@@ -33,7 +33,7 @@ async function wikiMain(en, enCountry) {
 }
 
 // 3) fotografije iz Wikimedia Commons
-async function commons(en, enCountry, limit = 14) {
+async function commons(en, enCountry, limit = 30) {
   const q = `${en} ${enCountry}`.trim();
   const u = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search'
     + '&gsrsearch=' + encodeURIComponent(q) + '&gsrnamespace=6&gsrlimit=' + limit
@@ -68,7 +68,7 @@ for (const d of list) {
   const a = await wikiMain(en, enCountry); await sleep(120);
   const b = await commons(en, enCountry); await sleep(150);
   const seen = new Set();
-  const photos = [...a, ...b].filter(p => { const k = p.url.split('/').pop(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 6);
+  const photos = [...a, ...b].filter(p => { const k = p.url.split('/').pop(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 10);
   result.push({ ...d, en, photos });
   console.log(`[${String(i).padStart(3)}/${list.length}] ${d.city} (${d.country}) → ${photos.length} kandidatov`);
 }
