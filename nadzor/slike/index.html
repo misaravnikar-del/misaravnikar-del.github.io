@@ -75,7 +75,33 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;font-weight:700}
 .done h2{font-family:var(--fd);font-size:28px;margin:0 0 8px}
 .done p{color:var(--muted);margin:0 0 18px;line-height:1.6}
 .done button{background:var(--accent);color:#fff;padding:13px 22px}
-@media(max-width:520px){ .brand{font-size:15px} .ctr button{width:58px;height:58px;font-size:23px} }
+/* lastne slike */
+.upbtn{background:var(--bg);color:var(--ink);padding:8px 13px;font-size:13px;white-space:nowrap}
+.upbtn:hover{background:#e2ecee}
+.modal{position:fixed;inset:0;background:rgba(6,24,28,.55);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal__box{background:var(--surface);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(640px,100%);max-height:88dvh;display:flex;flex-direction:column;overflow:hidden}
+.modal__hd{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+.modal__hd h3{font-family:var(--fd);font-size:20px;margin:0}
+.modal__hd button{background:var(--bg);color:var(--muted);width:34px;height:34px;border-radius:50%;font-size:17px}
+.modal__bd{padding:16px 20px;overflow:auto;flex:1}
+.modal__ft{padding:12px 20px 18px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between}
+.drop{border:2.5px dashed var(--line);border-radius:16px;padding:28px 18px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s;background:#fbfdfd}
+.drop:hover,.drop.over{border-color:var(--accent2);background:#f2fafb;color:var(--accent)}
+.drop b{display:block;color:var(--ink);font-size:15px;margin-bottom:3px}
+.row{display:flex;gap:11px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row img{width:74px;height:56px;object-fit:cover;border-radius:9px;flex:none;background:var(--bg)}
+.row .f{flex:1;min-width:0}
+.row .nm{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.row select,.row input{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font:inherit;font-size:13.5px;background:#fbfdfd;outline:none}
+.row select:focus,.row input:focus{border-color:var(--accent2)}
+.row .del{background:none;color:var(--ne);font-size:17px;width:30px;height:30px;flex:none}
+.cust{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.st{font-size:12.5px;color:var(--muted)}
+.st.ok{color:var(--ja);font-weight:700}.st.err{color:var(--ne);font-weight:700}
+.modal__ft .go{background:var(--accent);color:#fff;padding:11px 20px}
+.modal__ft .go:disabled{opacity:.45;cursor:default}
+@media(max-width:520px){ .brand{font-size:15px} .ctr button{width:58px;height:58px;font-size:23px} .upbtn{padding:8px 10px;font-size:12px} .row img{width:56px;height:44px} .cust{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -97,6 +123,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;font-weight:700}
       <div class="prog__t"><span id="pLabel">—</span><span><b id="pDone">0</b> / <span id="pAll">0</span> mest</span></div>
       <div class="bar"><i id="pBar" style="width:0%"></i></div>
     </div>
+    <button class="upbtn" id="bUpload" title="Dodaj svojo fotografijo">📤 Svoja slika</button>
     <span class="tag ja" id="okCount">0 ✓</span>
   </div>
 
@@ -110,6 +137,28 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;font-weight:700}
     </div>
     <div class="hint">Povleci sliko levo/desno · ali <kbd>←</kbd> ne · <kbd>→</kbd> ja · <kbd>↓</kbd> preskoči mesto</div>
   </div>
+
+  <!-- lastne slike -->
+  <div class="modal" id="upModal" hidden>
+    <div class="modal__box">
+      <div class="modal__hd">
+        <h3>📤 Dodaj svoje fotografije</h3>
+        <button id="upClose" title="Zapri">✕</button>
+      </div>
+      <div class="modal__bd">
+        <div class="drop" id="drop">
+          <b>Spusti fotografije sem</b>
+          ali klikni za izbiro · JPG/PNG · več hkrati · do 10 MB
+        </div>
+        <div id="upList"></div>
+      </div>
+      <div class="modal__ft">
+        <span class="st" id="upStatus">Za vsako sliko izberi mesto.</span>
+        <button class="go" id="upGo" disabled>Naloži</button>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="upFile" accept="image/*" multiple hidden>
 
   <div class="done" id="done" hidden>
     <div>
@@ -268,6 +317,116 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;font-weight:700}
     else if(e.key==='ArrowDown'){e.preventDefault();skipCity();}
     else if(e.key==='Backspace'){e.preventDefault();undo();}
   });
+  // ---------- LASTNE SLIKE (nalaganje) ----------
+  var CELINE=['Evropa','Azija','Afrika','Severna Amerika','Srednja Amerika','Južna Amerika','Oceanija'];
+  var queue=[];   // {file,url,id}
+
+  function cityOptions(){
+    var o='<option value="">— izberi mesto —</option>';
+    DATA.slice().sort(function(a,b){return a.city.localeCompare(b.city,'sl')}).forEach(function(d){
+      o+='<option value="'+esc(d.code)+'">'+esc(d.city)+' — '+esc(d.country)+'</option>';
+    });
+    return o+'<option value="__c">➕ drugo mesto (ni na seznamu)</option>';
+  }
+
+  function renderQueue(){
+    var L=$('upList'); L.innerHTML='';
+    queue.forEach(function(it){
+      var r=document.createElement('div'); r.className='row';
+      r.innerHTML='<img src="'+it.url+'" alt="">'+
+        '<div class="f"><div class="nm">'+esc(it.file.name)+'</div>'+
+        '<select data-id="'+it.id+'" class="sel">'+cityOptions()+'</select>'+
+        '<div class="cust" data-c="'+it.id+'" hidden>'+
+          '<input placeholder="Mesto (npr. Split)" data-k="city">'+
+          '<input placeholder="Država (npr. Hrvaška)" data-k="country">'+
+          '<select data-k="cont">'+CELINE.map(function(c){return '<option>'+c+'</option>'}).join('')+'</select>'+
+        '</div></div>'+
+        '<button class="del" data-del="'+it.id+'" title="Odstrani">✕</button>';
+      L.appendChild(r);
+    });
+    L.querySelectorAll('.sel').forEach(function(s){
+      s.onchange=function(){ var c=L.querySelector('[data-c="'+s.dataset.id+'"]'); c.hidden=(s.value!=='__c'); check(); };
+    });
+    L.querySelectorAll('input,select').forEach(function(el){ el.oninput=check; });
+    L.querySelectorAll('[data-del]').forEach(function(b){
+      b.onclick=function(){ queue=queue.filter(function(q){return q.id!=b.dataset.del}); renderQueue(); check(); };
+    });
+    check();
+  }
+
+  function rowData(it){
+    var L=$('upList');
+    var sel=L.querySelector('.sel[data-id="'+it.id+'"]'); if(!sel||!sel.value) return null;
+    if(sel.value==='__c'){
+      var box=L.querySelector('[data-c="'+it.id+'"]');
+      var city=box.querySelector('[data-k="city"]').value.trim();
+      var country=box.querySelector('[data-k="country"]').value.trim();
+      var cont=box.querySelector('[data-k="cont"]').value;
+      if(!city||!country) return null;
+      return {code:'CUSTOM-'+city.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8), city:city, country:country, cont:cont};
+    }
+    var d=DATA.find(function(x){return x.code===sel.value});
+    return d? {code:d.code,city:d.city,country:d.country,cont:d.cont} : null;
+  }
+  function check(){
+    var ready=queue.length>0 && queue.every(function(it){return !!rowData(it)});
+    $('upGo').disabled=!ready;
+    $('upStatus').className='st';
+    $('upStatus').textContent = queue.length? (ready? queue.length+' slik pripravljenih za nalaganje.' : 'Za vsako sliko izberi mesto.') : 'Spusti ali izberi fotografije.';
+  }
+
+  function addFiles(files){
+    [].slice.call(files).forEach(function(f){
+      if(!/^image\//.test(f.type)) return;
+      if(f.size>10*1024*1024){ $('upStatus').className='st err'; $('upStatus').textContent=f.name+' je prevelika (nad 10 MB).'; return; }
+      queue.push({file:f,url:URL.createObjectURL(f),id:Date.now()+'-'+Math.random().toString(36).slice(2,7)});
+    });
+    renderQueue();
+  }
+
+  function upload(){
+    var ready=queue.slice(); if(!ready.length) return;
+    $('upGo').disabled=true; var done=0, fail=0;
+    $('upStatus').className='st'; $('upStatus').textContent='Nalagam…';
+    (function next(i){
+      if(i>=ready.length){
+        $('upStatus').className=fail?'st err':'st ok';
+        $('upStatus').textContent=fail? (done+' naloženih, '+fail+' neuspešnih.') : ('Naloženih '+done+' slik ✓ Shranil jih bom v tvojo mapo.');
+        queue=[]; renderQueue(); render();
+        if(!fail) setTimeout(function(){ $('upModal').hidden=true; },1400);
+        return;
+      }
+      var it=ready[i], d=rowData(it);
+      var ext=(it.file.name.match(/\.(jpe?g|png|webp)$/i)||['.jpg'])[0];
+      var path='lastne/'+d.code+'-'+Date.now()+ext.toLowerCase();
+      fetch(U+'/storage/v1/object/content/'+path,{method:'POST',
+        headers:{apikey:K,Authorization:'Bearer '+K,'x-upsert':'true','Content-Type':it.file.type||'image/jpeg'},
+        body:it.file})
+        .then(function(r){ if(!r.ok) throw new Error(r.status);
+          var url=U+'/storage/v1/object/public/content/'+path;
+          return rpc('vote_photo',{pass:PW,p_code:d.code,p_url:url,p_decision:'ja',
+            p_city:d.city,p_country:d.country,p_cont:d.cont,p_title:'LASTNA: '+it.file.name});
+        })
+        .then(function(){ done++; votes['CITY:'+d.code]='ja'; $('upStatus').textContent='Nalagam… '+done+'/'+ready.length; })
+        .catch(function(){ fail++; })
+        .then(function(){ next(i+1); });
+    })(0);
+  }
+
+  $('bUpload').onclick=function(){ $('upModal').hidden=false; renderQueue(); };
+  $('upClose').onclick=function(){ $('upModal').hidden=true; };
+  $('upModal').onclick=function(e){ if(e.target===$('upModal')) $('upModal').hidden=true; };
+  $('drop').onclick=function(){ $('upFile').click(); };
+  $('upFile').onchange=function(){ addFiles(this.files); this.value=''; };
+  $('upGo').onclick=upload;
+  ['dragenter','dragover'].forEach(function(ev){ $('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.add('over');}); });
+  ['dragleave','drop'].forEach(function(ev){ $('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.remove('over');}); });
+  $('drop').addEventListener('drop',function(e){ if(e.dataTransfer&&e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+  addEventListener('dragover',function(e){e.preventDefault();});
+  addEventListener('drop',function(e){ e.preventDefault();
+    if($('app').hidden) return;
+    if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){ $('upModal').hidden=false; addFiles(e.dataTransfer.files); } });
+
   $('loginForm').addEventListener('submit',function(e){e.preventDefault();var v=$('pw').value.trim();if(v)login(v);});
   var saved=''; try{saved=localStorage.getItem('bkrj_admin_pw')||'';}catch(e){}
   if(saved) login(saved);
