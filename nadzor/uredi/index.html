@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Urejanje strani — Bookiraj.si</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#0C7F93;--accent2:#37C1D5;--ink:#12292f;--muted:#6c8188;--line:#e0eaec;--bg:#eef4f5;--surface:#fff;--good:#1f9d6b;--warn:#d9822b;--danger:#c0392b;
+  --fd:"Playfair Display",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif;}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{font-family:var(--fb);color:var(--ink);background:var(--bg);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;font-weight:700}
+
+/* login */
+.gate{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+.gate__card{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(18,41,47,.09);padding:32px 28px;max-width:390px;width:100%;text-align:center}
+.gate__logo{font-family:var(--fd);font-weight:800;font-size:25px}.gate__logo span{color:var(--accent)}
+.gate__sub{color:var(--muted);font-size:14px;margin:.3rem 0 1.3rem}
+#pw{width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:11px;font:inherit;font-size:15px;background:#fbfdfd;outline:none;margin-bottom:11px}
+#pw:focus{border-color:var(--accent2)}
+.gate__card button{width:100%;padding:13px;background:var(--accent);color:#fff;font-size:15px}
+.err{color:var(--danger);font-size:13px;min-height:17px;margin-top:7px}
+
+/* editor */
+#app{flex:1;display:flex;flex-direction:column;min-height:0}
+#bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 2px 10px rgba(18,41,47,.05);flex-wrap:wrap;z-index:5}
+.brand{font-family:var(--fd);font-weight:800;font-size:18px;white-space:nowrap}.brand span{color:var(--accent)}
+.brand small{font-family:var(--fb);font-weight:600;font-size:11px;color:var(--muted);display:block;letter-spacing:.3px}
+#status{font-size:13px;color:var(--muted);margin-left:6px;min-width:130px}
+#status.saving{color:var(--warn)}#status.ok{color:var(--good)}#status.err{color:var(--danger)}
+.pending{display:inline-block;background:#fdeede;color:var(--warn);font-weight:700;font-size:12px;padding:2px 9px;border-radius:20px;margin-left:4px}
+.pending.zero{background:#e7f4ee;color:var(--good)}
+.sp{flex:1}
+.actions{display:flex;gap:8px;align-items:center}
+.btn-ghost{background:var(--bg);color:var(--ink);padding:9px 13px;font-size:13px}
+.btn-ghost:hover{background:#e2ecee}
+.btn-danger{background:#fdecec;color:var(--danger);padding:9px 13px;font-size:13px}
+.btn-pub{background:var(--accent);color:#fff;padding:10px 18px;font-size:14px}
+.btn-pub:hover{filter:brightness(1.08)}.btn-pub:disabled{opacity:.5;cursor:default;filter:none}
+#hint{background:#f6fbfc;border-bottom:1px solid var(--line);color:var(--ink);font-size:12.5px;padding:8px 16px;text-align:center}
+#hint b{color:var(--accent)}
+.frame-wrap{flex:1;min-height:0;position:relative;background:#fff}
+#frame{width:100%;height:100%;border:0;display:block}
+#veil{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#fff;color:var(--muted);font-size:14px;z-index:2}
+.spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite;display:inline-block;margin-right:9px;vertical-align:-3px}
+@keyframes s{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:11px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:20;opacity:0;transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.hide0{transform:translateX(-50%) translateY(8px)}
+@media(max-width:640px){#status{min-width:0;flex-basis:100%;order:5}.brand small{display:none}}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <form class="gate__card" id="loginForm" autocomplete="off">
+    <div class="gate__logo">Bookiraj<span>.si</span></div>
+    <div class="gate__sub">Urejanje strani · dostop samo zate</div>
+    <input id="pw" type="password" placeholder="Geslo" autocomplete="current-password">
+    <button type="submit">Odpri urejevalnik</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <div id="bar">
+    <div class="brand">Bookiraj<span>.si</span><small>urejanje strani</small></div>
+    <div id="status">nalagam…</div>
+    <span class="pending zero" id="pending" hidden>0</span>
+    <div class="sp"></div>
+    <div class="actions">
+      <button class="btn-danger" id="discardBtn" title="Zavrzi neobjavljene osnutke">Zavrzi osnutke</button>
+      <button class="btn-pub" id="publishBtn" disabled>OBJAVI ⬆</button>
+      <button class="btn-ghost" id="logoutBtn">Odjava</button>
+    </div>
+  </div>
+  <div id="hint">Klikni <b>besedilo</b> in ga popravi · klikni <b>sliko</b> za zamenjavo · spremembe so <b>OSNUTEK</b> (stranke jih ne vidijo), dokler ne klikneš <b>OBJAVI</b>.</div>
+  <div class="frame-wrap">
+    <div id="veil"><span class="spin"></span> nalagam tvojo stran…</div>
+    <iframe id="frame" title="Predogled strani"></iframe>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var U='https://fliwoulbwqcnufdfgvcj.supabase.co';
+  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+  var $=function(id){return document.getElementById(id)};
+  var PW='', pending=0, pendingImg=null;
+
+  function rpc(fn,body){return fetch(U+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}
+  function esc(s){try{return CSS.escape(s);}catch(e){return String(s).replace(/[^a-zA-Z0-9_-]/g,'\\$&');}}
+  function setStatus(t,cls){var s=$('status');s.textContent=t;s.className=cls||'';}
+  var toT;
+  function toast(t){var el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toT);toT=setTimeout(function(){el.classList.remove('show');},2200);}
+  function setPending(n){pending=n;var p=$('pending');p.hidden=false;p.textContent=n+(n===1?' sprememba':' spremembe/-b');p.className='pending'+(n===0?' zero':'');$('publishBtn').disabled=(n===0);}
+
+  // ---- unique selector for an element ----
+  function selFor(el){
+    var doc=el.ownerDocument, parts=[];
+    while(el && el.nodeType===1 && el!==doc.body){
+      if(el.id){parts.unshift('#'+esc(el.id));break;}
+      var tag=el.tagName.toLowerCase(), nth=1, sib=el;
+      while(sib=sib.previousElementSibling){if(sib.tagName===el.tagName)nth++;}
+      parts.unshift(tag+':nth-of-type('+nth+')');
+      el=el.parentElement;
+    }
+    return parts.join('>');
+  }
+
+  // ---- login ----
+  function login(pw){
+    $('loginErr').textContent='';
+    return rpc('admin_stats',{pass:pw}).then(function(){
+      PW=pw; try{localStorage.setItem('bkrj_admin_pw',pw);}catch(e){}
+      $('gate').hidden=true; $('app').hidden=false;
+      $('frame').src='/?edit=1&cb='+Date.now();
+    }).catch(function(){ $('loginErr').textContent='Napačno geslo.'; try{localStorage.removeItem('bkrj_admin_pw');}catch(e){} });
+  }
+
+  // ---- editor setup after iframe loads ----
+  $('frame').addEventListener('load',function(){
+    var frame=$('frame'), doc, win;
+    try{ doc=frame.contentDocument; win=frame.contentWindow; }catch(e){ return; }
+    if(!doc || !doc.body) return;
+    // fetch drafts, apply, then make editable
+    rpc('draft_content',{pass:PW}).then(function(rows){
+      rows=rows||[];
+      var applied=rows.map(function(o){return {key:o.key,kind:o.kind,val:(o.draft!=null?o.draft:o.published)};}).filter(function(o){return o.val!=null;});
+      try{ if(win.__bkrjApply) win.__bkrjApply(applied); }catch(e){}
+      var pend=rows.filter(function(o){return (o.draft||'')!==(o.published||'');}).length;
+      setPending(pend);
+      makeEditable(doc);
+      $('veil').hidden=true;
+      setStatus('pripravljeno — klikni za urejanje','ok');
+    }).catch(function(){ $('veil').hidden=true; setStatus('napaka pri nalaganju','err'); });
+  });
+
+  function makeEditable(doc){
+    // reveal everything (site hides .reveal until scroll)
+    try{doc.querySelectorAll('.reveal').forEach(function(el){el.classList.add('in');});}catch(e){}
+    // editor styles inside iframe
+    var st=doc.createElement('style');
+    st.textContent='[data-be]{outline:1.5px dashed rgba(12,127,147,.45);outline-offset:2px}[data-be]:hover{outline-color:#0C7F93;background:rgba(55,193,213,.10)}[data-be="text"]{cursor:text}[data-be="img"]{cursor:pointer}[data-be="text"]:focus{outline:2px solid #0C7F93;background:rgba(55,193,213,.14)}';
+    doc.head.appendChild(st);
+    // block link navigation while editing
+    doc.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a');if(a)e.preventDefault();},true);
+    // text leaf elements
+    var sel='h1,h2,h3,h4,h5,h6,p,li,a,span,small,b,strong,em,button,figcaption,blockquote,td,th,label';
+    doc.querySelectorAll(sel).forEach(function(el){
+      if(el.children.length>0) return;              // leaf only
+      var t=(el.textContent||'').trim();
+      if(!t || t.length>500) return;
+      if(el.closest('script,style,svg')) return;
+      el.setAttribute('data-be','text');
+      el.setAttribute('contenteditable','true');
+      el.setAttribute('spellcheck','false');
+      el.addEventListener('focus',function(){el.__o=el.textContent;});
+      el.addEventListener('keydown',function(e){if(e.key==='Enter'&&el.tagName!=='LI'){e.preventDefault();el.blur();}});
+      el.addEventListener('blur',function(){
+        var nv=el.textContent;
+        if(nv!==el.__o){ save(selFor(el),'text',nv,true); }
+      });
+    });
+    // images
+    doc.querySelectorAll('img').forEach(function(img){
+      if(img.closest('script')) return;
+      img.setAttribute('data-be','img');
+      img.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();pendingImg=img;$('fileInput').click();});
+    });
+  }
+
+  function save(key,kind,val,bump){
+    setStatus('shranjujem…','saving');
+    return rpc('set_content',{pass:PW,k:key,kind_in:kind,v:val}).then(function(){
+      if(bump) setPending(pending+1);
+      setStatus('osnutek shranjen','ok'); toast('Shranjeno kot osnutek');
+    }).catch(function(){ setStatus('napaka pri shranjevanju','err'); toast('Napaka pri shranjevanju'); });
+  }
+
+  // ---- image upload ----
+  $('fileInput').addEventListener('change',function(){
+    var f=this.files&&this.files[0]; if(!f||!pendingImg){this.value='';return;}
+    if(f.size>6*1024*1024){toast('Slika je prevelika (max 6 MB)');this.value='';return;}
+    var img=pendingImg; pendingImg=null; this.value='';
+    var name='img/'+Date.now()+'-'+(f.name||'slika').replace(/[^a-zA-Z0-9._-]/g,'_');
+    setStatus('nalagam sliko…','saving');
+    fetch(U+'/storage/v1/object/content/'+name,{method:'POST',headers:{apikey:K,Authorization:'Bearer '+K,'x-upsert':'true','Content-Type':f.type||'application/octet-stream'},body:f})
+      .then(function(r){if(!r.ok)throw new Error(r.status);
+        var url=U+'/storage/v1/object/public/content/'+name;
+        try{img.src=url; img.srcset='';}catch(e){}
+        return save(selFor(img),'img',url,true);
+      }).catch(function(){ setStatus('napaka pri nalaganju slike','err'); toast('Napaka pri nalaganju slike'); });
+  });
+
+  // ---- publish / discard / logout ----
+  $('publishBtn').addEventListener('click',function(){
+    if(pending===0) return;
+    if(!confirm('Objavim '+pending+' spremembe/-b? Po objavi jih bodo videle tudi stranke na pravi strani.')) return;
+    setStatus('objavljam…','saving');
+    rpc('publish_content',{pass:PW}).then(function(){ setPending(0); setStatus('objavljeno ✓ — v živo na strani','ok'); toast('Objavljeno! Spremembe so zdaj v živo.'); })
+      .catch(function(){ setStatus('napaka pri objavi','err'); toast('Napaka pri objavi'); });
+  });
+  $('discardBtn').addEventListener('click',function(){
+    if(!confirm('Zavržem vse neobjavljene osnutke? Vrne se na zadnje objavljeno stanje.')) return;
+    setStatus('brišem osnutke…','saving');
+    rpc('discard_content',{pass:PW}).then(function(){ toast('Osnutki zavrženi'); $('veil').hidden=false; $('frame').src='/?edit=1&cb='+Date.now(); })
+      .catch(function(){ setStatus('napaka','err'); });
+  });
+  $('logoutBtn').addEventListener('click',function(){ try{localStorage.removeItem('bkrj_admin_pw');}catch(e){} location.reload(); });
+
+  $('loginForm').addEventListener('submit',function(e){e.preventDefault();var v=$('pw').value.trim();if(v)login(v);});
+  var saved=''; try{saved=localStorage.getItem('bkrj_admin_pw')||'';}catch(e){}
+  if(saved) login(saved);
+})();
+</script>
+</body>
+</html>
