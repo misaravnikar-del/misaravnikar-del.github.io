@@ -40,6 +40,8 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;font-weight:700}
 .actions{display:flex;gap:8px;align-items:center}
 .btn-ghost{background:var(--bg);color:var(--ink);padding:9px 13px;font-size:13px}
 .btn-ghost:hover{background:#e2ecee}
+.btn-ghost.mode-on{background:var(--accent);color:#fff}
+#hint.hm{background:#fff5ec;color:#8a4b12}
 .btn-danger{background:#fdecec;color:var(--danger);padding:9px 13px;font-size:13px}
 .btn-pub{background:var(--accent);color:#fff;padding:10px 18px;font-size:14px}
 .btn-pub:hover{filter:brightness(1.08)}.btn-pub:disabled{opacity:.5;cursor:default;filter:none}
@@ -75,6 +77,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;font-weight:700}
     <span class="pending zero" id="pending" hidden>0</span>
     <div class="sp"></div>
     <div class="actions">
+      <button class="btn-ghost" id="hideBtn" title="Vklopi način skrivanja elementov">🚫 Skrivanje</button>
       <button class="btn-danger" id="discardBtn" title="Zavrzi neobjavljene osnutke">Zavrzi osnutke</button>
       <button class="btn-pub" id="publishBtn" disabled>OBJAVI ⬆</button>
       <button class="btn-ghost" id="logoutBtn">Odjava</button>
@@ -127,55 +130,72 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;font-weight:700}
     }).catch(function(){ $('loginErr').textContent='Napačno geslo.'; try{localStorage.removeItem('bkrj_admin_pw');}catch(e){} });
   }
 
+  // ---- hide-mode state + helpers ----
+  var HIDDEN={}, hideMode=false, curDoc=null;
+  function markHidden(el,on){ if(!el)return; if(on){el.style.opacity='.35';el.style.textDecoration='line-through';el.setAttribute('data-be-hidden','1');}else{el.style.opacity='';el.style.textDecoration='';el.removeAttribute('data-be-hidden');} }
+  function toggleHide(el){ if(!el)return; var key=selFor(el); var willHide=!HIDDEN[key]; if(willHide){HIDDEN[key]=true;}else{delete HIDDEN[key];} markHidden(el,willHide); save(key,'hide',willHide?'1':null,true); }
+  function setHideMode(on){
+    hideMode=on;
+    var b=$('hideBtn'); if(b){b.classList.toggle('mode-on',on); b.textContent=on?'✓ Skrivanje':'🚫 Skrivanje';}
+    if(curDoc){try{curDoc.body.style.cursor=on?'crosshair':'';}catch(e){}}
+    var h=$('hint'); h.classList.toggle('hm',on);
+    h.innerHTML=on
+      ? '<b>Način skrivanja vklopljen:</b> klikni element, da ga <b>skriješ</b> (ali ponovno pokažeš) — postane osnutek. Ko končaš, izklopi način in klikni OBJAVI.'
+      : 'Klikni <b>besedilo</b> in ga popravi · klikni <b>sliko</b> za zamenjavo · spremembe so <b>OSNUTEK</b> (stranke jih ne vidijo), dokler ne klikneš <b>OBJAVI</b>.';
+  }
+
   // ---- editor setup after iframe loads ----
   $('frame').addEventListener('load',function(){
     var frame=$('frame'), doc, win;
     try{ doc=frame.contentDocument; win=frame.contentWindow; }catch(e){ return; }
     if(!doc || !doc.body) return;
-    // fetch drafts, apply, then make editable
+    curDoc=doc;
     rpc('draft_content',{pass:PW}).then(function(rows){
-      rows=rows||[];
-      var applied=rows.map(function(o){return {key:o.key,kind:o.kind,val:(o.draft!=null?o.draft:o.published)};}).filter(function(o){return o.val!=null;});
+      rows=rows||[]; HIDDEN={};
+      var applied=[];
+      rows.forEach(function(o){
+        var v=(o.draft!=null?o.draft:o.published);
+        if(o.kind==='hide'){ if(v) HIDDEN[o.key]=true; return; }   // skrite obravnavamo posebej (zatemnimo)
+        if(v!=null) applied.push({key:o.key,kind:o.kind,val:v});
+      });
       try{ if(win.__bkrjApply) win.__bkrjApply(applied); }catch(e){}
       var pend=rows.filter(function(o){return (o.draft||'')!==(o.published||'');}).length;
       setPending(pend);
       makeEditable(doc);
+      Object.keys(HIDDEN).forEach(function(k){ markHidden(doc.querySelector(k),true); });
+      setHideMode(hideMode);
       $('veil').hidden=true;
       setStatus('pripravljeno — klikni za urejanje','ok');
     }).catch(function(){ $('veil').hidden=true; setStatus('napaka pri nalaganju','err'); });
   });
 
   function makeEditable(doc){
-    // reveal everything (site hides .reveal until scroll)
     try{doc.querySelectorAll('.reveal').forEach(function(el){el.classList.add('in');});}catch(e){}
-    // editor styles inside iframe
     var st=doc.createElement('style');
-    st.textContent='[data-be]{outline:1.5px dashed rgba(12,127,147,.45);outline-offset:2px}[data-be]:hover{outline-color:#0C7F93;background:rgba(55,193,213,.10)}[data-be="text"]{cursor:text}[data-be="img"]{cursor:pointer}[data-be="text"]:focus{outline:2px solid #0C7F93;background:rgba(55,193,213,.14)}';
+    st.textContent='[data-be]{outline:1.5px dashed rgba(12,127,147,.45);outline-offset:2px}[data-be]:hover{outline-color:#0C7F93;background:rgba(55,193,213,.10)}[data-be="text"]{cursor:text}[data-be="img"]{cursor:pointer}[data-be="text"]:focus{outline:2px solid #0C7F93;background:rgba(55,193,213,.14)}[data-be-hidden]{outline-style:dotted!important;outline-color:#c0392b!important}';
     doc.head.appendChild(st);
-    // block link navigation while editing
-    doc.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a');if(a)e.preventDefault();},true);
-    // text leaf elements
+    // hide-mode: klik skrije/pokaze; sicer blokiraj navigacijo povezav
+    doc.addEventListener('click',function(e){
+      if(hideMode){ var h=e.target.closest&&e.target.closest('[data-be]'); if(h){ e.preventDefault(); e.stopPropagation(); toggleHide(h); return; } }
+      var a=e.target.closest&&e.target.closest('a'); if(a)e.preventDefault();
+    },true);
     var sel='h1,h2,h3,h4,h5,h6,p,li,a,span,small,b,strong,em,button,figcaption,blockquote,td,th,label';
     doc.querySelectorAll(sel).forEach(function(el){
-      if(el.children.length>0) return;              // leaf only
+      if(el.children.length>0) return;
       var t=(el.textContent||'').trim();
       if(!t || t.length>500) return;
       if(el.closest('script,style,svg')) return;
       el.setAttribute('data-be','text');
       el.setAttribute('contenteditable','true');
       el.setAttribute('spellcheck','false');
-      el.addEventListener('focus',function(){el.__o=el.textContent;});
+      el.addEventListener('focus',function(){ if(hideMode){el.blur();return;} el.__o=el.textContent; });
       el.addEventListener('keydown',function(e){if(e.key==='Enter'&&el.tagName!=='LI'){e.preventDefault();el.blur();}});
-      el.addEventListener('blur',function(){
-        var nv=el.textContent;
-        if(nv!==el.__o){ save(selFor(el),'text',nv,true); }
-      });
+      el.addEventListener('blur',function(){ if(hideMode)return; var nv=el.textContent; if(nv!==el.__o){ save(selFor(el),'text',nv,true); } });
     });
-    // images
     doc.querySelectorAll('img').forEach(function(img){
       if(img.closest('script')) return;
       img.setAttribute('data-be','img');
-      img.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();pendingImg=img;$('fileInput').click();});
+      img.addEventListener('click',function(e){ if(hideMode)return; e.preventDefault();e.stopPropagation();pendingImg=img;$('fileInput').click();});
     });
   }
 
@@ -217,6 +237,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;font-weight:700}
       .catch(function(){ setStatus('napaka','err'); });
   });
   $('logoutBtn').addEventListener('click',function(){ try{localStorage.removeItem('bkrj_admin_pw');}catch(e){} location.reload(); });
+  $('hideBtn').addEventListener('click',function(){ setHideMode(!hideMode); });
 
   $('loginForm').addEventListener('submit',function(e){e.preventDefault();var v=$('pw').value.trim();if(v)login(v);});
   var saved=''; try{saved=localStorage.getItem('bkrj_admin_pw')||'';}catch(e){}

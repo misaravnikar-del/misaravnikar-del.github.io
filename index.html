@@ -2377,7 +2377,7 @@ route();
   function inFrame(){try{return window.top!==window.self;}catch(e){return true;}}
   var EDIT = location.search.indexOf('edit=1')>=0 || inFrame();
   // pomozna: uveljavi popravke na elemente z data-ov (uporabljata ziva stran in urejevalnik)
-  window.__bkrjApply=function(rows){(rows||[]).forEach(function(o){try{var el=document.querySelector(o.key);if(!el)return;if(o.kind==='img'){if(el.tagName==='IMG')el.src=o.val;else el.style.backgroundImage='url("'+o.val+'")';}else if(o.kind==='html'){el.innerHTML=o.val;}else{el.textContent=o.val;}}catch(e){}});};
+  window.__bkrjApply=function(rows){(rows||[]).forEach(function(o){try{var el=document.querySelector(o.key);if(!el)return;if(o.kind==='hide'){el.style.display=(o.val?'none':'');}else if(o.kind==='img'){if(el.tagName==='IMG')el.src=o.val;else el.style.backgroundImage='url("'+o.val+'")';}else if(o.kind==='html'){el.innerHTML=o.val;}else{el.textContent=o.val;}}catch(e){}});};
   if(EDIT) return; // urejevalnik (nadzor/uredi) prevzame prikaz osnutka + urejanje
   // ziva stran: uveljavi samo OBJAVLJENE popravke
   fetch(U+'/rest/v1/rpc/published_content',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json();}).then(function(rows){window.__bkrjApply(rows);}).catch(function(){});
