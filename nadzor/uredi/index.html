@@ -97,7 +97,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;font-weight:700}
   var $=function(id){return document.getElementById(id)};
   var PW='', pending=0, pendingImg=null;
 
-  function rpc(fn,body){return fetch(U+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}
+  function rpc(fn,body){return fetch(U+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error(r.status);return r.text();}).then(function(t){return t?JSON.parse(t):null;});}
   function esc(s){try{return CSS.escape(s);}catch(e){return String(s).replace(/[^a-zA-Z0-9_-]/g,'\\$&');}}
   function setStatus(t,cls){var s=$('status');s.textContent=t;s.className=cls||'';}
   var toT;
