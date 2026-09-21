@@ -2368,3 +2368,20 @@ route();
   document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
 })();
 </script>
+
+<!-- Bookiraj analitika: nevidno stetje obiskov (Supabase). Ne vpliva na videz strani. -->
+<script>
+(function(){
+  var U='https://fliwoulbwqcnufdfgvcj.supabase.co';
+  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+  var sid;
+  try{sid=localStorage.getItem('bkrj_sid');if(!sid){sid=Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem('bkrj_sid',sid);}}catch(e){sid='anon';}
+  function track(t,n){try{fetch(U+'/rest/v1/events',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({type:t,name:(n||'').slice(0,120),session:sid}),keepalive:true}).catch(function(){});}catch(e){}}
+  function onRoute(){var h=location.hash||'/';track('pageview',h);if(h.indexOf('#deal/')===0)track('deal_open',h.slice(6));}
+  onRoute();
+  addEventListener('hashchange',onRoute);
+  var seen={},ids=['tedna','akcije','esim','zakaj','storitve','mnenja','nasveti','news'];
+  try{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!seen[e.target.id]){seen[e.target.id]=1;track('section_view',e.target.id);}});},{threshold:0.4});
+  ids.forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el);});}catch(e){}
+})();
+</script>
