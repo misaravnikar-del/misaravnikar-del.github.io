@@ -79,13 +79,29 @@ const manifestPath = join(ROOT, '.bookiraj-slike.json');
 let manifest = {};
 if (existsSync(manifestPath)) { try { manifest = JSON.parse(readFileSync(manifestPath, 'utf8')); } catch {} }
 
+// Mesta, ki jih Miša ročno izbira (ima že kak JA), pustimo pri miru —
+// njene izbire imajo prednost, samodejno jih ne dopolnjujemo.
+const curated = new Set();
+if (process.env.SKIP_CURATED !== '0') {
+  try {
+    const U = 'https://fliwoulbwqcnufdfgvcj.supabase.co';
+    const K = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+    const rr = await fetch(U + '/rest/v1/rpc/photo_votes_all', {
+      method: 'POST', headers: { apikey: K, Authorization: 'Bearer ' + K, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pass: process.env.BKRJ_PASS || 'bookiraj-nadzor-2026' })
+    });
+    if (rr.ok) for (const v of await rr.json()) if (v.decision === 'ja') curated.add(v.code);
+  } catch {}
+}
+
 const list = await destinations();
-console.log(`Destinacij: ${list.length} · cilj: ${MIN} slik na mesto · mapa: ${ROOT}`);
+console.log(`Destinacij: ${list.length} · cilj: ${MIN} slik na mesto · ročno izbranih mest (preskočim): ${curated.size} · mapa: ${ROOT}`);
 
 let added = 0, filled = 0, newCities = [], skipped = 0;
 
 for (const d of list) {
   if (added >= MAX_NEW) { console.log('… dosežena varovalka MAX_NEW, ostalo bo jutri.'); break; }
+  if (curated.has(d.code)) { skipped++; continue; }   // Mišina ročna izbira — ne diramo
   const dir = join(ROOT, safe(d.cont), safe(d.country));
   const city = safe(d.city);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
