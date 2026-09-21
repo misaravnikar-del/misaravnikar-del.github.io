@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Izbor slik — Bookiraj.si</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#0C7F93;--accent2:#37C1D5;--ink:#12292f;--muted:#6c8188;--line:#e0eaec;
+  --bg:#eef4f5;--surface:#fff;--ja:#1f9d6b;--ne:#e05252;
+  --fd:"Playfair Display",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overscroll-behavior:none}
+body{font-family:var(--fb);color:var(--ink);background:
+  radial-gradient(900px 500px at 80% -10%,#dff1f4 0,transparent 60%),
+  radial-gradient(700px 400px at -10% 0%,#eaf3ea 0,transparent 55%),var(--bg);
+  height:100dvh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;user-select:none}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;font-weight:700}
+
+/* login */
+.gate{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+.gate__card{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(18,41,47,.09);padding:32px 28px;max-width:380px;width:100%;text-align:center}
+.gate__logo{font-family:var(--fd);font-weight:800;font-size:25px}.gate__logo span{color:var(--accent)}
+.gate__sub{color:var(--muted);font-size:14px;margin:.3rem 0 1.3rem}
+#pw{width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:11px;font:inherit;font-size:15px;background:#fbfdfd;outline:none;margin-bottom:11px}
+#pw:focus{border-color:var(--accent2)}
+.gate__card button{width:100%;padding:13px;background:var(--accent);color:#fff;font-size:15px}
+.err{color:#c0392b;font-size:13px;min-height:17px;margin-top:7px}
+
+/* header */
+#bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{font-family:var(--fd);font-weight:800;font-size:17px;white-space:nowrap}.brand span{color:var(--accent)}
+.prog{flex:1;min-width:0}
+.prog__t{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:4px}
+.prog__t b{color:var(--ink)}
+.bar{height:7px;background:var(--bg);border-radius:6px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:6px;transition:width .3s}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.tag.ja{background:#e7f4ee;color:var(--ja)}
+
+/* deck */
+.deck-wrap{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;gap:12px}
+.deck{position:relative;width:min(560px,100%);flex:1;min-height:0;max-height:640px}
+.card{position:absolute;inset:0;background:#0d1b1f;border-radius:22px;overflow:hidden;
+  box-shadow:0 18px 44px rgba(18,41,47,.22);will-change:transform;touch-action:none}
+.card img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.card .ph{position:absolute;inset:0;display:grid;place-items:center;color:#ffffff88;font-size:14px;background:#12292f}
+.card .meta{position:absolute;left:0;right:0;bottom:0;padding:44px 20px 18px;color:#fff;pointer-events:none;
+  background:linear-gradient(to top,rgba(5,18,22,.92),rgba(5,18,22,.55) 45%,transparent)}
+.card .city{font-family:var(--fd);font-weight:800;font-size:clamp(26px,6vw,34px);line-height:1.1}
+.card .cnt{font-size:14px;opacity:.85;margin-top:3px}
+.card .idx{position:absolute;top:14px;right:14px;background:rgba(5,18,22,.6);color:#fff;font-size:12px;font-weight:600;padding:5px 11px;border-radius:20px;backdrop-filter:blur(6px)}
+.card .kur{position:absolute;top:14px;left:14px;background:rgba(55,193,213,.92);color:#04262d;font-size:11px;font-weight:800;letter-spacing:.4px;padding:5px 10px;border-radius:20px}
+.stamp{position:absolute;top:26px;font-size:30px;font-weight:800;letter-spacing:2px;padding:8px 18px;border:4px solid;border-radius:12px;opacity:0;transform:rotate(-14deg)}
+.stamp.ja{left:22px;color:var(--ja);border-color:var(--ja)}
+.stamp.ne{right:22px;color:var(--ne);border-color:var(--ne);transform:rotate(14deg)}
+.card.back{transform:scale(.94) translateY(14px);filter:brightness(.85)}
+
+/* controls */
+.ctr{display:flex;align-items:center;gap:16px}
+.ctr button{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:26px;
+  box-shadow:0 6px 18px rgba(18,41,47,.16);background:var(--surface);transition:transform .08s}
+.ctr button:active{transform:scale(.92)}
+.ctr .no{color:var(--ne)}.ctr .yes{color:var(--ja)}
+.ctr .skip,.ctr .undo{width:48px;height:48px;font-size:18px;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);text-align:center}
+.hint kbd{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:var(--fb);font-size:11px}
+
+/* done */
+.done{flex:1;display:grid;place-items:center;padding:24px;text-align:center}
+.done h2{font-family:var(--fd);font-size:28px;margin:0 0 8px}
+.done p{color:var(--muted);margin:0 0 18px;line-height:1.6}
+.done button{background:var(--accent);color:#fff;padding:13px 22px}
+@media(max-width:520px){ .brand{font-size:15px} .ctr button{width:58px;height:58px;font-size:23px} }
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <form class="gate__card" id="loginForm" autocomplete="off">
+    <div class="gate__logo">Bookiraj<span>.si</span></div>
+    <div class="gate__sub">Izbor slik destinacij 📸</div>
+    <input id="pw" type="password" placeholder="Geslo" autocomplete="current-password">
+    <button type="submit">Začni izbirati</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app" hidden style="flex:1;display:flex;flex-direction:column;min-height:0">
+  <div id="bar">
+    <div class="brand">Bookiraj<span>.si</span></div>
+    <div class="prog">
+      <div class="prog__t"><span id="pLabel">—</span><span><b id="pDone">0</b> / <span id="pAll">0</span> mest</span></div>
+      <div class="bar"><i id="pBar" style="width:0%"></i></div>
+    </div>
+    <span class="tag ja" id="okCount">0 ✓</span>
+  </div>
+
+  <div class="deck-wrap" id="deckWrap">
+    <div class="deck" id="deck"></div>
+    <div class="ctr">
+      <button class="undo" id="bUndo" title="Nazaj">↶</button>
+      <button class="no" id="bNo" title="Neprimerna">✕</button>
+      <button class="yes" id="bYes" title="Primerna">✓</button>
+      <button class="skip" id="bSkip" title="Preskoči mesto">»</button>
+    </div>
+    <div class="hint">Povleci sliko levo/desno · ali <kbd>←</kbd> ne · <kbd>→</kbd> ja · <kbd>↓</kbd> preskoči mesto</div>
+  </div>
+
+  <div class="done" id="done" hidden>
+    <div>
+      <h2>Vse pregledano! 🎉</h2>
+      <p id="doneTxt">—</p>
+      <button id="bRestart">Poglej še neodločena mesta</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var U='https://fliwoulbwqcnufdfgvcj.supabase.co';
+  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+  var $=function(id){return document.getElementById(id)};
+  var PW='', DATA=[], votes={}, order=[], ci=0, pi=0, history=[], busy=false;
+
+  function rpc(fn,body){return fetch(U+'/rest/v1/rpc/'+fn,{method:'POST',
+    headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},
+    body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
+    .then(function(t){return t?JSON.parse(t):null;});}
+
+  // ---------- login ----------
+  function login(pw){
+    $('loginErr').textContent='';
+    return rpc('admin_stats',{pass:pw}).then(function(){
+      PW=pw; try{localStorage.setItem('bkrj_admin_pw',pw);}catch(e){}
+      return start();
+    }).catch(function(){ $('loginErr').textContent='Napačno geslo.'; try{localStorage.removeItem('bkrj_admin_pw');}catch(e){} });
+  }
+
+  function start(){
+    return Promise.all([
+      fetch('kandidati.json?cb='+Date.now()).then(function(r){return r.json();}),
+      rpc('photo_votes_all',{pass:PW})
+    ]).then(function(res){
+      DATA=res[0]||[];
+      (res[1]||[]).forEach(function(v){ votes[v.code+'|'+v.url]=v.decision; if(v.decision==='ja') votes['CITY:'+v.code]='ja'; });
+      $('gate').hidden=true; $('app').hidden=false;
+      buildOrder(false); render();
+    });
+  }
+
+  // mesta, ki še nimajo potrjene slike (in imajo kandidate)
+  function buildOrder(includeAll){
+    order=[];
+    DATA.forEach(function(d,i){
+      if(!d.photos||!d.photos.length) return;
+      if(!includeAll && votes['CITY:'+d.code]==='ja') return;   // že ima potrjeno sliko
+      order.push(i);
+    });
+    ci=0; pi=0;
+  }
+
+  function cur(){ return order.length&&ci<order.length ? DATA[order[ci]] : null; }
+  function curPhoto(){ var d=cur(); if(!d) return null;
+    while(d && pi<d.photos.length && votes[d.code+'|'+d.photos[pi].url]==='ne') pi++;   // preskoči že zavrnjene
+    return (d&&pi<d.photos.length)? d.photos[pi] : null; }
+
+  // ---------- render ----------
+  function render(){
+    var total=DATA.filter(function(d){return d.photos&&d.photos.length}).length;
+    var ok=Object.keys(votes).filter(function(k){return k.indexOf('CITY:')===0}).length;
+    $('pAll').textContent=total; $('pDone').textContent=ok;
+    $('pBar').style.width=(total? Math.round(ok/total*100):0)+'%';
+    $('okCount').textContent=ok+' ✓';
+
+    var d=cur();
+    if(!d){ finish(); return; }
+    var p=curPhoto();
+    if(!p){ nextCity(); return; }                      // ni več kandidatov za to mesto
+    $('pLabel').textContent=d.city+', '+d.country;
+
+    var deck=$('deck'); deck.innerHTML='';
+    // naslednja (ozadje)
+    var nxt=d.photos[pi+1]|| (order[ci+1]!=null? (DATA[order[ci+1]].photos||[])[0] : null);
+    if(nxt){ var b=document.createElement('div'); b.className='card back';
+      b.innerHTML='<img src="'+esc(nxt.url)+'" alt="" loading="eager">'; deck.appendChild(b); }
+    var c=document.createElement('div'); c.className='card'; c.id='top';
+    c.innerHTML=
+      '<div class="ph">nalagam sliko…</div>'+
+      '<img src="'+esc(p.url)+'" alt="'+esc(d.city)+'" onload="this.previousElementSibling.style.display=\'none\'" onerror="this.style.display=\'none\'">'+
+      (d.kuriran?'<div class="kur">GLAVNA AKCIJA</div>':'')+
+      '<div class="idx">slika '+(pi+1)+' / '+d.photos.length+'</div>'+
+      '<div class="stamp ja">JA</div><div class="stamp ne">NE</div>'+
+      '<div class="meta"><div class="city">'+esc(d.city)+'</div><div class="cnt">'+esc(d.country)+' · '+esc(d.cont)+'</div></div>';
+    deck.appendChild(c);
+    drag(c);
+  }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+
+  function finish(){
+    $('deckWrap').hidden=true; $('done').hidden=false;
+    var ok=Object.keys(votes).filter(function(k){return k.indexOf('CITY:')===0}).length;
+    var total=DATA.filter(function(d){return d.photos&&d.photos.length}).length;
+    $('doneTxt').innerHTML='Potrdila si sliko za <b>'+ok+'</b> od '+total+' mest.<br>Claudeu samo napiši »<b>končala sem</b>«, pa jih shrani v tvojo mapo na namizju.';
+  }
+
+  // ---------- akcije ----------
+  function vote(dec){
+    if(busy) return; var d=cur(), p=curPhoto(); if(!d||!p) return;
+    busy=true;
+    history.push({code:d.code,url:p.url,ci:ci,pi:pi});
+    votes[d.code+'|'+p.url]=dec;
+    if(dec==='ja') votes['CITY:'+d.code]='ja';
+    rpc('vote_photo',{pass:PW,p_code:d.code,p_url:p.url,p_decision:dec,p_city:d.city,p_country:d.country,p_cont:d.cont,p_title:p.title||''}).catch(function(){});
+    fly(dec==='ja'?1:-1, function(){
+      if(dec==='ja'){ nextCity(); } else { pi++; render(); }
+      busy=false;
+    });
+  }
+  function nextCity(){ ci++; pi=0; render(); }
+  function skipCity(){ if(busy)return; history.push({skip:true,ci:ci,pi:pi}); nextCity(); }
+  function undo(){
+    if(busy||!history.length) return;
+    var h=history.pop(); ci=h.ci; pi=h.pi;
+    if(!h.skip){ delete votes[h.code+'|'+h.url];
+      var still=Object.keys(votes).some(function(k){return k.indexOf(h.code+'|')===0 && votes[k]==='ja';});
+      if(!still) delete votes['CITY:'+h.code];
+      rpc('undo_photo_vote',{pass:PW,p_code:h.code,p_url:h.url}).catch(function(){});
+    }
+    $('deckWrap').hidden=false; $('done').hidden=true; render();
+  }
+
+  function fly(dir,cb){
+    var c=$('top'); if(!c){cb();return;}
+    c.style.transition='transform .32s ease-out, opacity .32s';
+    c.style.transform='translateX('+(dir*window.innerWidth*1.1)+'px) rotate('+(dir*22)+'deg)';
+    c.style.opacity='0'; setTimeout(cb,300);
+  }
+
+  // ---------- poteg (drag) ----------
+  function drag(c){
+    var sx=0,sy=0,dx=0,down=false;
+    var ja=c.querySelector('.stamp.ja'), ne=c.querySelector('.stamp.ne');
+    c.addEventListener('pointerdown',function(e){ down=true; sx=e.clientX; sy=e.clientY; c.setPointerCapture(e.pointerId); c.style.transition='none'; });
+    c.addEventListener('pointermove',function(e){ if(!down)return; dx=e.clientX-sx; var dy=e.clientY-sy;
+      c.style.transform='translate('+dx+'px,'+dy*.25+'px) rotate('+(dx*.055)+'deg)';
+      var t=Math.min(Math.abs(dx)/120,1); ja.style.opacity=dx>0?t:0; ne.style.opacity=dx<0?t:0; });
+    function end(){ if(!down)return; down=false; c.style.transition='transform .25s, opacity .25s';
+      if(Math.abs(dx)>110){ vote(dx>0?'ja':'ne'); }
+      else { c.style.transform=''; ja.style.opacity=0; ne.style.opacity=0; } dx=0; }
+    c.addEventListener('pointerup',end); c.addEventListener('pointercancel',end);
+  }
+
+  // ---------- vezava ----------
+  $('bYes').onclick=function(){vote('ja')};
+  $('bNo').onclick=function(){vote('ne')};
+  $('bSkip').onclick=skipCity;
+  $('bUndo').onclick=undo;
+  $('bRestart').onclick=function(){ $('deckWrap').hidden=false; $('done').hidden=true; buildOrder(true); render(); };
+  addEventListener('keydown',function(e){
+    if($('app').hidden) return;
+    if(e.key==='ArrowRight'){e.preventDefault();vote('ja');}
+    else if(e.key==='ArrowLeft'){e.preventDefault();vote('ne');}
+    else if(e.key==='ArrowDown'){e.preventDefault();skipCity();}
+    else if(e.key==='Backspace'){e.preventDefault();undo();}
+  });
+  $('loginForm').addEventListener('submit',function(e){e.preventDefault();var v=$('pw').value.trim();if(v)login(v);});
+  var saved=''; try{saved=localStorage.getItem('bkrj_admin_pw')||'';}catch(e){}
+  if(saved) login(saved);
+})();
+</script>
+</body>
+</html>
