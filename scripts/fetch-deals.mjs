@@ -80,12 +80,22 @@ const SHORT_EU_MAX     = Number(process.env.SHORT_EU_MAX     || 40);  // … sam
 const MIN_DAYS_FAR     = Number(process.env.MIN_DAYS_FAR     || 7);   // izven Evrope
 const MIN_DAYS_VERYFAR = Number(process.env.MIN_DAYS_VERYFAR || 10);  // zelo oddaljene
 const VERYFAR_KM       = Number(process.env.VERYFAR_KM       || 7000);
+// Miša (22.9.2026): »tudi 8-dnevne lahko pustiš, če so poceni, to ni strogo pravilo.«
+// Zelo oddaljena destinacija sme biti krajša od 10 dni (a nikoli pod 7), če je cena
+// res dobra — pod VERYFAR_SHORT_MAX € ali vsaj toliko pod povprečjem proge.
+const VERYFAR_SHORT_MAX  = Number(process.env.VERYFAR_SHORT_MAX  || 700);
+const VERYFAR_SHORT_DISC = Number(process.env.VERYFAR_SHORT_DISC || 0.35);
 const MAX_DAYS         = Number(process.env.MAX_DAYS         || 31);
-function tripOK(nights, cont, km, price){
+function tripOK(nights, cont, km, price, avg){
   if (nights == null || nights < 1) return false;
   const days = nights + 1;
   if (days > MAX_DAYS) return false;
-  if (km && km >= VERYFAR_KM) return days >= MIN_DAYS_VERYFAR;   // Maldivi, Tajska, Karibi …
+  if (km && km >= VERYFAR_KM) {                                   // Maldivi, Tajska, Karibi …
+    if (days >= MIN_DAYS_VERYFAR) return true;
+    const cheap = price < VERYFAR_SHORT_MAX
+      || (avg && price <= avg * (1 - VERYFAR_SHORT_DISC));
+    return days >= MIN_DAYS_FAR && cheap;                         // krajše samo, če je res poceni
+  }
   if (cont && cont !== 'evropa') return days >= MIN_DAYS_FAR;    // Maroko, Egipt, Gruzija …
   if (days >= MIN_DAYS_EU) return true;
   return days >= SHORT_EU_DAYS && price < SHORT_EU_MAX;          // 3 dni le pri res nizki ceni
@@ -282,19 +292,23 @@ const cities = await pub('https://api.travelpayouts.com/data/en/cities.json');
 const countries = await pub('https://api.travelpayouts.com/data/en/countries.json');
 const CITY = {}, CC = {}, GEOC = {};
 if (cities) for (const c of cities) { CITY[c.code] = { name:c.name, cc:c.country_code }; if (c.coordinates) GEOC[c.code] = c.coordinates; }
-for (const k in GEO_PATCH) if (!GEOC[k]) GEOC[k] = GEO_PATCH[k];
 if (countries) for (const c of countries) CC[c.code] = c.name;
 const cityName = code => { const n = (CITY[code]&&CITY[code].name)||code; return CITY_SL[n]||n; };
 
 // Nekaj letaliških kod v javnem imeniku nima koordinat (Rio GIG, Buenos Aires EZE …),
 // zato pravilo o dolžini potovanja zanje ne bi znalo uveljaviti meje za »zelo oddaljene«.
 const GEO_PATCH = {
+  // ⚠️ MXP (Milano Malpensa) in TSF (Treviso) sta kodi LETALIŠČ, ne mest — v javnem imeniku
+  // mest ju ni, zato razdalje z njiju sploh ni bilo mogoče izračunati. Posledica: pravilo
+  // »zelo oddaljene ≥10 dni« za vse lete iz Milana in Trevisa ni delovalo.
+  MXP:{lat:45.630,lon:8.723},  TSF:{lat:45.648,lon:12.194},
   GIG:{lat:-22.81,lon:-43.25}, EZE:{lat:-34.82,lon:-58.54}, SDU:{lat:-22.91,lon:-43.16},
   AEP:{lat:-34.56,lon:-58.42}, HKT:{lat:8.11,lon:98.32},   KBV:{lat:8.10,lon:98.99},
   DAD:{lat:16.04,lon:108.20}, PQC:{lat:10.23,lon:103.97}, SEZ:{lat:-4.67,lon:55.52},
   PUJ:{lat:18.57,lon:-68.36}, CUN:{lat:21.04,lon:-86.87}, PTY:{lat:9.07,lon:-79.38},
   NBO:{lat:-1.32,lon:36.93},  DKR:{lat:14.67,lon:-17.07}, SID:{lat:16.74,lon:-22.95},
 };
+for (const k in GEO_PATCH) if (!GEOC[k]) GEOC[k] = GEO_PATCH[k];
 
 // ---- razdalje (veliki krog) ----
 const rad = d => d*Math.PI/180;
@@ -386,7 +400,7 @@ function pickTerms(data, avg, km, opt){
         url: 'https://www.aviasales.com'+d.link+'&marker='+MARKER };
     })
     // DOLŽINA POTOVANJA (Mišino pravilo) — prekratkih izletov ne objavljamo
-    .filter(t => tripOK(t.nights, opt && opt.cont, km, t.price));
+    .filter(t => tripOK(t.nights, opt && opt.cont, km, t.price, avg));
 }
 // Združi termine na eno kartico (pravilo 4): brez podvojenih datumov, urejeno po datumu.
 function mergeTerms(){

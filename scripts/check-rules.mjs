@@ -94,6 +94,7 @@ if (noBag.length) fail.push(`8. Manjka oznaka prtljage: ${cap(noBag)}`);
 
 // --- 9. dolžina potovanja (evropske ≥4 dni, izven Evrope ≥7, zelo oddaljene ≥10) ---
 const D = { eu:4, shortEu:3, shortEuMax:40, far:7, veryFar:10, veryFarKm:7000, max:31 };
+// Zelo oddaljene smejo biti krajše od 10 dni, če so poceni — zato tu preverjamo le spodnjo mejo 7.
 const badLen = [];
 for (const d of all)
   for (const t of (d.terms || [])) {

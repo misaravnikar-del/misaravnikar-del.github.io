@@ -538,6 +538,9 @@ section{scroll-margin-top:78px}
 .rv__fields textarea{resize:vertical;min-height:68px}
 .rv__file input{padding:9px 0}
 .rv__submit{width:100%;margin-top:16px}
+.ask__row{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.rv__err{color:var(--hot);font-size:.9rem;text-align:center;margin-top:12px}
+button.svc__cta{border:0;cursor:pointer;font:inherit}
 .rv__note{color:var(--muted);font-size:.8rem;text-align:center;margin-top:10px}
 .rv__ok{color:var(--accent);font-weight:600;text-align:center;margin-top:12px}
 .rv__buildhint{color:var(--muted);font-size:.82rem;margin:-2px 0 4px}
@@ -1148,7 +1151,7 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
           <li>Najcenejši termini in kombinacije letališč</li>
           <li>Nasvet glede prtljage in prestopov</li>
         </ul>
-        <a class="btn svc__cta" href="mailto:info@bookiraj.si?subject=Povpra%C5%A1evanje%20%E2%80%93%20iskanje%20letalskih%20kart">Pošlji povpraševanje</a>
+        <button class="btn svc__cta" type="button" data-ask="Iskanje letalskih kart">Pošlji povpraševanje</button>
       </div>
       <div class="svc__card svc__card--featured">
         <span class="svc__tag">Najbolj priljubljeno</span>
@@ -1161,12 +1164,40 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
           <li>Prilagojeno tvojemu proračunu in željam</li>
           <li>Osebna podpora vse do odhoda</li>
         </ul>
-        <a class="btn btn--lg svc__cta" href="mailto:info@bookiraj.si?subject=Povpra%C5%A1evanje%20%E2%80%93%20personaliziran%20plan%20potovanja">Pošlji povpraševanje</a>
+        <button class="btn btn--lg svc__cta" type="button" data-ask="Personaliziran plan potovanja">Pošlji povpraševanje</button>
       </div>
     </div>
-    <p class="svc__note">Načrtuješ skupinsko potovanje, poroko ali medene tedne? <a href="mailto:info@bookiraj.si?subject=Povpra%C5%A1evanje%20%E2%80%93%20organizacija%20po%20meri">Piši nam za ponudbo po meri.</a></p>
+    <p class="svc__note">Načrtuješ skupinsko potovanje, poroko ali medene tedne? <a href="#" data-ask="Organizacija po meri">Piši nam za ponudbo po meri.</a></p>
   </div>
 </section>
+
+<!-- ===================== POVPRAŠEVANJE ===================== -->
+<div class="modal" id="askModal" hidden>
+  <div class="modal__scrim" data-askclose></div>
+  <div class="modal__box">
+    <button class="modal__x" type="button" data-askclose aria-label="Zapri">✕</button>
+    <form class="rv__step" id="askForm" novalidate>
+      <p class="eyebrow" id="askKind">Povpraševanje</p>
+      <h3>Povej, kam bi rada — ostalo uredimo mi.</h3>
+      <p class="rv__lead">Odgovorimo v enem delovnem dnevu. Povpraševanje je brezplačno in te k ničemur ne zavezuje.</p>
+      <div class="rv__fields">
+        <label>Kam bi rada?<input name="Destinacija" placeholder="npr. Tajska, Barcelona, nekam toplo …" required></label>
+        <label>Od kod bi letela?<input name="Odhod" placeholder="Ljubljana, Benetke, Trst … ali vseeno"></label>
+        <label>Kdaj približno?<input name="Termin" placeholder="npr. konec oktobra, 10 dni"></label>
+        <div class="ask__row">
+          <label>Št. potnikov<input name="Potniki" type="number" min="1" max="20" placeholder="2"></label>
+          <label>Proračun na osebo<input name="Proracun" placeholder="npr. do 400 €"></label>
+        </div>
+        <label>Tvoje ime<input name="Ime" placeholder="Ime in priimek" required></label>
+        <label>Tvoj e-naslov<input name="E-posta" type="email" placeholder="da ti lahko odgovorimo" required></label>
+        <label>Še kaj, kar naj vemo?<textarea name="Sporocilo" placeholder="Direktni let, brez prestopov, s psom, poročno potovanje …"></textarea></label>
+      </div>
+      <button class="btn btn--lg rv__submit" type="submit">Pošlji povpraševanje</button>
+      <p class="rv__ok" id="askOk" hidden>Hvala! Povpraševanje je oddano — oglasimo se v enem delovnem dnevu.</p>
+      <p class="rv__err" id="askErr" hidden>Pošiljanje ni uspelo. Poskusi znova ali piši na info@bookiraj.si.</p>
+    </form>
+  </div>
+</div>
 
 <!-- ===================== MNENJA STRANK ===================== -->
 <section class="sec" id="mnenja">
@@ -1280,6 +1311,58 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
     </form>
   </div>
 </div>
+
+<!-- ===== POVPRAŠEVANJE: obrazec namesto mailto =====
+     Oddano povpraševanje gre po isti poti kot mnenja: vedno v nadzorno ploščo,
+     in ko je vpisan ključ Web3Forms, tudi na info@bookiraj.si. -->
+<script>
+(function(){
+  var modal=document.getElementById('askModal'); if(!modal) return;
+  var form=document.getElementById('askForm'), kind=document.getElementById('askKind');
+  var ok=document.getElementById('askOk'), err=document.getElementById('askErr');
+  var what='Povpraševanje';
+  function open(label){
+    what=label||'Povpraševanje'; kind.textContent=what;
+    ok.hidden=true; err.hidden=true; form.reset();
+    modal.hidden=false; document.body.style.overflow='hidden';
+    setTimeout(function(){ var f=form.querySelector('input'); if(f) f.focus(); },60);
+  }
+  function close(){ modal.hidden=true; document.body.style.overflow=''; }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest&&e.target.closest('[data-ask]');
+    if(b){ e.preventDefault(); open(b.getAttribute('data-ask')); return; }
+    if(e.target.closest&&e.target.closest('[data-askclose]')) close();
+  });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!modal.hidden) close(); });
+
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var btn=form.querySelector('.rv__submit');
+    var vals={}, txt=[];
+    [].forEach.call(form.querySelectorAll('input,textarea'),function(i){
+      if(!i.value.trim()) return;
+      vals[i.name]=i.value.trim(); txt.push(i.name.replace(/-/g,' ')+': '+i.value.trim());
+    });
+    if(!vals['Destinacija']||!vals['Ime']||!vals['E-posta']){
+      err.textContent='Izpolni vsaj destinacijo, ime in e-naslov.'; err.hidden=false; return;
+    }
+    vals['Storitev']=what;
+    err.hidden=true; btn.disabled=true; btn.textContent='Pošiljam…';
+    window.bkrjSend('povprasevanje',{
+      name:vals['Ime'], email:vals['E-posta'],
+      subject:'Bookiraj.si — povpraševanje: '+what,
+      message:'Novo povpraševanje ('+what+'):\n'+txt.join('\n'),
+      data:vals
+    }).then(function(){
+      ok.hidden=false; btn.disabled=false; btn.textContent='Pošlji povpraševanje';
+      setTimeout(close,2600);
+    },function(){
+      err.textContent='Pošiljanje ni uspelo. Poskusi znova ali piši na info@bookiraj.si.';
+      err.hidden=false; btn.disabled=false; btn.textContent='Pošlji povpraševanje';
+    });
+  });
+})();
+</script>
 
 <!-- ===== SPOREJANJE SPOROČIL S STRANI =====
      Vsako oddano sporočilo se VEDNO shrani v Bookiraj bazo (vidiš ga v nadzorni plošči
