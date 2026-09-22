@@ -123,6 +123,18 @@ for (const f of geo.features) {
   if (!d) { skipped.push(name); continue; }
   paths.push({ cc, name, d });
 }
+// Nekaj držav ima v viru več zapisov z isto kodo (Avstralija + njena drobna ozemlja).
+// Združimo jih v eno pot, sicer bi imeli podvojene id-je in bi silhueta lahko zajela
+// napačen kos.
+const merged = {};
+for (const p of paths) {
+  if (merged[p.cc]) { merged[p.cc].d += p.d; if (p.d.length > merged[p.cc].mainLen) { merged[p.cc].name = p.name; merged[p.cc].mainLen = p.d.length; } }
+  else merged[p.cc] = { cc:p.cc, name:p.name, d:p.d, mainLen:p.d.length };
+}
+const dupCount = paths.length - Object.keys(merged).length;
+paths.length = 0;
+for (const cc in merged) paths.push(merged[cc]);
+if (dupCount) console.log(`Združenih podvojenih zapisov: ${dupCount}`);
 paths.sort((a,b)=>a.cc.localeCompare(b.cc));
 
 // ---- majhne države, ki jih v viru 110m sploh ni: narišemo jih kot točko ----

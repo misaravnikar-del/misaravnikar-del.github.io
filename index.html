@@ -2068,10 +2068,10 @@ function onasHTML(){
 
 function wmLoad(){
   return Promise.all([
-    WMAP.svg     ? WMAP.svg     : fetch('map/world.svg?v=2').then(function(r){return r.text();}),
-    WMAP.centers ? WMAP.centers : fetch('map/centers.json?v=2').then(function(r){return r.json();}),
-    WMAP.photos  ? WMAP.photos  : fetch('map/photos.json?v=2').then(function(r){return r.json();}),
-    WMAP.meta    ? WMAP.meta    : fetch('map/meta.json?v=2').then(function(r){return r.json();})
+    WMAP.svg     ? WMAP.svg     : fetch('map/world.svg?v=3').then(function(r){return r.text();}),
+    WMAP.centers ? WMAP.centers : fetch('map/centers.json?v=3').then(function(r){return r.json();}),
+    WMAP.photos  ? WMAP.photos  : fetch('map/photos.json?v=3').then(function(r){return r.json();}),
+    WMAP.meta    ? WMAP.meta    : fetch('map/meta.json?v=3').then(function(r){return r.json();})
   ]).then(function(a){ WMAP.svg=a[0];WMAP.centers=a[1];WMAP.photos=a[2];WMAP.meta=a[3]; return WMAP; });
 }
 function wmVisited(){
