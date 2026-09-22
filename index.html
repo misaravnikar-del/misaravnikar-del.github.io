@@ -967,6 +967,7 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
   box-shadow:var(--shadow);padding:clamp(24px,4vw,40px);text-align:center;margin-top:2rem}
 .svcteaser h3{font-size:clamp(1.3rem,3vw,1.9rem);margin:0 0 .6rem}
 .svcteaser p{color:var(--ink-2);max-width:56ch;margin:0 auto 1.4rem}
+.svcteaser__cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 
 .shop__hero{text-align:center;max-width:58ch;margin:0 auto 2.4rem}
 .shop__hero h1{font-size:clamp(2.1rem,5vw,3.4rem);letter-spacing:-.02em;text-wrap:balance;margin:.4rem 0 0}
@@ -1214,7 +1215,10 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
       <div class="svcteaser__in">
         <h3>Poišči mi karte ali sestavi celoten plan</h3>
         <p>Povej, kam bi rada. Ostalo je moja skrb — od primerjave letališč do dnevnega itinerarja.</p>
-        <a class="btn btn--lg" href="#storitve-nakup">Poglej, kaj dobiš</a>
+        <div class="svcteaser__cta">
+          <a class="btn btn--lg" href="#storitve-nakup">Poglej, kaj dobiš</a>
+          <button class="btn btn--lg btn--ghost" type="button" data-ask="Povpraševanje z domače strani">Najprej povprašaj</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1338,6 +1342,9 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
      in ko je vpisan ključ Web3Forms, tudi na info@bookiraj.si. -->
 <script>
 (function(){
+  // obrazec stoji niže v dokumentu — počakaj, da se stran naloži
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',start); } else { start(); }
+  function start(){
   var modal=document.getElementById('askModal'); if(!modal) return;
   var form=document.getElementById('askForm'), kind=document.getElementById('askKind');
   var ok=document.getElementById('askOk'), err=document.getElementById('askErr');
@@ -1382,6 +1389,7 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
       err.hidden=false; btn.disabled=false; btn.textContent='Pošlji povpraševanje';
     });
   });
+  }
 })();
 </script>
 
