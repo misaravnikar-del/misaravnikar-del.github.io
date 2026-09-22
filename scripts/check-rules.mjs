@@ -75,6 +75,18 @@ for (const d of all)
   }
 if (holMiss.length) fail.push(`6. Manjka oznaka šolskih počitnic: ${cap(holMiss)}`);
 
+// --- 8. pri vsakem terminu piše letalska družba in prtljaga ---
+const BAGS = new Set(['osebna','rocna','oddana']);
+const noAir = [], noBag = [];
+for (const d of all)
+  for (const t of (d.terms || [])) {
+    if (!t.airlineName || t.airlineName === t.airline) noAir.push(`${d.fromCode}→${d.code} ${t.depart}${t.airline?' ('+t.airline+')':''}`);
+    if (!BAGS.has(t.bag)) noBag.push(`${d.fromCode}→${d.code} ${t.depart}`);
+  }
+if (noAir.length > all.length * 0.1) fail.push(`8. Manjka ime letalske družbe pri ${noAir.length} terminih: ${cap(noAir)}`);
+else if (noAir.length) warn.push(`8. Ime prevoznika ni znano pri ${noAir.length} terminih (koda ni v imeniku): ${cap(noAir)}`);
+if (noBag.length) fail.push(`8. Manjka oznaka prtljage: ${cap(noBag)}`);
+
 // --- 7. zdravje ---
 if (curated.length < 3) fail.push(`7. Premalo kuriranih akcij: ${curated.length} (najmanj 3)`);
 if (discover.length < 25) fail.push(`7. Premalo odkritih kartic: ${discover.length} (najmanj 25)`);

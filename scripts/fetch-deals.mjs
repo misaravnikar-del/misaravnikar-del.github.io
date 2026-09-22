@@ -31,6 +31,7 @@ const MIN_ROUTE_KM = Number(process.env.MIN_ROUTE_KM || 300);  // in vsaj toliko
 const MIN_DISCOUNT = Number(process.env.MIN_DISCOUNT || 0.40); // vsaj 40 % pod povprečjem proge …
 const ALWAYS_UNDER = Number(process.env.ALWAYS_UNDER || 50);   // … ali cena pod 50 €
 const MAX_PAIRS    = Number(process.env.MAX_PAIRS    || 320);  // varovalka za število API klicev
+const HOL_MAX_PAIRS= Number(process.env.HOL_MAX_PAIRS|| 220);  // isto za iskanje počitniških akcij
 
 // ---- šolske počitnice 2026/27 (Miša, 22.9.2026) ----
 const HOLIDAYS = [
@@ -177,10 +178,18 @@ async function latest(o){
   try { const r = await fetch(url, { headers:{ 'X-Access-Token':TOKEN } }); if(!r.ok) return []; const j = await r.json(); return j.data||[]; }
   catch { return []; }
 }
-async function forDates(origin, dest){
+async function forDates(origin, dest, month){
   const url = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?origin=${origin}&destination=${dest}`
-    + `&currency=eur&sorting=price&direct=false&limit=30&page=1&one_way=false&market=si`;
+    + `&currency=eur&sorting=price&direct=false&limit=30&page=1&one_way=false&market=si`
+    + (month ? `&departure_at=${month}` : '');
   try { const r = await fetch(url, { headers:{ 'X-Access-Token':TOKEN } }); if(!r.ok) return []; const j = await r.json(); return Array.isArray(j.data)?j.data:[]; }
+  catch { return []; }
+}
+// najcenejši leti za DOLOČEN MESEC (za iskanje počitniških akcij)
+async function latestMonth(origin, month){
+  const url = `https://api.travelpayouts.com/aviasales/v3/get_latest_prices?origin=${origin}&currency=eur`
+    + `&period_type=month&beginning_of_period=${month}-01&one_way=false&limit=1000&page=1&market=si`;
+  try { const r = await fetch(url, { headers:{ 'X-Access-Token':TOKEN } }); if(!r.ok) return []; const j = await r.json(); return j.data||[]; }
   catch { return []; }
 }
 
@@ -240,43 +249,88 @@ function tooClose(origin, dest){
   return false;
 }
 
+// ---- letalske družbe + prtljaga ----
+// Miša: »vedno naj tudi piše katera letalska družba je in z ikono naj bo narisano
+// katera prtljaga pripada«. API ne vrne prtljage za konkretno vozovnico, zato jo
+// sklepamo iz PRIVZETE politike prevoznika (Travelpayouts zastavica is_lowcost) in
+// dolžine leta. Na strani je to jasno označeno kot privzeto, ne kot zagotovilo.
+const airlines = await pub('https://api.travelpayouts.com/data/airlines.json');
+const AIR = {};
+if (airlines) for (const a of airlines) if (a.code) AIR[a.code] = { name:a.name||a.code, lowcost:!!a.is_lowcost };
+const airName = c => (AIR[c] && AIR[c].name) || c || '';
+// 'osebna' = samo majhna torba pod sedežem · 'rocna' = ročna v kabini · 'oddana' = tudi oddana prtljaga
+function bagTier(code, km){
+  const a = AIR[code];
+  if (a && a.lowcost) return 'osebna';
+  if (!a) return 'rocna';                       // neznan prevoznik → previdna sredina
+  return (km && km > 3500) ? 'oddana' : 'rocna';
+}
+
 // ---- skupna obdelava ene proge (odhod → prihod) ----
-// Vrne povprečje proge in SAMO tiste termine, ki ustrezajo Mišinemu pravilu 2
-// (vsaj MIN_DISCOUNT pod povprečjem ALI pod ALWAYS_UNDER €). Datumi se zberejo
-// na eno kartico (pravilo 4) in vsak dobi oznako počitnic (pravilo 6).
+// Pravilo 2: obdržimo SAMO termine vsaj MIN_DISCOUNT pod povprečjem proge ALI pod ALWAYS_UNDER €.
+// Pravilo 4: vsi datumi gredo na isto kartico. Pravilo 6: vsak termin dobi oznako počitnic.
 const priceLog = [];   // pravilo 7: dnevna zgodovina povprečij
-function routeTerms(data, fromCode, code, meta){
+const AVG = {};        // 'ODHOD|CILJ' → povprečje proge (da ga ne računamo dvakrat)
+function routeAvg(data, fromCode, code, meta){
   const prices = data.map(d=>d.price).filter(p=>p>0);
   if (prices.length < 3) return null;                       // premalo vzorcev za pošteno povprečje
   const avg = prices.reduce((a,b)=>a+b,0)/prices.length;
-  const minAll = Math.min(...prices);
+  AVG[fromCode+'|'+code] = avg;
   priceLog.push({ from_code:fromCode, code, city:meta.city, country:meta.country,
-    avg:Math.round(avg), min:Math.round(minAll), samples:prices.length });
-
+    avg:Math.round(avg), min:Math.round(Math.min(...prices)), samples:prices.length });
+  return avg;
+}
+function pickTerms(data, avg, km, opt){
   const cut = avg * (1 - MIN_DISCOUNT);
+  const win = (opt && opt.window) || null;                  // {start,end} za počitniško iskanje
   const seen = new Set();
-  const terms = data
+  return data
     .filter(d => d.price > 0 && (d.price <= cut || d.price < ALWAYS_UNDER))
+    .filter(d => {
+      if (!win) return true;
+      const dep = (d.departure_at||'').slice(0,10);
+      const ret = d.return_at ? d.return_at.slice(0,10) : dep;
+      return dep >= win.start && dep <= win.end && ret <= win.endPlus;   // potovanje ostane v počitnicah
+    })
     .sort((a,b)=>a.price-b.price)
     .filter(d => { const k = (d.departure_at||'').slice(0,10); if (!k || seen.has(k)) return false; seen.add(k); return true; })
-    .slice(0,8)
     .map(d => {
       const depart = d.departure_at.slice(0,10);
       const ret = d.return_at ? d.return_at.slice(0,10) : null;
       const hol = holidaysFor(depart);
-      return { depart, ret, price:Math.round(d.price), airline:d.airline||'', transfers:d.transfers??0,
+      const code = d.airline || '';
+      return { depart, ret, price:Math.round(d.price), airline:code, airlineName:airName(code),
+        bag:bagTier(code, km), transfers:d.transfers??0,
         nights: ret ? Math.round((new Date(ret)-new Date(depart))/86400000) : null,
         discount: Math.max(0, Math.round((avg-d.price)/avg*100)),
         hol: hol.length ? hol : undefined,
         // pravilo 5: vedno Aviasales z Mišinim markerjem
         url: 'https://www.aviasales.com'+d.link+'&marker='+MARKER };
-    })
-    .sort((a,b)=>a.depart<b.depart?-1:1);                   // na kartici po datumu
-  if (!terms.length) return null;
+    });
+}
+// Združi termine na eno kartico (pravilo 4): brez podvojenih datumov, urejeno po datumu.
+function mergeTerms(){
+  const seen = new Set(), out = [];
+  for (const t of [].concat(...arguments).filter(Boolean)) {
+    if (seen.has(t.depart)) continue;
+    seen.add(t.depart); out.push(t);
+  }
+  return out.sort((a,b)=>a.depart<b.depart?-1:1).slice(0,14);
+}
+function cardStats(terms, avg){
   const fromPrice = Math.min(...terms.map(t=>t.price));
   return { avg:Math.round(avg), terms, fromPrice,
     discount: Math.max(0, Math.round((avg-fromPrice)/avg*100)),
     holidays: [...new Set(terms.flatMap(t=>t.hol||[]))] };
+}
+function routeTerms(data, fromCode, code, meta){
+  const avg = routeAvg(data, fromCode, code, meta);
+  if (avg == null) return null;
+  const terms = pickTerms(data, avg, distKm(fromCode, code)).slice(0,8).sort((a,b)=>a.depart<b.depart?-1:1);
+  if (!terms.length) return null;
+  const r = cardStats(terms, avg);
+  r.rawAvg = avg;
+  return r;
 }
 
 // =================== 1) KURIRANE (kartice) ===================
@@ -348,6 +402,94 @@ for (const d of picked) {
 }
 console.log(`Ustreza pravilu (−${Math.round(MIN_DISCOUNT*100)} % ali <${ALWAYS_UNDER} €): ${kept.length} · brez akcije ${noDeal} · brez podatkov ${noData}`);
 
+// =================== 3) POČITNIŠKE AKCIJE ===================
+// Splošno iskanje gleda celo leto in zato počitniške termine pogosto zgreši.
+// Tu namenoma iščemo PO MESECIH šolskih počitnic. Pravilo 2 ostaja nespremenjeno:
+// termin mora biti vsaj −MIN_DISCOUNT pod povprečjem SVOJE proge ali pod ALWAYS_UNDER €.
+const keptBy = {};                       // 'ODHOD|CILJ' → obstoječa kartica
+kept.forEach(k => { keptBy[k.fromCode+'|'+k.code] = k; });
+const curatedPair = {};                  // kurirane dopolnimo na mestu
+curated.forEach(c => { curatedPair[c.fromCode+'|'+c.code] = c; });
+
+const monthsOf = h => {                  // vsi meseci 'YYYY-MM', ki jih okno pokriva
+  const out = [], d = new Date(h.start+'T00:00:00Z'), end = new Date(h.end+'T00:00:00Z');
+  while (d <= end) { out.push(d.toISOString().slice(0,7)); d.setUTCMonth(d.getUTCMonth()+1, 1); }
+  return [...new Set(out)];
+};
+const plusDays = (iso,n) => { const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); };
+
+// 3a) kandidati po mesecih počitnic
+const holCand = {};                      // 'ODHOD|CILJ' → {meta, windows:Set, months:Set}
+const monthCache = {};
+let holScanned = 0;
+for (const h of HOLIDAYS) {
+  const win = { name:h.name, start:h.start, end:h.end, endPlus:plusDays(h.end, 3) };
+  for (const mth of monthsOf(h)) {
+    for (const o of ORIGINS) {
+      const ck = o.code+'@'+mth;
+      if (!monthCache[ck]) { monthCache[ck] = await latestMonth(o.code, mth); await sleep(200); }
+      for (const it of monthCache[ck]) {
+        holScanned++;
+        if (!it.value || !it.depart_date || !it.return_date) continue;
+        const dep = it.depart_date.slice(0,10), ret = it.return_date.slice(0,10);
+        if (dep < win.start || dep > win.end || ret > win.endPlus) continue;   // mora biti v počitnicah
+        const dest = it.destination;
+        const ci = CITY[dest]; if (!ci) continue;
+        const cat = CATALOG[ci.cc]; if (!cat) continue;
+        if (tooClose(o.code, dest)) continue;                                  // pravilo 1
+        if (!SEASON[cat.season].m.includes(+dep.slice(5,7))) continue;         // ni primeren letni čas
+        const key = o.code+'|'+dest;
+        if (!holCand[key]) holCand[key] = {
+          fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
+          en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
+          season:SEASON[cat.season].note, homeKm:distKm(HOME,dest), routeKm:distKm(o.code,dest),
+          windows:[], months:new Set(), hint:Math.round(it.value) };
+        holCand[key].hint = Math.min(holCand[key].hint, Math.round(it.value));
+        if (!holCand[key].windows.some(w=>w.name===win.name)) holCand[key].windows.push(win);
+        holCand[key].months.add(mth);
+      }
+    }
+  }
+}
+// najprej najcenejše (varovalka za število API klicev); največ 3 meseci na progo
+const holPairs = Object.values(holCand).sort((a,b)=>a.hint-b.hint).slice(0, HOL_MAX_PAIRS);
+holPairs.forEach(d => { d.months = new Set([...d.months].slice(0,3)); });
+console.log(`\nPočitnice: pregledano ${holScanned} letov v počitniških mesecih · ${Object.keys(holCand).length} kandidatnih prog (preverjam ${holPairs.length})`);
+
+// 3b) prave cene za počitniške mesece
+let holNew = 0, holAdded = 0, holTerms = 0;
+for (const d of holPairs) {
+  const key = d.fromCode+'|'+d.code;
+  let avg = AVG[key];
+  if (avg == null) {                                        // povprečje proge (ista osnova kot povsod)
+    const base = await forDates(d.fromCode, d.code); await sleep(160);
+    avg = routeAvg(base, d.fromCode, d.code, {city:d.city, country:d.country});
+    if (avg == null) continue;
+  }
+  const km = distKm(d.fromCode, d.code);
+  let found = [];
+  for (const mth of d.months) {
+    const data = await forDates(d.fromCode, d.code, mth); await sleep(160);
+    if (!data.length) continue;
+    for (const w of d.windows) found = found.concat(pickTerms(data, avg, km, {window:w}));
+  }
+  if (!found.length) continue;
+  holTerms += found.length;
+  const exist = keptBy[key] || curatedPair[key];
+  if (exist) {                                              // pravilo 4: na OBSTOJEČO kartico
+    const before = exist.terms.length;
+    const merged = mergeTerms(exist.terms, found);
+    Object.assign(exist, cardStats(merged, AVG[key] != null ? AVG[key] : avg));
+    if (merged.length > before) holAdded++;
+  } else {                                                  // nova počitniška kartica
+    const t = mergeTerms(found);
+    kept.push(Object.assign({}, d, cardStats(t, avg), {months:undefined, windows:undefined}));
+    keptBy[key] = kept[kept.length-1];
+    holNew++;
+  }
+}
+console.log(`Počitniške akcije: ${holTerms} terminov · ${holNew} novih kartic · ${holAdded} obstoječih dopolnjenih`);
+
 // SLIKE: prava fotografija mesta prek MediaWiki pageimages (~960px); prenesi lokalno
 mkdirSync(new URL('../img/deals/', import.meta.url), {recursive:true});
 async function photoURL(city, country){
@@ -387,6 +529,7 @@ for (const d of kept){
     country:d.country, continent:d.continent, exotic:d.exotic, season:d.season,
     price:c.price, avg:d.avg, discount:d.discount,
     depart:c.depart, ret:c.ret, nights:c.nights, transfers:c.transfers, url:c.url,
+    airline:c.airline, airlineName:c.airlineName, bag:c.bag,
     terms:d.terms, holidays:d.holidays, photo:'img/deals/'+d.code+'.jpg',
   });
 }

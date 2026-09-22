@@ -671,6 +671,15 @@ section{scroll-margin-top:78px}
   background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);
   font-size:.72rem;font-weight:600;letter-spacing:.02em}
 .card__more{color:var(--muted);font-size:.82rem;margin:8px 0 0}
+.bag{display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 6px;border-radius:999px;
+  border:1px solid var(--line);background:var(--bg-2,transparent);color:var(--ink-2);
+  font-family:var(--font-sans);font-size:.74rem;font-weight:600;white-space:nowrap;line-height:1.5}
+.bag svg{flex:none;opacity:.85}
+.bag--oddana{color:#1f7a55;border-color:color-mix(in srgb,#1f7a55 30%,var(--line))}
+.bag--rocna{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.bag--osebna{color:var(--muted)}
+.term__sub .bag{margin-left:8px;vertical-align:middle}
+.card__cta .air{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .card__teaser{color:var(--ink-2);font-size:.92rem;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card__cta{margin-top:auto;padding-top:14px;border-top:1px dashed var(--line);
@@ -1569,23 +1578,24 @@ function cardHTML(d){
   var disc=!!d.photo;
   var nT=(d.terms&&d.terms.length)||0;
   var src=disc?d.photo:'img/'+d.img+'.jpg';
-  // Vse povezave vodijo na Aviasales (Mišin affiliate). Pri več datumih vmes stran s termini,
-  // kjer je vsak posamezen termin spet gumb na Aviasales.
-  var href=disc?(nT>1?'#ponudba/'+d.fromCode+'-'+d.code:d.url):'#deal/'+d.img;
-  var ext=(disc&&nT<=1)?' target="_blank" rel="noopener"':'';
+  // Miša: VEDNO naj bo vmes še ena stran, tudi če je na voljo samo en let.
+  // Zato kartica nikoli ne skoči naravnost na Aviasales — šele gumb na vmesni strani.
+  var href=disc?('#ponudba/'+d.fromCode+'-'+d.code):('#deal/'+d.img);
+  var ext='';
   var price=disc?d.price:d.fromPrice;
   var fromCode=d.fromCode;
   var fromCity=d.fromCity;
   var badge=(d.discount>=15)?'<span class="badge">−'+d.discount+' %</span>':'';
   var rRight=disc?fmtShort(d.depart,d.ret):d.period;
   var teaser=disc?'':d.teaser;
-  var ctaTxt=disc?(nT>1?'Poglej '+nT+' termine':'Rezerviraj'):'Poglej akcijo';
-  var cRight=disc?termSub({transfers:d.transfers}):d.airline;
+  var ctaTxt='Poglej '+(nT>1?tText(nT):'termin');
+  var cheap=(d.terms&&d.terms.length)?d.terms.reduce(function(m,t){return t.price<m.price?t:m;},d.terms[0]):null;
+  var cRight=(cheap?esc(airOf(cheap))||termSub(cheap):(disc?termSub({transfers:d.transfers}):d.airline))
+    +(cheap&&cheap.bag?bagHTML(cheap.bag):'');
   var hol=[...new Set(((d.terms||[]).flatMap(function(t){return t.hol||[];})))];
   var holTag=hol.length?'<span class="card__hol">'+hol.map(function(x){return x.split(' · ')[0];}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(' · ')+' počitnice</span>':'';
-  var svg=(disc&&nT<=1)
-    ?'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>'
-    :'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  // kartica vedno vodi na vmesno stran znotraj Bookiraj.si → puščica naprej, ne »zunanja povezava«
+  var svg='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
   return '<a class="card" href="'+href+'"'+ext+'>'
     +'<div class="card__media">'
       +'<img loading="lazy" decoding="async" src="'+src+'" alt="'+d.city+', '+d.country+'">'
@@ -1617,6 +1627,7 @@ function matchFilters(d){
     &&dateMatch(d);
 }
 function slText(n){return n+(n===1?' akcija':(n===2?' akciji':(n<5&&n>0?' akcije':' akcij')));}
+function tText(n){return n+(n===1?' termin':(n===2?' termina':(n<5&&n>0?' termini':' terminov')));}
 function rowHTML(d){
   return '<a class="radar__row" href="'+d.url+'" target="_blank" rel="noopener">'
     +'<span class="radar__route">'+d.fromCode+'<span class="arrow">→</span>'+d.code+'</span>'
@@ -1643,7 +1654,22 @@ const MON=["jan.","feb.","mar.","apr.","maj","jun.","jul.","avg.","sep.","okt.",
 function fmtISO(s){var p=String(s).split('-');return [+p[0],+p[1],+p[2]];}
 function fmtRangeISO(dep,ret){var a=fmtISO(dep);if(!ret)return a[2]+'. '+MON[a[1]-1]+' '+a[0];var b=fmtISO(ret);var left=(a[0]===b[0])?(a[2]+'. '+MON[a[1]-1]):(a[2]+'. '+MON[a[1]-1]+' '+a[0]);return left+' – '+b[2]+'. '+MON[b[1]-1]+' '+b[0];}
 function fmtUpdated(iso){if(!iso)return 'danes';var d=new Date(iso);return d.getDate()+'. '+MON[d.getMonth()]+' '+d.getFullYear();}
-function termSub(t){return (t.airline?t.airline+' · ':'')+(t.transfers>0?(t.transfers+(t.transfers===1?' prestop':(t.transfers===2?' prestopa':' prestopi'))):'direktno');}
+function airOf(t){return t.airlineName||t.airline||'';}
+function termSub(t){return (airOf(t)?esc(airOf(t))+' · ':'')+(t.transfers>0?(t.transfers+(t.transfers===1?' prestop':(t.transfers===2?' prestopa':' prestopi'))):'direktno');}
+// Prtljaga: privzeta politika prevoznika (nizkocenovnik → samo majhna torba; klasični prevoznik →
+// ročna, na dolgih letih tudi oddana). Konkretna vozovnica se lahko razlikuje — tako tudi piše.
+var BAGS={
+  osebna:{t:'samo majhna torba',d:'<path d="M9 9V7.5a3 3 0 0 1 6 0V9"/><rect x="6.5" y="9" width="11" height="10" rx="2.5"/>'},
+  rocna:{t:'ročna prtljaga',d:'<path d="M12 8V3.5"/><path d="M9.5 3.5h5"/><rect x="6" y="8" width="12" height="11" rx="2"/><circle cx="9" cy="20.6" r="1"/><circle cx="15" cy="20.6" r="1"/>'},
+  oddana:{t:'tudi oddana prtljaga',d:'<rect x="4.5" y="7" width="12" height="13" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h0A1.5 1.5 0 0 1 12 5.5V7"/><path d="M16.5 12H19a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2.5"/>'}
+};
+function bagHTML(b){
+  var x=BAGS[b]; if(!x) return '';
+  return '<span class="bag bag--'+b+'" title="'+x.t+' — privzeta prtljaga prevoznika, potrdi ob nakupu">'
+    +'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+x.d+'</svg>'
+    +x.t+'</span>';
+}
+var BAGNOTE='<p class="terms__note">Prikazana prtljaga je <strong>privzeta politika prevoznika</strong> — pri nakupu preveri, kaj je vključeno v izbrano ceno.</p>';
 function ymd(iso){var p=iso.split('-');return p[0].slice(2)+p[1]+p[2];}
 // (Mišino pravilo: vse povezave vodijo na Aviasales z njenim affiliate markerjem — nikoli na primerjalnike.)
 function featuredHTML(d){var t=(d.terms&&d.terms.length)?d.terms.reduce(function(m,x){return x.price<m.price?x:m;},d.terms[0]):null;return '<article class="pass">'
@@ -1667,7 +1693,9 @@ function detailHTML(d){
     .concat(DEALS.filter(x=>x.img!==d.img&&x.region!==d.region)).slice(0,3);
   const termRows=(d.terms||[]).map(t=>
     '<li><a href="'+t.url+'" target="_blank" rel="noopener">'
-    +'<span class="term__l"><span class="term__date">'+fmtRangeISO(t.depart,t.ret)+'</span><span class="term__sub">'+termSub(t)+'</span></span>'
+    +'<span class="term__l"><span class="term__date">'+fmtRangeISO(t.depart,t.ret)
+    +(t.hol&&t.hol.length?' <span class="card__hol">'+t.hol[0].split(' · ')[0]+' počitnice</span>':'')+'</span>'
+    +'<span class="term__sub">'+termSub(t)+(t.nights?' · '+t.nights+' noči':'')+bagHTML(t.bag)+'</span></span>'
     +'<span class="term__r"><span class="term__price">od '+t.price+' €</span>'
     +'<svg class="term__go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>').join('');
   return ''
@@ -1688,6 +1716,7 @@ function detailHTML(d){
       +'<p class="terms__hint">Klik na termin te odpelje na nakupno stran z že izbrano progo in datumi.</p>'
       +'<ul class="terms">'+termRows+'</ul>'
       +'<p class="terms__note">Cene so najnižje najdene ob zadnjem osveževanju ('+fmtUpdated(UPDATED)+'). Končno ceno potrdiš pri ponudniku.</p>'
+    +BAGNOTE
       +'<h3>Kaj te čaka</h3>'
       +'<ul class="detail__hl">'+d.hl.map(h=>'<li>'+CHK+'<span>'+h+'</span></li>').join('')+'</ul>'
       +'<h3>Kaj je vključeno</h3>'
@@ -1883,7 +1912,7 @@ function ponudbaHTML(key){
     return '<li><a href="'+t.url+'" target="_blank" rel="noopener">'
       +'<span class="term__l"><span class="term__date">'+fmtRangeISO(t.depart,t.ret)
         +(t.hol&&t.hol.length?' <span class="card__hol">'+t.hol[0].split(' · ')[0]+' počitnice</span>':'')+'</span>'
-      +'<span class="term__sub">'+termSub(t)+(t.nights?' · '+t.nights+' noči':'')+'</span></span>'
+      +'<span class="term__sub">'+termSub(t)+(t.nights?' · '+t.nights+' noči':'')+bagHTML(t.bag)+'</span></span>'
       +'<span class="term__r"><span class="term__price">'+t.price+' €</span>'
       +'<svg class="term__go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>';
   }).join('');
@@ -1897,9 +1926,10 @@ function ponudbaHTML(key){
       +'<img src="'+d.photo+'" alt="'+d.city+', '+d.country+'" style="width:100%;height:100%;object-fit:cover;display:block">'
     +'</div>'
     +'<h3 style="margin-bottom:.3rem">Izberi termin</h3>'
-    +'<p class="terms__hint">'+slText((d.terms||[]).length)+' za to progo. Klik te odpelje na nakupno stran z že izbranimi datumi.</p>'
+    +'<p class="terms__hint">'+tText((d.terms||[]).length)+' za to progo. Klik te odpelje na nakupno stran z že izbranimi datumi.</p>'
     +'<ul class="terms">'+rows+'</ul>'
     +'<p class="terms__note">Cene so najnižje najdene ob zadnjem osveževanju ('+fmtUpdated(UPDATED)+'). Končno ceno potrdiš pri ponudniku.</p>'
+    +BAGNOTE
     +'</div></div>';
 }
 
