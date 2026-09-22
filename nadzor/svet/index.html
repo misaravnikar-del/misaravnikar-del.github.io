@@ -147,8 +147,8 @@ input:focus{border-color:var(--accent2)}
 
   function boot(){
     Promise.all([
-      fetch('/map/world.svg').then(function(r){return r.text();}),
-      fetch('/map/meta.json').then(function(r){return r.json();}),
+      fetch('/map/world.svg?v=2').then(function(r){return r.text();}),
+      fetch('/map/meta.json?v=2').then(function(r){return r.json();}),
       fetch(U+'/rest/v1/rpc/public_settings',{method:'POST',
         headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:'{}'})
         .then(function(r){return r.json();}).catch(function(){return {};})
