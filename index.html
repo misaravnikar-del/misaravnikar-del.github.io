@@ -914,18 +914,11 @@ body.about-page .about__stat{background:var(--bg-2);border-color:transparent}
   margin-top:.5rem;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
 .wm__stage{position:relative;line-height:0}
 .wm__stage>svg{width:100%;height:auto;display:block;overflow:visible}
-.wm__land path,.wm__land circle{fill:var(--bg-2);stroke:var(--surface);stroke-width:.9;
-  transition:fill .22s ease}
-.wm__land .v{fill:var(--accent);cursor:pointer}
-.wm__land .v:hover,.wm__land .v.on{fill:var(--accent-2)}
-.wm__pin{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;
-  background:var(--accent-2);border:3px solid var(--surface);box-shadow:0 2px 10px rgba(0,0,0,.28);
-  pointer-events:none;opacity:0;transform:scale(.4);transition:opacity .4s,transform .4s;z-index:3}
-.wm__pin.on{opacity:1;transform:scale(1)}
-.wm__pin::after{content:"";position:absolute;inset:-8px;border-radius:50%;
-  border:2px solid var(--accent-2);opacity:.6;animation:wmPulse 2s ease-out infinite}
-@keyframes wmPulse{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.7);opacity:0}}
-
+/* Zemljevid je mehko prosojen — deluje kot ozadje, ne kot glavni grafični element. */
+.wm__land path,.wm__land circle{fill:var(--ink);fill-opacity:.06;
+  stroke:var(--surface);stroke-width:.9;transition:fill-opacity .25s ease}
+.wm__land .v{fill:var(--accent);fill-opacity:.38;cursor:pointer}
+.wm__land .v:hover,.wm__land .v.on{fill-opacity:.82}
 .wm__tip{position:absolute;z-index:6;max-width:230px;background:var(--surface);
   border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);
   padding:11px 15px;pointer-events:none;line-height:1.35;
@@ -934,8 +927,7 @@ body.about-page .about__stat{background:var(--bg-2);border-color:transparent}
 .wm__tip b{display:block;font-family:var(--font-display);font-weight:700;font-size:1.12rem;color:var(--ink)}
 .wm__tip span{display:block;color:var(--muted);font-family:var(--font-mono);font-size:.64rem;
   letter-spacing:.15em;text-transform:uppercase;margin-top:5px}
-.wm__tip .city{font-family:var(--font-sans);font-size:.85rem;letter-spacing:0;text-transform:none;
-  color:var(--ink-2);margin-top:7px}
+.wm__tip .city{display:none}
 .wm__land .shot{stroke:var(--surface);stroke-width:1.4}
 .wm__legend{display:flex;gap:20px;justify-content:center;margin-top:18px;font-size:.84rem;color:var(--muted)}
 .wm__legend i{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-right:7px}
@@ -2050,10 +2042,10 @@ function onasHTML(){
         +'<div class="about__stat"><b>vsak dan</b><span>lov na cene</span></div>'
       +'</div>'
       +'<div class="wm" id="wmBox" hidden>'
-        +'<div class="wm__stage" id="wmStage"><div class="wm__pin" id="wmPin"></div>'
+        +'<div class="wm__stage" id="wmStage">'
           +'<div class="wm__tip" id="wmTip"><b id="wmName"></b><span id="wmSub"></span><span class="city" id="wmCity"></span></div></div>'
         +'<div class="wm__legend"><span><i class="a"></i>kjer sem že bila</span><span><i class="b"></i>še na seznamu</span></div>'
-        +'<div class="wm__hint"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 7 16 2-7 7-2z"/></svg><span>Povleci miško čez zemljevid — vsaka država skriva svojo sliko.</span></div>'
+        +'<div class="wm__hint"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 7 16 2-7 7-2z"/></svg><span>Povleci miško čez zemljevid.</span></div>'
       +'</div>'
       +'<div class="about__story">'
         +'<h2>Kako je nastal Bookiraj.si</h2>'
@@ -2102,19 +2094,17 @@ function initAbout(){
     var cs={}; visited.forEach(function(c){ var m=WMAP.meta[c]; if(m&&m.cont) cs[m.cont]=1; });
     document.getElementById('abConts').textContent=Object.keys(cs).length||1;
 
-    var pin=document.getElementById('wmPin');
     var tip=document.getElementById('wmTip'), nm=document.getElementById('wmName');
     var sub=document.getElementById('wmSub'), ct=document.getElementById('wmCity');
     var svg=stage.querySelector('svg');
-    var timer=null, idx=0, hovering=0, cur=null, uid=0;
+    var timer=null, idx=0, hovering=0, cur=null;
     var withPhoto=visited.filter(function(c){return WMAP.photos[c]&&WMAP.photos[c].length;});
     var pool=withPhoto.length?withPhoto:visited;
 
-    // Fotografijo narišemo KAR V DRŽAVO na zemljevidu (SVG vzorec čez njen obseg).
-    // ⚠️ Nekatere države imajo v podatkih tudi čezmorska ozemlja (Francija → Francoska Gvajana,
-    // Španija → Kanarski otoki). Vzorec zato umerimo po GLAVNEM kosu, sicer bi bila slika
-    // v matični državi videti kot drobec.
-    var measurer=null;
+    // Miša je slike zaenkrat opustila — zemljevid naj bo samo prosojno ozadje.
+    // Koda za risanje fotografije v državo ostaja; prižge se z WM_PHOTOS=true.
+    var WM_PHOTOS=false;
+    var measurer=null, boxCache={}, shot=null, pat=null, patImg=null;
     function measure(d){
       if(!measurer){
         measurer=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -2125,51 +2115,43 @@ function initAbout(){
       var pe=document.createElementNS('http://www.w3.org/2000/svg','path');
       pe.setAttribute('d',d); measurer.appendChild(pe);
       var bb=null; try{ bb=pe.getBBox(); }catch(e){}
-      measurer.removeChild(pe);
-      return bb;
+      measurer.removeChild(pe); return bb;
     }
-    var boxCache={};
     function mainBox(cc, d){
       if(boxCache[cc]) return boxCache[cc];
-      var parts=d.split('M').filter(Boolean).map(function(x){return 'M'+x;});
-      var best=null;
+      var parts=d.split('M').filter(Boolean).map(function(x){return 'M'+x;}), best=null;
       for(var i=0;i<parts.length;i++){
         var bb=measure(parts[i]); if(!bb||!bb.width||!bb.height) continue;
         if(!best||bb.width*bb.height>best.width*best.height) best=bb;
       }
       if(!best){ best=measure(d); if(!best) return null; }
-      boxCache[cc]={x:best.x,y:best.y,w:best.width,h:best.height};
-      return boxCache[cc];
+      boxCache[cc]={x:best.x,y:best.y,w:best.width,h:best.height}; return boxCache[cc];
     }
-
-    // en sam vzorec, ki ga prestavljamo z države na državo
-    var NS='http://www.w3.org/2000/svg';
-    var defs=document.createElementNS(NS,'defs');
-    var pat=document.createElementNS(NS,'pattern');
-    pat.setAttribute('id','wmPhoto'); pat.setAttribute('patternUnits','userSpaceOnUse');
-    var patImg=document.createElementNS(NS,'image');
-    patImg.setAttribute('preserveAspectRatio','xMidYMid slice');
-    pat.appendChild(patImg); defs.appendChild(pat); svg.insertBefore(defs, svg.firstChild);
-
-    var shot=null;                               // država, ki trenutno nosi fotografijo
-    function clearShot(){
-      if(shot){ shot.removeAttribute('fill'); shot.classList.remove('shot'); shot=null; }
+    function ensurePattern(){
+      if(pat) return;
+      var NS='http://www.w3.org/2000/svg';
+      var defs=document.createElementNS(NS,'defs');
+      pat=document.createElementNS(NS,'pattern');
+      pat.setAttribute('id','wmPhoto'); pat.setAttribute('patternUnits','userSpaceOnUse');
+      patImg=document.createElementNS(NS,'image');
+      patImg.setAttribute('preserveAspectRatio','xMidYMid slice');
+      pat.appendChild(patImg); defs.appendChild(pat); svg.insertBefore(defs, svg.firstChild);
     }
+    function clearShot(){ if(shot){ shot.removeAttribute('fill'); shot.classList.remove('shot'); shot=null; } }
     function paintPhoto(cc, photo){
-      clearShot();
-      if(!photo) return;
+      if(!WM_PHOTOS) return;
+      clearShot(); if(!photo) return;
       var el=stage.querySelector('path[data-cc="'+cc+'"]'); if(!el) return;
       var bb=mainBox(cc, el.getAttribute('d')); if(!bb) return;
-      var side=Math.max(bb.w,bb.h);               // kvadraten izsek, da slika ni raztegnjena
-      pat.setAttribute('x', bb.x+bb.w/2-side/2);
-      pat.setAttribute('y', bb.y+bb.h/2-side/2);
+      ensurePattern();
+      var side=Math.max(bb.w,bb.h);
+      pat.setAttribute('x', bb.x+bb.w/2-side/2); pat.setAttribute('y', bb.y+bb.h/2-side/2);
       pat.setAttribute('width', side); pat.setAttribute('height', side);
       patImg.setAttribute('x','0'); patImg.setAttribute('y','0');
       patImg.setAttribute('width', side); patImg.setAttribute('height', side);
       patImg.setAttribute('href', photo);
       patImg.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href', photo);
-      el.setAttribute('fill','url(#wmPhoto)'); el.classList.add('shot');
-      shot=el;
+      el.setAttribute('fill','url(#wmPhoto)'); el.classList.add('shot'); shot=el;
     }
 
     function show(cc){
@@ -2180,14 +2162,13 @@ function initAbout(){
       var c=WMAP.centers[cc]; if(!c) return;
       var rect=stage.getBoundingClientRect(), vb=svg.viewBox.baseVal;
       var x=c[0]/vb.width*rect.width, y=c[1]/vb.height*rect.height;
-      pin.style.left=x+'px'; pin.style.top=y+'px'; pin.classList.add('on');
       nm.textContent=m.sl||cc;
       sub.textContent=m.cont||'';
       ct.textContent=p?('na sliki: '+p.city):'';
       tip.classList.add('on');
-      var tw=tip.offsetWidth||200, th=tip.offsetHeight||90;
+      var tw=tip.offsetWidth||180, th=tip.offsetHeight||60;
       tip.style.left=Math.min(Math.max(x-tw/2,8), Math.max(8,rect.width-tw-8))+'px';
-      tip.style.top=(y-th-20<4 ? y+22 : y-th-20)+'px';
+      tip.style.top=(y-th-16<4 ? y+18 : y-th-16)+'px';
     }
 
     function mark(cc){
@@ -2201,7 +2182,7 @@ function initAbout(){
       var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null;
       if(t&&t.classList.contains('v')) { hovering=1; pick(t.getAttribute('data-cc')); }
     });
-    stage.addEventListener('mouseleave',function(){ hovering=0; });
+    stage.addEventListener('mouseleave',function(){ hovering=0; tip.classList.remove('on'); cur=null; clearShot(); });
     stage.addEventListener('click',function(e){
       var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null;
       if(t&&t.classList.contains('v')){ hovering=1; pick(t.getAttribute('data-cc'));
