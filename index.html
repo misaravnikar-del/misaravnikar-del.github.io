@@ -962,6 +962,72 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 
 }
 
+/* ===================== PRODAJNA STRAN IN KOŠARICA ===================== */
+.svcteaser{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);
+  box-shadow:var(--shadow);padding:clamp(24px,4vw,40px);text-align:center;margin-top:2rem}
+.svcteaser h3{font-size:clamp(1.3rem,3vw,1.9rem);margin:0 0 .6rem}
+.svcteaser p{color:var(--ink-2);max-width:56ch;margin:0 auto 1.4rem}
+
+.shop__hero{text-align:center;max-width:58ch;margin:0 auto 2.4rem}
+.shop__hero h1{font-size:clamp(2.1rem,5vw,3.4rem);letter-spacing:-.02em;text-wrap:balance;margin:.4rem 0 0}
+.shop__hero h1 em{font-style:italic;color:var(--accent)}
+.shop__hero p{color:var(--ink-2);font-size:1.08rem;line-height:1.65;margin-top:1rem}
+
+.prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:3rem}
+.prod{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);box-shadow:var(--shadow);padding:26px 24px;position:relative}
+.prod--best{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow-lg)}
+.prod__tag{position:absolute;top:-11px;left:24px;background:var(--accent);color:var(--on-accent);
+  font-family:var(--font-mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;
+  padding:5px 11px;border-radius:999px}
+.prod h3{font-size:1.35rem;margin:.2rem 0 .1rem}
+.prod__for{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.prod__price{display:flex;align-items:baseline;gap:8px;margin:0 0 16px}
+.prod__price b{font-family:var(--font-display);font-weight:700;font-size:2.3rem;line-height:1;color:var(--ink)}
+.prod__price small{color:var(--muted);font-size:.85rem}
+.prod ul{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:10px}
+.prod li{display:flex;gap:10px;font-size:.95rem;color:var(--ink-2);line-height:1.5}
+.prod li svg{flex:none;width:17px;height:17px;color:var(--accent);margin-top:2px}
+.prod .btn{margin-top:auto;width:100%}
+.prod__note{color:var(--muted);font-size:.78rem;margin:10px 0 0;text-align:center}
+
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px;margin:0 0 3rem}
+.step__n{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.16em;color:var(--accent);
+  text-transform:uppercase;margin:0 0 8px}
+.step h4{font-size:1.05rem;margin:0 0 6px}
+.step p{color:var(--ink-2);font-size:.93rem;line-height:1.6;margin:0}
+
+.shop__faq{max-width:64ch;margin:0 auto 2.6rem}
+.shop__faq h2{font-size:clamp(1.4rem,3.2vw,2rem);margin:0 0 1.2rem;text-align:center}
+
+/* košarica */
+.cartbtn{position:fixed;right:18px;bottom:18px;z-index:150;display:none;align-items:center;gap:10px;
+  padding:14px 20px;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent);
+  font:inherit;font-weight:700;cursor:pointer;box-shadow:var(--shadow-lg)}
+.cartbtn.on{display:inline-flex}
+.cartbtn b{background:var(--on-accent);color:var(--accent);border-radius:999px;padding:1px 9px;font-size:.85rem}
+.cart{position:fixed;inset:0;z-index:200;display:grid;place-items:end center;padding:0}
+.cart__scrim{position:absolute;inset:0;background:rgba(6,14,16,.55);backdrop-filter:blur(3px)}
+.cart__box{position:relative;z-index:1;width:min(520px,100%);max-height:88vh;overflow:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;
+  box-shadow:var(--shadow-lg);padding:26px 24px 24px}
+@media(min-width:720px){.cart{place-items:center}.cart__box{border-radius:22px}}
+.cart__box h3{font-size:1.5rem;margin:0 0 4px}
+.cart__lead{color:var(--muted);font-size:.9rem;margin:0 0 18px}
+.cart__list{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.citem{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;
+  border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.citem b{display:block;font-size:.97rem}
+.citem small{color:var(--muted);font-size:.8rem}
+.citem__price{font-family:var(--font-mono);font-weight:600}
+.citem__x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:4px}
+.citem__x:hover{color:var(--hot)}
+.cart__sum{display:flex;justify-content:space-between;align-items:baseline;
+  border-top:1px dashed var(--line);padding-top:14px;margin-bottom:6px;font-size:1.05rem}
+.cart__sum b{font-family:var(--font-display);font-size:1.7rem}
+.cart__vat{color:var(--muted);font-size:.78rem;margin:0 0 16px}
+.cart__empty{color:var(--muted);text-align:center;padding:26px 0}
+
 </style>
 
 <script>
@@ -982,6 +1048,9 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
       <a href="#pocitnice">Počitniški termini</a>
       <a href="#planerji">Planerji</a>
       <a href="#parking">Parking</a>
+      <!-- Opozorilo: nastavitev v nadzorni plošči skriva 3. in 4. povezavo v tem meniju
+           (Planerji, Parking). Nove povezave zato vedno dodaj ŠELE za njima. -->
+      <a href="#storitve-nakup">Storitve</a>
       <a href="#blog">Blog</a>
       <a href="#o-nas">O nas</a>
     </nav>
@@ -1137,67 +1206,19 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
     <div class="sec__head reveal">
       <div>
         <p class="eyebrow">Naša storitev</p>
-        <h2>Ti sanjaj — pot uredimo mi.</h2>
+        <h2>Ti sanjaj — pot uredim jaz.</h2>
       </div>
-      <p>Nimaš časa ali živcev za brskanje? Prevzamemo iskanje letalskih kart ali sestavimo celoten načrt potovanja po tvoji meri — ti le potuješ.</p>
+      <p>Nimaš časa ali živcev za brskanje? Prevzamem iskanje letalskih kart ali sestavim celoten načrt potovanja po tvoji meri — ti le potuješ.</p>
     </div>
-    <div class="svc reveal">
-      <div class="svc__card">
-        <h3>Iskanje letalskih kart</h3>
-        <div class="svc__price"><small>že od</small><b>25 €</b></div>
-        <p>Poiščemo ti najugodnejše lete za želeno destinacijo in termin — ti le potrdiš nakup.</p>
-        <ul class="svc__list">
-          <li>Primerjava vseh letalskih družb in poti</li>
-          <li>Najcenejši termini in kombinacije letališč</li>
-          <li>Nasvet glede prtljage in prestopov</li>
-        </ul>
-        <button class="btn svc__cta" type="button" data-ask="Iskanje letalskih kart">Pošlji povpraševanje</button>
-      </div>
-      <div class="svc__card svc__card--featured">
-        <span class="svc__tag">Najbolj priljubljeno</span>
-        <h3>Personaliziran plan potovanja</h3>
-        <div class="svc__price"><small>že od</small><b>79 €</b></div>
-        <p>Celoten načrt po tvoji meri — leti, nastanitve, prevozi in dnevni itinerar z nasveti.</p>
-        <ul class="svc__list">
-          <li>Leti, nastanitve in prevozi na enem mestu</li>
-          <li>Dnevni itinerar z znamenitostmi in namigi</li>
-          <li>Prilagojeno tvojemu proračunu in željam</li>
-          <li>Osebna podpora vse do odhoda</li>
-        </ul>
-        <button class="btn btn--lg svc__cta" type="button" data-ask="Personaliziran plan potovanja">Pošlji povpraševanje</button>
+    <div class="svcteaser reveal">
+      <div class="svcteaser__in">
+        <h3>Poišči mi karte ali sestavi celoten plan</h3>
+        <p>Povej, kam bi rada. Ostalo je moja skrb — od primerjave letališč do dnevnega itinerarja.</p>
+        <a class="btn btn--lg" href="#storitve-nakup">Poglej, kaj dobiš</a>
       </div>
     </div>
-    <p class="svc__note">Načrtuješ skupinsko potovanje, poroko ali medene tedne? <a href="#" data-ask="Organizacija po meri">Piši nam za ponudbo po meri.</a></p>
   </div>
 </section>
-
-<!-- ===================== POVPRAŠEVANJE ===================== -->
-<div class="modal" id="askModal" hidden>
-  <div class="modal__scrim" data-askclose></div>
-  <div class="modal__box">
-    <button class="modal__x" type="button" data-askclose aria-label="Zapri">✕</button>
-    <form class="rv__step" id="askForm" novalidate>
-      <p class="eyebrow" id="askKind">Povpraševanje</p>
-      <h3>Povej, kam bi rada — ostalo uredimo mi.</h3>
-      <p class="rv__lead">Odgovorimo v enem delovnem dnevu. Povpraševanje je brezplačno in te k ničemur ne zavezuje.</p>
-      <div class="rv__fields">
-        <label>Kam bi rada?<input name="Destinacija" placeholder="npr. Tajska, Barcelona, nekam toplo …" required></label>
-        <label>Od kod bi letela?<input name="Odhod" placeholder="Ljubljana, Benetke, Trst … ali vseeno"></label>
-        <label>Kdaj približno?<input name="Termin" placeholder="npr. konec oktobra, 10 dni"></label>
-        <div class="ask__row">
-          <label>Št. potnikov<input name="Potniki" type="number" min="1" max="20" placeholder="2"></label>
-          <label>Proračun na osebo<input name="Proracun" placeholder="npr. do 400 €"></label>
-        </div>
-        <label>Tvoje ime<input name="Ime" placeholder="Ime in priimek" required></label>
-        <label>Tvoj e-naslov<input name="E-posta" type="email" placeholder="da ti lahko odgovorimo" required></label>
-        <label>Še kaj, kar naj vemo?<textarea name="Sporocilo" placeholder="Direktni let, brez prestopov, s psom, poročno potovanje …"></textarea></label>
-      </div>
-      <button class="btn btn--lg rv__submit" type="submit">Pošlji povpraševanje</button>
-      <p class="rv__ok" id="askOk" hidden>Hvala! Povpraševanje je oddano — oglasimo se v enem delovnem dnevu.</p>
-      <p class="rv__err" id="askErr" hidden>Pošiljanje ni uspelo. Poskusi znova ali piši na info@bookiraj.si.</p>
-    </form>
-  </div>
-</div>
 
 <!-- ===================== MNENJA STRANK ===================== -->
 <section class="sec" id="mnenja">
@@ -1536,6 +1557,77 @@ window.bkrjSend = function(kind, o){
   </div>
 </section>
 </div><!-- /#home -->
+
+<!-- ===================== KOŠARICA ===================== -->
+<button class="cartbtn" id="cartBtn" type="button" aria-label="Odpri košarico">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.6 8.2a2 2 0 0 1-2 1.6H9.2a2 2 0 0 1-2-1.6L5.4 3H3"/><circle cx="10" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>
+  Košarica <b id="cartN">0</b></button>
+<div class="cart" id="cartBox" hidden>
+  <div class="cart__scrim" data-cartclose></div>
+  <div class="cart__box">
+    <button class="modal__x" type="button" data-cartclose aria-label="Zapri">&#10005;</button>
+    <div id="cartStep1">
+      <h3>Tvoja košarica</h3>
+      <p class="cart__lead">Plačilo je vnaprej. Ko je plačilo pri meni, začnem z delom.</p>
+      <div class="cart__list" id="cartList"></div>
+      <div class="cart__sum" id="cartSumRow">Skupaj <b id="cartSum">0 &euro;</b></div>
+      <p class="cart__vat">Cena je končna. Miša Ravnikar s.p. ni zavezanka za DDV, zato DDV ni obračunan (1. odstavek 94. člena ZDDV-1).</p>
+      <button class="btn btn--lg" id="cartNext" type="button" style="width:100%">Naprej na naročilo</button>
+    </div>
+    <form id="cartStep2" novalidate hidden>
+      <h3>Še tvoji podatki</h3>
+      <p class="cart__lead">Na ta naslov ti pošljem račun za plačilo in končni izdelek.</p>
+      <div class="rv__fields">
+        <label>Ime in priimek<input name="Ime" placeholder="Ime in priimek" required></label>
+        <label>E-naslov<input name="E-posta" type="email" placeholder="nanj pošljem račun in izdelek" required></label>
+        <label>Telefon <span style="font-weight:400;color:var(--muted)">(ni obvezno)</span><input name="Telefon" placeholder="041 123 456"></label>
+        <label>Kam bi rada?<input name="Destinacija" placeholder="npr. Tajska, Barcelona, nekam toplo &hellip;" required></label>
+        <div class="ask__row">
+          <label>Kdaj približno?<input name="Termin" placeholder="npr. konec oktobra, 10 dni"></label>
+          <label>Št. potnikov<input name="Potniki" type="number" min="1" max="20" placeholder="2"></label>
+        </div>
+        <label>Še kaj, kar naj vem?<textarea name="Sporocilo" placeholder="Proračun, direktni let, potovanje s psom, poročno potovanje &hellip;"></textarea></label>
+      </div>
+      <div class="cart__sum" style="margin-top:16px">Za plačilo <b id="cartSum2">0 &euro;</b></div>
+      <button class="btn btn--lg rv__submit" type="submit" id="cartPay">Oddaj naročilo</button>
+      <button class="btn btn--ghost" type="button" id="cartBack" style="width:100%;margin-top:10px">Nazaj v košarico</button>
+      <p class="rv__err" id="cartErr" hidden>Oddaja ni uspela. Poskusi znova ali piši na info@bookiraj.si.</p>
+    </form>
+    <div id="cartDone" hidden style="text-align:center;padding:14px 0">
+      <div style="font-size:2.4rem;line-height:1">&#10003;</div>
+      <h3 style="margin:.4rem 0 .5rem">Naročilo je oddano.</h3>
+      <p class="cart__lead" style="margin-bottom:18px">V enem delovnem dnevu ti na e-pošto pošljem račun za predplačilo. Ko je plačilo pri meni, začnem z delom.</p>
+      <button class="btn" type="button" data-cartclose style="width:100%">Zapri</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="askModal" hidden>
+  <div class="modal__scrim" data-askclose></div>
+  <div class="modal__box">
+    <button class="modal__x" type="button" data-askclose aria-label="Zapri">✕</button>
+    <form class="rv__step" id="askForm" novalidate>
+      <p class="eyebrow" id="askKind">Povpraševanje</p>
+      <h3>Povej, kam bi rada — ostalo uredimo mi.</h3>
+      <p class="rv__lead">Odgovorimo v enem delovnem dnevu. Povpraševanje je brezplačno in te k ničemur ne zavezuje.</p>
+      <div class="rv__fields">
+        <label>Kam bi rada?<input name="Destinacija" placeholder="npr. Tajska, Barcelona, nekam toplo …" required></label>
+        <label>Od kod bi letela?<input name="Odhod" placeholder="Ljubljana, Benetke, Trst … ali vseeno"></label>
+        <label>Kdaj približno?<input name="Termin" placeholder="npr. konec oktobra, 10 dni"></label>
+        <div class="ask__row">
+          <label>Št. potnikov<input name="Potniki" type="number" min="1" max="20" placeholder="2"></label>
+          <label>Proračun na osebo<input name="Proracun" placeholder="npr. do 400 €"></label>
+        </div>
+        <label>Tvoje ime<input name="Ime" placeholder="Ime in priimek" required></label>
+        <label>Tvoj e-naslov<input name="E-posta" type="email" placeholder="da ti lahko odgovorimo" required></label>
+        <label>Še kaj, kar naj vemo?<textarea name="Sporocilo" placeholder="Direktni let, brez prestopov, s psom, poročno potovanje …"></textarea></label>
+      </div>
+      <button class="btn btn--lg rv__submit" type="submit">Pošlji povpraševanje</button>
+      <p class="rv__ok" id="askOk" hidden>Hvala! Povpraševanje je oddano — oglasimo se v enem delovnem dnevu.</p>
+      <p class="rv__err" id="askErr" hidden>Pošiljanje ni uspelo. Poskusi znova ali piši na info@bookiraj.si.</p>
+    </form>
+  </div>
+</div>
 
 <!-- ===================== DETAIL (sub-page) ===================== -->
 <main id="detail" hidden></main>
@@ -2567,6 +2659,170 @@ function pageHTML(slug){var p=PAGES[slug];return ''
     +'<div class="page__body">'+p.html+'</div>'
   +'</div></div>';
 }
+// ===================== PRODAJNA STRAN IN KOŠARICA =====================
+// Cene so zapisane na enem samem mestu. Ko priklopiva plačilo s kartico, bo isto
+// številko prebral strežnik — brskalnik cene nikoli ne določa sam.
+var SHOP = {
+  karta:{id:'karta', name:'Poišči mi karto', price:25, short:'Predlog letov v 24 urah',
+    lead:'Veš, kam bi rada — nočeš pa treh ur brskanja.',
+    note:'Velja za eno pot, do 4 potnike. Karto kupiš sama, provizije ni.',
+    items:['Do tri najboljše kombinacije letov za tvoj termin',
+           'Primerjam vseh pet odhodnih letališč (LJU, TRS, VCE, ZAG, VIE)',
+           'Preverim prtljago, prestopne čase in skrita doplačila',
+           'Povezave, kjer karto kupiš z enim klikom',
+           'Odgovor v 24 urah']},
+  plan:{id:'plan', name:'Načrt potovanja', price:79, best:true, short:'Načrt v treh delovnih dneh',
+    lead:'Destinacijo imaš — manjka ti vse ostalo.',
+    note:'Velja za eno potovanje, dolgo do 14 dni.',
+    items:['Itinerar po dnevih, prilagojen tvojemu tempu',
+           'Nastanitve v tvojem proračunu, s povezavami',
+           'Prevozi na kraju samem — od letališča do zadnje postaje',
+           'Kaj je res vredno videti in kaj mirno preskočiš',
+           'Zemljevid z vsemi označenimi točkami',
+           'Ena runda popravkov, ko načrt prebereš']},
+  celota:{id:'celota', name:'Cela pot, od A do Ž', price:95, short:'Karte in načrt skupaj',
+    lead:'Nočeš se ukvarjati prav z ničimer.',
+    note:'Karte in načrt skupaj — 9 € ceneje kot ločeno.',
+    items:['Vse iz paketa »Poišči mi karto«',
+           'Vse iz paketa »Načrt potovanja«',
+           'Nasvet za prtljago in eSIM za tvojo destinacijo',
+           'Seznam za pakiranje, pisan za to pot',
+           'Dosegljiva sem ti po e-pošti tudi med potovanjem']}
+};
+var SHOP_ORDER = ['karta','plan','celota'];
+var TICK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+function eur(n){ return (Math.round(n*100)/100).toLocaleString('sl-SI')+' €'; }
+
+function prodHTML(k){
+  var p=SHOP[k];
+  return '<div class="prod'+(p.best?' prod--best':'')+'">'
+    +(p.best?'<span class="prod__tag">Najbolj iskano</span>':'')
+    +'<h3>'+p.name+'</h3>'
+    +'<p class="prod__for">'+p.lead+'</p>'
+    +'<p class="prod__price"><b>'+eur(p.price)+'</b><small>enkratno plačilo</small></p>'
+    +'<ul>'+p.items.map(function(i){return '<li>'+TICK+'<span>'+i+'</span></li>';}).join('')+'</ul>'
+    +'<button class="btn btn--lg" type="button" onclick="cartAdd(\''+p.id+'\')">Daj v košarico</button>'
+    +'<p class="prod__note">'+p.note+'</p>'
+  +'</div>';
+}
+
+function storitveHTML(){
+  return '<div class="page"><div class="container">'+BACK
+  +'<div class="shop__hero">'
+    +'<p class="eyebrow">Storitve</p>'
+    +'<h1>Ti sanjaj — <em>pot uredim jaz.</em></h1>'
+    +'<p>V 78 državah sem se naučila eno stvar: najcenejša karta se skoraj nikoli ne pokaže sama. Povej, kam bi rada, in dobiš nazaj pot, ki se splača — brez ur brskanja in brez ugibanja.</p>'
+  +'</div>'
+  +'<div class="prods">'+SHOP_ORDER.map(prodHTML).join('')+'</div>'
+  +'<h2 style="text-align:center;font-size:clamp(1.4rem,3.2vw,2rem);margin:0 0 1.6rem">Kako poteka</h2>'
+  +'<div class="steps">'
+    +'<div class="step"><p class="step__n">Korak 1</p><h4>Izbereš paket</h4><p>Daš ga v košarico in pustiš svoje podatke — kam, kdaj, koliko vas je.</p></div>'
+    +'<div class="step"><p class="step__n">Korak 2</p><h4>Plačaš vnaprej</h4><p>Na e-pošto dobiš račun. Delo začnem, ko je plačilo pri meni.</p></div>'
+    +'<div class="step"><p class="step__n">Korak 3</p><h4>Iščem</h4><p>Primerjam letališča, termine in prevoznike — tudi tiste, ki jih iskalniki radi skrijejo.</p></div>'
+    +'<div class="step"><p class="step__n">Korak 4</p><h4>Dobiš svojo pot</h4><p>Karte v 24 urah, načrt potovanja v treh delovnih dneh. Z eno rundo popravkov.</p></div>'
+  +'</div>'
+  +'<div class="shop__faq"><h2>Pogosta vprašanja</h2><div class="qa">'
+    +'<div class="qa__item"><h3>Kupim karto pri tebi?</h3><p>Ne. Karto kupiš sama, neposredno pri prevozniku ali prodajalcu — jaz jo najdem in ti pošljem povezavo. Tako ni nobenih posredniških doplačil, vozovnica pa se glasi naravnost na tvoje ime.</p></div>'
+    +'<div class="qa__item"><h3>Kdaj dobim izdelek?</h3><p>Predlog kart v 24 urah od plačila. Celoten načrt potovanja v treh delovnih dneh. Če se mi kdaj zatakne, ti povem vnaprej.</p></div>'
+    +'<div class="qa__item"><h3>Kaj pa, če mi ni všeč?</h3><p>Ena runda popravkov je vključena v ceno — napišeš, kaj naj bo drugače, in popravim. Če ti v tvojem terminu in proračunu ne najdem ničesar smiselnega, ti denar vrnem.</p></div>'
+    +'<div class="qa__item"><h3>Kako plačam?</h3><p>Vnaprej. Po oddaji naročila ti na e-pošto pošljem račun s povezavo za plačilo. Šele ko je plačilo pri meni, začnem z delom.</p></div>'
+    +'<div class="qa__item"><h3>Kdo izda račun?</h3><p>Miša Ravnikar s.p. Nisem zavezanka za DDV, zato je cena na tej strani že končna — DDV ni obračunan po 1. odstavku 94. člena ZDDV-1.</p></div>'
+    +'<div class="qa__item"><h3>Za koliko oseb velja cena?</h3><p>Za eno potovanje, do štiri potnike. Če vas je več ali gre za daljšo pot, mi najprej piši na info@bookiraj.si in se dogovoriva.</p></div>'
+  +'</div></div>'
+  +'<div class="svcteaser" style="text-align:center">'
+    +'<h3>Nisi prepričana, kateri paket?</h3>'
+    +'<p>Napiši mi, kaj imaš v mislih. Povpraševanje je brezplačno in te k ničemur ne zavezuje.</p>'
+    +'<button class="btn btn--lg" type="button" data-ask="Povpraševanje za storitev">Pošlji brezplačno povpraševanje</button>'
+  +'</div>'
+  +'</div></div>';
+}
+
+/* --- košarica: stanje v brskalniku (localStorage) --- */
+function cartGet(){ try{ return JSON.parse(localStorage.getItem('bkrj_cart')||'{}')||{}; }catch(e){ return {}; } }
+function cartSave(c){ try{ localStorage.setItem('bkrj_cart',JSON.stringify(c)); }catch(e){} cartBadge(); }
+function cartCount(){ var c=cartGet(),n=0; for(var k in c) if(SHOP[k]) n+=c[k]; return n; }
+function cartTotal(){ var c=cartGet(),s=0; for(var k in c) if(SHOP[k]) s+=SHOP[k].price*c[k]; return s; }
+function cartBadge(){
+  var b=document.getElementById('cartBtn'), n=document.getElementById('cartN');
+  if(!b||!n) return;
+  var q=cartCount(); n.textContent=q; b.classList.toggle('on', q>0);
+}
+window.cartAdd=function(id){
+  if(!SHOP[id]) return;
+  var c=cartGet(); c[id]=(c[id]||0)+1; cartSave(c);
+  if(window.bkrjTrack) window.bkrjTrack('dodaj_v_kosarico', id);
+  cartOpen();
+};
+window.cartDel=function(id){ var c=cartGet(); delete c[id]; cartSave(c); cartDraw(); };
+function cartDraw(){
+  var list=document.getElementById('cartList'); if(!list) return;
+  var c=cartGet(), rows=[];
+  for(var i=0;i<SHOP_ORDER.length;i++){
+    var k=SHOP_ORDER[i]; if(!c[k]) continue;
+    var p=SHOP[k];
+    rows.push('<div class="citem"><div><b>'+p.name+'</b><small>'+(c[k]>1?c[k]+' × '+eur(p.price):p.short)+'</small></div>'
+      +'<span class="citem__price">'+eur(p.price*c[k])+'</span>'
+      +'<button class="citem__x" type="button" onclick="cartDel(\''+k+'\')" aria-label="Odstrani">&#10005;</button></div>');
+  }
+  list.innerHTML = rows.length ? rows.join('') : '<p class="cart__empty">Košarica je prazna.</p>';
+  var t=eur(cartTotal());
+  var a=document.getElementById('cartSum'), b=document.getElementById('cartSum2');
+  if(a) a.textContent=t; if(b) b.textContent=t;
+  var nx=document.getElementById('cartNext'); if(nx) nx.disabled = rows.length===0;
+  var sr=document.getElementById('cartSumRow'); if(sr) sr.hidden = rows.length===0;
+}
+function cartStep(n){
+  var s1=document.getElementById('cartStep1'), s2=document.getElementById('cartStep2'), s3=document.getElementById('cartDone');
+  if(!s1) return; s1.hidden=(n!==1); s2.hidden=(n!==2); s3.hidden=(n!==3);
+}
+function cartOpen(){
+  var box=document.getElementById('cartBox'); if(!box) return;
+  cartDraw(); cartStep(1); box.hidden=false; document.body.style.overflow='hidden';
+}
+function cartClose(){
+  var box=document.getElementById('cartBox'); if(!box) return;
+  box.hidden=true; document.body.style.overflow='';
+}
+(function(){
+  var box=document.getElementById('cartBox'); if(!box) return;
+  var btn=document.getElementById('cartBtn');
+  if(btn) btn.addEventListener('click', cartOpen);
+  box.addEventListener('click', function(e){ if(e.target.closest('[data-cartclose]')) cartClose(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !box.hidden) cartClose(); });
+  var nx=document.getElementById('cartNext'); if(nx) nx.addEventListener('click', function(){ cartDraw(); cartStep(2); });
+  var bk=document.getElementById('cartBack'); if(bk) bk.addEventListener('click', function(){ cartStep(1); });
+  var f=document.getElementById('cartStep2');
+  if(f) f.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!f.reportValidity()) return;
+    var fd=new FormData(f), o={};
+    fd.forEach(function(v,k){ if(String(v).trim()) o[k]=String(v).trim(); });
+    var c=cartGet(), lines=[];
+    for(var i=0;i<SHOP_ORDER.length;i++){ var k=SHOP_ORDER[i]; if(c[k]) lines.push(SHOP[k].name+(c[k]>1?' × '+c[k]:'')+' — '+eur(SHOP[k].price*c[k])); }
+    if(!lines.length){ cartStep(1); return; }
+    o['Paketi']=lines.join(' | ');
+    o['Skupaj']=eur(cartTotal());
+    var btnP=document.getElementById('cartPay'), err=document.getElementById('cartErr');
+    if(err) err.hidden=true;
+    if(btnP){ btnP.disabled=true; btnP.textContent='Pošiljam …'; }
+    window.bkrjSend('narocilo',{
+      name:o['Ime']||'', email:o['E-posta']||'',
+      subject:'NOVO NAROČILO ('+eur(cartTotal())+') — Bookiraj.si',
+      message:lines.join('\n')+'\n\nSkupaj: '+eur(cartTotal())+'\n\nDestinacija: '+(o['Destinacija']||'')+'\nTermin: '+(o['Termin']||'')+'\nPotnikov: '+(o['Potniki']||'')+'\nTelefon: '+(o['Telefon']||'')+'\n\n'+(o['Sporocilo']||''),
+      data:o
+    }).then(function(){
+      if(window.bkrjTrack) window.bkrjTrack('narocilo', lines.join(', '));
+      cartSave({}); cartStep(3); f.reset();
+    }).catch(function(){
+      if(err) err.hidden=false;
+    }).then(function(){
+      if(btnP){ btnP.disabled=false; btnP.textContent='Oddaj naročilo'; }
+    });
+  });
+  cartBadge();
+})();
+
 function route(){
   document.body.classList.remove('about-page');
   const h=location.hash;
@@ -2596,6 +2852,11 @@ function route(){
     detailEl.innerHTML=ponudbaHTML(_pk);
     showView('detail');
     document.title=(_pd?_pd.fromCity+' → '+_pd.city:'Akcija')+' — Bookiraj.si'; window.scrollTo(0,0); return;
+  }
+  if(pslug==='storitve-nakup'){
+    detailEl.innerHTML=storitveHTML();
+    showView('detail');
+    document.title='Storitve — Bookiraj.si'; window.scrollTo(0,0); cartBadge(); return;
   }
   if(pslug==='planerji'){
     detailEl.innerHTML=planerjiHTML();
@@ -2906,6 +3167,7 @@ route();
   var sid;
   try{sid=localStorage.getItem('bkrj_sid');if(!sid){sid=Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem('bkrj_sid',sid);}}catch(e){sid='anon';}
   function track(t,n){try{fetch(U+'/rest/v1/events',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({type:t,name:(n||'').slice(0,120),session:sid}),keepalive:true}).catch(function(){});}catch(e){}}
+  window.bkrjTrack=track;   // da ga lahko uporabi tudi košarica
   function onRoute(){var h=location.hash||'/';track('pageview',h);if(h.indexOf('#deal/')===0)track('deal_open',h.slice(6));}
   onRoute();
   addEventListener('hashchange',onRoute);
