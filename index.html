@@ -1206,6 +1206,36 @@ section{scroll-margin-top:78px}
     </form>
   </div>
 </div>
+
+<!-- ===== SPOREJANJE SPOROČIL S STRANI =====
+     Vsako oddano sporočilo se VEDNO shrani v Bookiraj bazo (vidiš ga v nadzorni plošči
+     → Sporočila), da se nikoli nič ne izgubi. Če je spodaj vpisan ključ Web3Forms,
+     gre isto sporočilo tudi na e-pošto info@bookiraj.si.
+     Ključ dobiš brezplačno na https://web3forms.com (vpišeš info@bookiraj.si, ključ
+     ti pošljejo na ta naslov) in ga prilepiš med narekovaje spodaj. -->
+<script>
+window.BKRJ_FORM_KEY = '';          // ← sem prilepi ključ z web3forms.com
+window.bkrjSend = function(kind, o){
+  o = o || {};
+  var U='https://fliwoulbwqcnufdfgvcj.supabase.co';
+  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+  var jobs = [];
+  jobs.push(fetch(U+'/rest/v1/messages',{method:'POST',
+    headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({kind:kind, name:o.name||null, email:o.email||null,
+      message:o.message||null, data:o.data||null})}).catch(function(){}));
+  if (window.BKRJ_FORM_KEY) {
+    jobs.push(fetch('https://api.web3forms.com/submit',{method:'POST',
+      headers:{'Content-Type':'application/json',Accept:'application/json'},
+      body:JSON.stringify({access_key:window.BKRJ_FORM_KEY, from_name:'Bookiraj.si',
+        subject:o.subject||'Novo sporočilo z Bookiraj.si',
+        email:o.email||'info@bookiraj.si', name:o.name||'', message:o.message||'',
+        podrobnosti:o.data?JSON.stringify(o.data):''})}).catch(function(){}));
+  }
+  return Promise.all(jobs);
+};
+</script>
+
 <script>(function(){
   var modal=document.getElementById('rvModal'); if(!modal)return;
   var openBtn=document.getElementById('rvOpen'),step1=document.getElementById('rvStep1'),step2=document.getElementById('rvStep2');
@@ -1265,11 +1295,23 @@ section{scroll-margin-top:78px}
   step2.addEventListener('submit',function(e){
     e.preventDefault();
     var ok=step2.querySelector('.rv__ok'),sub=step2.querySelector('.rv__submit');
-    function done(){ok.hidden=false;setTimeout(close,1700);}
-    if(!REVIEW_KEY){done();return;}
-    var fd=new FormData(step2);fd.append('access_key',REVIEW_KEY);fd.append('subject','Bookiraj.si — novo mnenje ('+(step2.dataset.type||'')+')');
+    function done(){ok.hidden=false;sub.disabled=false;sub.textContent='Pošlji vtis';setTimeout(close,1700);}
+    // zberi polja obrazca (razglednica ali polaroid)
+    var vals={}, txt=[];
+    [].forEach.call(step2.querySelectorAll('input,textarea'),function(i){
+      if(i.disabled||i.type==='file'||!i.value) return;
+      var k=i.name||i.placeholder||i.id||'polje';
+      vals[k]=i.value; txt.push(k+': '+i.value);
+    });
+    var tip=(step2.dataset.type==='card')?'razglednica':'polaroid';
+    vals.oblika=tip;
     sub.disabled=true;sub.textContent='Pošiljam…';
-    fetch('https://api.web3forms.com/submit',{method:'POST',body:fd}).then(function(r){return r.json();}).then(done).catch(done).then(function(){sub.disabled=false;sub.textContent='Pošlji vtis';});
+    window.bkrjSend('mnenje',{
+      name:vals.ime||vals.Ime||null, email:vals.email||vals.eposta||null,
+      subject:'Bookiraj.si — novo mnenje ('+tip+')',
+      message:'Novo mnenje strank ('+tip+'):\n'+txt.join('\n'),
+      data:vals
+    }).then(done, done);
   });
 })();</script>
 
@@ -2435,21 +2477,16 @@ if(burger&&navLinks){
   navLinks.addEventListener('click',e=>{if(e.target.closest('a')){navLinks.classList.remove('open');burger.setAttribute('aria-expanded','false');}});
 }
 
-// newsletter — pošlje prijavo prek Web3Forms, če je vpisan ključ (brezplačen z web3forms.com);
-// dokler je ključ prazen, prikaže potrditev in shrani lokalno (graciozno).
-const NEWSLETTER_KEY='';
+// newsletter — prijava se shrani v Bookiraj bazo (nadzorna plošča → Sporočila)
+// in, ko je vpisan ključ Web3Forms, tudi pošlje na info@bookiraj.si.
 document.addEventListener('submit',e=>{
   if(e.target.id!=='nform')return;
   e.preventDefault();
   const inp=document.getElementById('nemail'); const v=inp.value.trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){inp.focus();return;}
   const done=()=>{document.querySelector('.news').classList.add('done');try{localStorage.setItem('bkr-sub',v);}catch(err){}};
-  if(NEWSLETTER_KEY){
-    fetch('https://api.web3forms.com/submit',{method:'POST',
-      headers:{'Content-Type':'application/json',Accept:'application/json'},
-      body:JSON.stringify({access_key:NEWSLETTER_KEY,subject:'Nova prijava na Bookiraj.si novice',from_name:'Bookiraj.si',email:v})})
-      .then(done).catch(done);
-  } else { done(); }
+  window.bkrjSend('novice',{email:v,subject:'Nova prijava na Bookiraj.si novice',
+    message:'Nova prijava na novice: '+v}).then(done,done);
 });
 
 // router
