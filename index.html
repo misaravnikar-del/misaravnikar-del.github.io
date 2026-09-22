@@ -1593,7 +1593,8 @@ function cardHTML(d){
   var cRight=(cheap?esc(airOf(cheap))||termSub(cheap):(disc?termSub({transfers:d.transfers}):d.airline))
     +(cheap&&cheap.bag?bagHTML(cheap.bag):'');
   var hol=[...new Set(((d.terms||[]).flatMap(function(t){return t.hol||[];})))];
-  var holTag=hol.length?'<span class="card__hol">'+hol.map(function(x){return x.split(' · ')[0];}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(' · ')+' počitnice</span>':'';
+  var holBest=Math.max.apply(null,[0].concat((d.terms||[]).map(function(t){return t.holDiscount||0;})));
+  var holTag=hol.length?'<span class="card__hol">'+hol.map(function(x){return x.split(' · ')[0];}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(' · ')+' počitnice'+(holBest>=40?' · −'+holBest+' % za ta termin':'')+'</span>':'';
   // kartica vedno vodi na vmesno stran znotraj Bookiraj.si → puščica naprej, ne »zunanja povezava«
   var svg='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
   return '<a class="card" href="'+href+'"'+ext+'>'
@@ -1629,7 +1630,8 @@ function matchFilters(d){
 function slText(n){return n+(n===1?' akcija':(n===2?' akciji':(n<5&&n>0?' akcije':' akcij')));}
 function tText(n){return n+(n===1?' termin':(n===2?' termina':(n<5&&n>0?' termini':' terminov')));}
 function rowHTML(d){
-  return '<a class="radar__row" href="'+d.url+'" target="_blank" rel="noopener">'
+  // tudi tu velja: nikoli naravnost na Aviasales, vedno prek strani z akcijo
+  return '<a class="radar__row" href="#ponudba/'+d.fromCode+'-'+d.code+'">'
     +'<span class="radar__route">'+d.fromCode+'<span class="arrow">→</span>'+d.code+'</span>'
     +'<span class="radar__city">'+d.city+(d.country?'<small>'+d.country+'</small>':'')+'</span>'
     +'<span class="radar__when">'+fmtRangeISO(d.depart,d.ret)+(d.nights?' · '+d.nights+' noči':'')+'</span>'
@@ -1670,6 +1672,12 @@ function bagHTML(b){
     +x.t+'</span>';
 }
 var BAGNOTE='<p class="terms__note">Prikazana prtljaga je <strong>privzeta politika prevoznika</strong> — pri nakupu preveri, kaj je vključeno v izbrano ceno.</p>';
+// Oznaka počitniškega termina; če je cena dobra glede na TISTO obdobje, pokažemo tudi odstotek.
+function holChip(t){
+  if(!t.hol||!t.hol.length) return '';
+  var n=t.hol[0].split(' · ')[0];
+  return ' <span class="card__hol">'+n+' počitnice'+(t.holDiscount>=40?' · −'+t.holDiscount+' % za ta termin':'')+'</span>';
+}
 function ymd(iso){var p=iso.split('-');return p[0].slice(2)+p[1]+p[2];}
 // (Mišino pravilo: vse povezave vodijo na Aviasales z njenim affiliate markerjem — nikoli na primerjalnike.)
 function featuredHTML(d){var t=(d.terms&&d.terms.length)?d.terms.reduce(function(m,x){return x.price<m.price?x:m;},d.terms[0]):null;return '<article class="pass">'
@@ -1694,7 +1702,7 @@ function detailHTML(d){
   const termRows=(d.terms||[]).map(t=>
     '<li><a href="'+t.url+'" target="_blank" rel="noopener">'
     +'<span class="term__l"><span class="term__date">'+fmtRangeISO(t.depart,t.ret)
-    +(t.hol&&t.hol.length?' <span class="card__hol">'+t.hol[0].split(' · ')[0]+' počitnice</span>':'')+'</span>'
+    +holChip(t)+'</span>'
     +'<span class="term__sub">'+termSub(t)+(t.nights?' · '+t.nights+' noči':'')+bagHTML(t.bag)+'</span></span>'
     +'<span class="term__r"><span class="term__price">od '+t.price+' €</span>'
     +'<svg class="term__go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>').join('');
@@ -1911,7 +1919,7 @@ function ponudbaHTML(key){
   var rows=(d.terms||[]).map(function(t){
     return '<li><a href="'+t.url+'" target="_blank" rel="noopener">'
       +'<span class="term__l"><span class="term__date">'+fmtRangeISO(t.depart,t.ret)
-        +(t.hol&&t.hol.length?' <span class="card__hol">'+t.hol[0].split(' · ')[0]+' počitnice</span>':'')+'</span>'
+        +holChip(t)+'</span>'
       +'<span class="term__sub">'+termSub(t)+(t.nights?' · '+t.nights+' noči':'')+bagHTML(t.bag)+'</span></span>'
       +'<span class="term__r"><span class="term__price">'+t.price+' €</span>'
       +'<svg class="term__go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>';

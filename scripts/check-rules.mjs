@@ -23,12 +23,13 @@ const hubDest = all.filter(d => HOME_HUBS.has(d.code)).map(d => d.fromCode + '�
 if (hubDest.length) fail.push(`1. Destinacija je naše odhodno letališče: ${cap(hubDest)}`);
 
 // --- 2. vsaj -40 % ali pod 50 € ---
+// Velja tudi, če je termin −40 % glede na povprečje SVOJEGA počitniškega obdobja (holDiscount).
 const badTerm = [];
 for (const d of all)
   for (const t of (d.terms || []))
-    if (!((t.discount ?? 0) >= MIN_DISCOUNT || t.price < ALWAYS_UNDER))
+    if (!((t.discount ?? 0) >= MIN_DISCOUNT || t.price < ALWAYS_UNDER || (t.holDiscount ?? 0) >= MIN_DISCOUNT))
       badTerm.push(`${d.fromCode}→${d.code} ${t.depart} ${t.price}€ (−${t.discount ?? 0} %)`);
-if (badTerm.length) fail.push(`2. Termin ni akcija (manj kot −${MIN_DISCOUNT} % in ni pod ${ALWAYS_UNDER} €): ${cap(badTerm)}`);
+if (badTerm.length) fail.push(`2. Termin ni akcija (manj kot −${MIN_DISCOUNT} % glede na letno ali počitniško povprečje in ni pod ${ALWAYS_UNDER} €): ${cap(badTerm)}`);
 
 // --- 3. eno odhodno letališče = svoja kartica (brez združevanja) ---
 const seen = new Map();
