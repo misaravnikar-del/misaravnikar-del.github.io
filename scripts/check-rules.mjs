@@ -10,6 +10,7 @@ const o = JSON.parse(src.slice(src.indexOf('{'), src.lastIndexOf('}') + 1));
 const curated = o.deals || [], discover = o.discover || [], all = curated.concat(discover);
 
 const MIN_DISCOUNT = Math.round((o.rules?.minDiscount ?? 0.40) * 100);
+const MIN_DISCOUNT_FULL = Math.round((o.rules?.minDiscountFull ?? 0.20) * 100);
 const ALWAYS_UNDER = o.rules?.alwaysUnder ?? 50;
 const MARKER = '779438';
 // Pravilo 1: naša odhodna letališča niso destinacija
@@ -26,10 +27,13 @@ if (hubDest.length) fail.push(`1. Destinacija je naše odhodno letališče: ${ca
 // Velja tudi, če je termin −40 % glede na povprečje SVOJEGA počitniškega obdobja (holDiscount).
 const badTerm = [];
 for (const d of all)
-  for (const t of (d.terms || []))
-    if (!((t.discount ?? 0) >= MIN_DISCOUNT || t.price < ALWAYS_UNDER || (t.holDiscount ?? 0) >= MIN_DISCOUNT))
+  for (const t of (d.terms || [])) {
+    // klasični (nenizkocenovni) prevozniki imajo nižji prag — glej pravilo v fetch-deals.mjs
+    const need = (t.lc === false) ? MIN_DISCOUNT_FULL : MIN_DISCOUNT;
+    if (!((t.discount ?? 0) >= need || t.price < ALWAYS_UNDER || (t.holDiscount ?? 0) >= need))
       badTerm.push(`${d.fromCode}→${d.code} ${t.depart} ${t.price}€ (−${t.discount ?? 0} %)`);
-if (badTerm.length) fail.push(`2. Termin ni akcija (manj kot −${MIN_DISCOUNT} % glede na letno ali počitniško povprečje in ni pod ${ALWAYS_UNDER} €): ${cap(badTerm)}`);
+  }
+if (badTerm.length) fail.push(`2. Termin ni akcija (nizkocenovnik pod −${MIN_DISCOUNT} %, klasični prevoznik pod −${MIN_DISCOUNT_FULL} %, in ni pod ${ALWAYS_UNDER} €): ${cap(badTerm)}`);
 
 // --- 3. eno odhodno letališče = svoja kartica (brez združevanja) ---
 const seen = new Map();

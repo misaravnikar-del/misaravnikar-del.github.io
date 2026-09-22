@@ -37,6 +37,11 @@ const MIN_HOME_KM  = Number(process.env.MIN_HOME_KM  || 440);  // destinacija mo
 const MIN_ROUTE_KM = Number(process.env.MIN_ROUTE_KM || 300);  // in vsaj toliko od odhodnega letališča
 const MIN_DISCOUNT = Number(process.env.MIN_DISCOUNT || 0.40); // vsaj 40 % pod povprečjem proge …
 const ALWAYS_UNDER = Number(process.env.ALWAYS_UNDER || 50);   // … ali cena pod 50 €
+// Miša (22.9.2026): »zakaj nimava med akcijami nobenega Turkish Airlines, ali pa Qatar …
+// dodaj še take ponudbe«. Razlog: klasični prevozniki imajo bistveno ožji razpon cen kot
+// nizkocenovniki, zato skoraj nikoli ne padejo 40 % pod povprečje proge (npr. VCE→BKK:
+// China Eastern −33 %, Air China −30 %, ITA −25 %). Zanje zato velja nižji prag.
+const MIN_DISCOUNT_FULL = Number(process.env.MIN_DISCOUNT_FULL || 0.20);
 const MAX_PAIRS    = Number(process.env.MAX_PAIRS    || 300);  // varovalka za število API klicev
 // »še išči datume, tudi nepočitniške, dokler ne rečem da je dovolj« — koliko mesecev naprej
 // pregledamo za vsako progo. Več mesecev = več terminov, a daljši zagon. Zvišaj, ko reče »še«.
@@ -277,8 +282,19 @@ const cities = await pub('https://api.travelpayouts.com/data/en/cities.json');
 const countries = await pub('https://api.travelpayouts.com/data/en/countries.json');
 const CITY = {}, CC = {}, GEOC = {};
 if (cities) for (const c of cities) { CITY[c.code] = { name:c.name, cc:c.country_code }; if (c.coordinates) GEOC[c.code] = c.coordinates; }
+for (const k in GEO_PATCH) if (!GEOC[k]) GEOC[k] = GEO_PATCH[k];
 if (countries) for (const c of countries) CC[c.code] = c.name;
 const cityName = code => { const n = (CITY[code]&&CITY[code].name)||code; return CITY_SL[n]||n; };
+
+// Nekaj letaliških kod v javnem imeniku nima koordinat (Rio GIG, Buenos Aires EZE …),
+// zato pravilo o dolžini potovanja zanje ne bi znalo uveljaviti meje za »zelo oddaljene«.
+const GEO_PATCH = {
+  GIG:{lat:-22.81,lon:-43.25}, EZE:{lat:-34.82,lon:-58.54}, SDU:{lat:-22.91,lon:-43.16},
+  AEP:{lat:-34.56,lon:-58.42}, HKT:{lat:8.11,lon:98.32},   KBV:{lat:8.10,lon:98.99},
+  DAD:{lat:16.04,lon:108.20}, PQC:{lat:10.23,lon:103.97}, SEZ:{lat:-4.67,lon:55.52},
+  PUJ:{lat:18.57,lon:-68.36}, CUN:{lat:21.04,lon:-86.87}, PTY:{lat:9.07,lon:-79.38},
+  NBO:{lat:-1.32,lon:36.93},  DKR:{lat:14.67,lon:-17.07}, SID:{lat:16.74,lon:-22.95},
+};
 
 // ---- razdalje (veliki krog) ----
 const rad = d => d*Math.PI/180;
@@ -339,12 +355,14 @@ function routeAvg(data, fromCode, code, meta){
     avg:Math.round(avg), min:Math.round(Math.min(...prices)), samples:prices.length });
   return avg;
 }
+const isLowcost = code => !!(AIR[code] && AIR[code].lowcost);
 function pickTerms(data, avg, km, opt){
-  const cut = avg * (1 - MIN_DISCOUNT);
+  const cutLow  = avg * (1 - MIN_DISCOUNT);        // nizkocenovniki: strog prag
+  const cutFull = avg * (1 - MIN_DISCOUNT_FULL);   // klasični prevozniki: nižji prag
   const win = (opt && opt.window) || null;                  // {start,end} za počitniško iskanje
   const seen = new Set();
   return data
-    .filter(d => d.price > 0 && (d.price <= cut || d.price < ALWAYS_UNDER))
+    .filter(d => d.price > 0 && (d.price <= (isLowcost(d.airline) ? cutLow : cutFull) || d.price < ALWAYS_UNDER))
     .filter(d => {
       if (!win) return true;
       const dep = (d.departure_at||'').slice(0,10);
@@ -360,7 +378,7 @@ function pickTerms(data, avg, km, opt){
       const code = d.airline || '';
       const nights = ret ? Math.round((new Date(ret)-new Date(depart))/86400000) : null;
       return { depart, ret, price:Math.round(d.price), airline:code, airlineName:airName(code),
-        bag:bagTier(code, km), transfers:d.transfers??0,
+        lc:isLowcost(code), bag:bagTier(code, km), transfers:d.transfers??0,
         nights, days: nights!=null ? nights+1 : null,
         discount: Math.max(0, Math.round((avg-d.price)/avg*100)),
         hol: hol.length ? hol : undefined,
@@ -627,7 +645,7 @@ if (curated.length < 3 || discover.length < 25) {
 // ---- PRAVILO 7: dnevna zgodovina povprečij v Supabase ----
 await logPrices(priceLog);
 
-const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:curated, discover };
+const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:curated, discover };
 writeFileSync(new URL('../deals.js', import.meta.url), 'window.__BOOKIRAJ_DEALS__ = '+JSON.stringify(payload)+';\n');
 const allTerms = curated.concat(discover).reduce((s,d)=>s+d.terms.length,0);
 console.log(`\nKurirane akcije: ${curated.length} (${skipCur} brez akcije) · Odkrite kartice: ${discover.length} · skupaj terminov: ${allTerms}`);

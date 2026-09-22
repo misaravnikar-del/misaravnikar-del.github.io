@@ -667,6 +667,7 @@ section{scroll-margin-top:78px}
 .card__sub{color:var(--muted);font-size:.98rem;margin-top:-1px}
 .card__sub strong{color:var(--ink);font-weight:600}
 .card__sub .s-arr{margin:0 4px;font-weight:400;color:var(--muted)}
+.badge--hol{background:var(--accent)!important;color:var(--on-accent)!important;font-size:.7rem!important}
 .card__hol{display:inline-block;margin-top:8px;padding:3px 9px;border-radius:999px;
   background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);
   font-size:.72rem;font-weight:600;letter-spacing:.02em}
@@ -1704,7 +1705,12 @@ function cardHTML(d){
   var price=disc?d.price:d.fromPrice;
   var fromCode=d.fromCode;
   var fromCity=d.fromCity;
-  var badge=(d.discount>=15)?'<span class="badge">−'+d.discount+' %</span>':'';
+  var holBest=Math.max.apply(null,[0].concat((d.terms||[]).map(function(t){return t.holDiscount||0;})));
+  // Če je ponudba akcija samo glede na CENE V TEM POČITNIŠKEM TERMINU (npr. božič, ko so
+  // cene za vse višje), pokažemo ta popust in ga označimo — sicer bi kartica pri 850 €
+  // ob povprečju 505 € molčala in delovala zavajajoče.
+  var badge=(d.discount>=15)?'<span class="badge">−'+d.discount+' %</span>'
+    :(holBest>=20?'<span class="badge badge--hol">−'+holBest+' % za termin</span>':'');
   var rRight=disc?fmtShort(d.depart,d.ret):d.period;
   var teaser=disc?'':d.teaser;
   var ctaTxt='Poglej '+(nT>1?tText(nT):'termin');
@@ -1712,7 +1718,6 @@ function cardHTML(d){
   var cRight=(cheap?esc(airOf(cheap))||termSub(cheap):(disc?termSub({transfers:d.transfers}):d.airline))
     +(cheap&&cheap.bag?bagHTML(cheap.bag):'');
   var hol=[...new Set(((d.terms||[]).flatMap(function(t){return t.hol||[];})))];
-  var holBest=Math.max.apply(null,[0].concat((d.terms||[]).map(function(t){return t.holDiscount||0;})));
   var holTag=hol.length?'<span class="card__hol">'+hol.map(function(x){return x.split(' · ')[0];}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(' · ')+' počitnice'+(holBest>=40?' · −'+holBest+' % za ta termin':'')+'</span>':'';
   // kartica vedno vodi na vmesno stran znotraj Bookiraj.si → puščica naprej, ne »zunanja povezava«
   var svg='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -1797,7 +1802,7 @@ var BAGNOTE='<p class="terms__note">Prikazana prtljaga je <strong>privzeta polit
 function holChip(t){
   if(!t.hol||!t.hol.length) return '';
   var n=t.hol[0].split(' · ')[0];
-  return ' <span class="card__hol">'+n+' počitnice'+(t.holDiscount>=40?' · −'+t.holDiscount+' % za ta termin':'')+'</span>';
+  return ' <span class="card__hol">'+n+' počitnice'+(t.holDiscount>=20?' · −'+t.holDiscount+' % za ta termin':'')+'</span>';
 }
 function ymd(iso){var p=iso.split('-');return p[0].slice(2)+p[1]+p[2];}
 // (Mišino pravilo: vse povezave vodijo na Aviasales z njenim affiliate markerjem — nikoli na primerjalnike.)
@@ -2230,7 +2235,7 @@ function ponudbaHTML(key){
     +'<p class="eyebrow">'+d.country+(d.discount?' · '+d.discount+' % pod povprečjem':'')+'</p>'
     +'<h1 class="page__h">'+d.fromCity+' → '+d.city+'</h1>'
     +'<p class="page__p" style="max-width:62ch">'+d.fromCode+' <span class="arrow">→</span> '+d.code
-      +(d.avg?' · povprečna cena te proge '+d.avg+' €':'')
+      +(d.avg?' · povprečna cena te proge '+d.avg+' €':'')+(function(){var h=(d.terms||[]).filter(function(t){return t.holAvg;});return h.length?' · v počitniškem terminu povprečno '+h[0].holAvg+' €':'';})()
       +(d.season?' · najlepše: '+d.season:'')+'</p>'
     +'<div style="margin:1.6rem 0 1.2rem;border-radius:18px;overflow:hidden;max-height:320px">'
       +'<img src="'+d.photo+'" alt="'+d.city+', '+d.country+'" style="width:100%;height:100%;object-fit:cover;display:block">'
