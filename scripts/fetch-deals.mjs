@@ -17,6 +17,13 @@
 //  5. Vse povezave vodijo na Aviasales z Mišinim affiliate markerjem.
 //  6. Termini, ki padejo v šolske počitnice, dobijo oznako (zavihek Počitniški termini).
 //  7. Dnevna povprečja cen se zapišejo v Supabase (tabela price_history) za zgodovino.
+//  8. Kartica nikoli ne vodi naravnost na Aviasales — vedno prek strani akcije,
+//     tudi če je na voljo samo en let.
+//  9. Pri vsakem terminu piše letalska družba in prtljaga (privzeta politika prevoznika).
+// 10. Datume iščemo mesec po mesec (SEARCH_MONTHS), ne le 30 najcenejših v letu.
+// 11. Za božične in zimske počitnice imajo prednost tople, oddaljene destinacije.
+// 12. DOLŽINA POTOVANJA: evropske ≥4 dni (3 dni le pod SHORT_EU_MAX €),
+//     izven Evrope ≥7 dni, zelo oddaljene (≥VERYFAR_KM) ≥10 dni.
 // Zažene GitHub Action (skrivnost TRAVELPAYOUTS_TOKEN); lokalno: TRAVELPAYOUTS_TOKEN=... node scripts/fetch-deals.mjs
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 
@@ -56,6 +63,28 @@ const SUNNY = new Set(['tropic','desert','southern','equator','safari']);   // s
 const WINTER_HOL = new Set(['Novoletne','Zimske (vzhodna Slovenija)','Zimske (zahodna in osrednja SLO)']);
 const SUN_MIN_KM = Number(process.env.SUN_MIN_KM || 2500);   // »bolj oddaljene«
 const SUN_QUOTA  = Number(process.env.SUN_QUOTA  || 90);     // koliko takih prog vedno pride v izbor
+
+// ---- DOLŽINA POTOVANJA (Miša, 22.9.2026) ----
+// »Evropske ne smejo biti krajše kot 4 dni, lahko so 3 dni če je cena res zelo nizka,
+//  manj kot to pa sploh ne. Za izven evropske destinacije pa najmanj 7 dni.
+//  Te neke zelo oddaljene destinacije pa od cca 10 dni.«
+// DNEVI = noči + 1 (odhod v četrtek, vrnitev v nedeljo = 4 dni, 3 noči) — tako se pri nas govori.
+const MIN_DAYS_EU      = Number(process.env.MIN_DAYS_EU      || 4);
+const SHORT_EU_DAYS    = Number(process.env.SHORT_EU_DAYS    || 3);   // izjema …
+const SHORT_EU_MAX     = Number(process.env.SHORT_EU_MAX     || 40);  // … samo pod toliko €
+const MIN_DAYS_FAR     = Number(process.env.MIN_DAYS_FAR     || 7);   // izven Evrope
+const MIN_DAYS_VERYFAR = Number(process.env.MIN_DAYS_VERYFAR || 10);  // zelo oddaljene
+const VERYFAR_KM       = Number(process.env.VERYFAR_KM       || 7000);
+const MAX_DAYS         = Number(process.env.MAX_DAYS         || 31);
+function tripOK(nights, cont, km, price){
+  if (nights == null || nights < 1) return false;
+  const days = nights + 1;
+  if (days > MAX_DAYS) return false;
+  if (km && km >= VERYFAR_KM) return days >= MIN_DAYS_VERYFAR;   // Maldivi, Tajska, Karibi …
+  if (cont && cont !== 'evropa') return days >= MIN_DAYS_FAR;    // Maroko, Egipt, Gruzija …
+  if (days >= MIN_DAYS_EU) return true;
+  return days >= SHORT_EU_DAYS && price < SHORT_EU_MAX;          // 3 dni le pri res nizki ceni
+}
 
 const ORIGINS = [
   {code:'LJU', city:'Ljubljana'}, {code:'TRS', city:'Trst'}, {code:'VCE', city:'Benetke'},
@@ -329,14 +358,17 @@ function pickTerms(data, avg, km, opt){
       const ret = d.return_at ? d.return_at.slice(0,10) : null;
       const hol = holidaysFor(depart);
       const code = d.airline || '';
+      const nights = ret ? Math.round((new Date(ret)-new Date(depart))/86400000) : null;
       return { depart, ret, price:Math.round(d.price), airline:code, airlineName:airName(code),
         bag:bagTier(code, km), transfers:d.transfers??0,
-        nights: ret ? Math.round((new Date(ret)-new Date(depart))/86400000) : null,
+        nights, days: nights!=null ? nights+1 : null,
         discount: Math.max(0, Math.round((avg-d.price)/avg*100)),
         hol: hol.length ? hol : undefined,
         // pravilo 5: vedno Aviasales z Mišinim markerjem
         url: 'https://www.aviasales.com'+d.link+'&marker='+MARKER };
-    });
+    })
+    // DOLŽINA POTOVANJA (Mišino pravilo) — prekratkih izletov ne objavljamo
+    .filter(t => tripOK(t.nights, opt && opt.cont, km, t.price));
 }
 // Združi termine na eno kartico (pravilo 4): brez podvojenih datumov, urejeno po datumu.
 function mergeTerms(){
@@ -353,10 +385,11 @@ function cardStats(terms, avg){
     discount: Math.max(0, Math.round((avg-fromPrice)/avg*100)),
     holidays: [...new Set(terms.flatMap(t=>t.hol||[]))] };
 }
+function contOf(code){ const ci = CITY[code]; const cat = ci && CATALOG[ci.cc]; return cat ? cat.cont : null; }
 function routeTerms(data, fromCode, code, meta){
   const avg = routeAvg(data, fromCode, code, meta);
   if (avg == null) return null;
-  const terms = pickTerms(data, avg, distKm(fromCode, code)).slice(0,MAX_TERMS).sort((a,b)=>a.depart<b.depart?-1:1);
+  const terms = pickTerms(data, avg, distKm(fromCode, code), {cont:contOf(code)}).slice(0,MAX_TERMS).sort((a,b)=>a.depart<b.depart?-1:1);
   if (!terms.length) return null;
   const r = cardStats(terms, avg);
   r.rawAvg = avg;
@@ -398,7 +431,7 @@ for (const o of ORIGINS) {
     const depMonth = +it.depart_date.slice(5,7);
     if (!SEASON[cat.season].m.includes(depMonth)) { dropSeason++; continue; }
     const nights = nightsBetween(it.depart_date, it.return_date);
-    if (nights < minNights(it.distance||0) || nights > 30) { dropNights++; continue; }
+    if (!tripOK(nights, cat.cont, it.distance||distKm(o.code,dest), it.value)) { dropNights++; continue; }
     const key = o.code+'|'+dest;
     if (cand[key] && cand[key].hint <= it.value) continue;
     cand[key] = { fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
@@ -491,11 +524,11 @@ for (const d of picked) {
   if (avg == null) { noDeal++; continue; }
   const km = distKm(d.fromCode, d.code);
 
-  let found = pickTerms(base, avg, km);                     // najcenejši čez celo leto
+  let found = pickTerms(base, avg, km, {cont:d.continent});   // najcenejši čez celo leto
   for (const mth of monthList) {
     const data = await forDates(d.fromCode, d.code, mth); calls++; await sleep(SLEEP_MS);
     if (!data.length) continue;
-    found = found.concat(pickTerms(data, avg, km));         // pravilo 2 glede na letno povprečje
+    found = found.concat(pickTerms(data, avg, km, {cont:d.continent}));   // pravilo 2 glede na letno povprečje
 
     // Počitniški termini se primerjajo tudi s povprečjem SVOJEGA obdobja
     // (božični let skoraj nikoli ni 40 % pod letnim povprečjem — takrat so cene višje za vse).
@@ -508,7 +541,7 @@ for (const d of picked) {
       const wp = inWin.map(x=>x.price);
       if (wp.length < 3) continue;
       const holAvg = wp.reduce((a,b)=>a+b,0)/wp.length;
-      const extra = pickTerms(inWin, holAvg, km, {window:w}).map(t => {
+      const extra = pickTerms(inWin, holAvg, km, {window:w, cont:d.continent}).map(t => {
         t.holAvg = Math.round(holAvg); t.holName = w.name; t.holDiscount = t.discount;
         t.discount = Math.max(0, Math.round((avg-t.price)/avg*100));
         return t;

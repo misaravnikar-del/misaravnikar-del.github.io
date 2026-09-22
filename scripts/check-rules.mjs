@@ -88,6 +88,23 @@ if (noAir.length > all.length * 0.1) fail.push(`8. Manjka ime letalske družbe p
 else if (noAir.length) warn.push(`8. Ime prevoznika ni znano pri ${noAir.length} terminih (koda ni v imeniku): ${cap(noAir)}`);
 if (noBag.length) fail.push(`8. Manjka oznaka prtljage: ${cap(noBag)}`);
 
+// --- 9. dolžina potovanja (evropske ≥4 dni, izven Evrope ≥7, zelo oddaljene ≥10) ---
+const D = { eu:4, shortEu:3, shortEuMax:40, far:7, veryFar:10, veryFarKm:7000, max:31 };
+const badLen = [];
+for (const d of all)
+  for (const t of (d.terms || [])) {
+    const days = t.days != null ? t.days : (t.nights != null ? t.nights + 1 : null);
+    if (days == null) { badLen.push(`${d.fromCode}→${d.code} ${t.depart} (brez datuma vrnitve)`); continue; }
+    const far = d.continent && d.continent !== 'evropa';
+    // (mejo za »zelo oddaljene« ≥10 dni uveljavi fetch-deals.mjs, kjer pozna razdaljo;
+    //  tu preverimo evropsko ≥4 dni in izven-evropsko ≥7 dni)
+    const ok = days <= D.max && (
+      far ? days >= D.far
+          : (days >= D.eu || (days >= D.shortEu && t.price < D.shortEuMax)));
+    if (!ok) badLen.push(`${d.fromCode}→${d.code} ${t.depart} ${days} dni ${t.price}€${far?' (izven Evrope)':''}`);
+  }
+if (badLen.length) fail.push(`9. Prekratko (ali predolgo) potovanje: ${cap(badLen)}`);
+
 // --- 7. zdravje ---
 if (curated.length < 3) fail.push(`7. Premalo kuriranih akcij: ${curated.length} (najmanj 3)`);
 if (discover.length < 25) fail.push(`7. Premalo odkritih kartic: ${discover.length} (najmanj 25)`);

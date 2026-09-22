@@ -1657,6 +1657,8 @@ function fmtISO(s){var p=String(s).split('-');return [+p[0],+p[1],+p[2]];}
 function fmtRangeISO(dep,ret){var a=fmtISO(dep);if(!ret)return a[2]+'. '+MON[a[1]-1]+' '+a[0];var b=fmtISO(ret);var left=(a[0]===b[0])?(a[2]+'. '+MON[a[1]-1]):(a[2]+'. '+MON[a[1]-1]+' '+a[0]);return left+' – '+b[2]+'. '+MON[b[1]-1]+' '+b[0];}
 function fmtUpdated(iso){if(!iso)return 'danes';var d=new Date(iso);return d.getDate()+'. '+MON[d.getMonth()]+' '+d.getFullYear();}
 function airOf(t){return t.airlineName||t.airline||'';}
+// Miša misli v DNEVIH (odhod v čet., vrnitev v ned. = 4 dni), zato jih tako tudi pišemo.
+function dniTxt(t){var d=t.days!=null?t.days:(t.nights!=null?t.nights+1:null);if(!d)return '';return ' · '+d+(d===1?' dan':(d===2?' dneva':(d<5?' dni':' dni')));}
 function termSub(t){return (airOf(t)?esc(airOf(t))+' · ':'')+(t.transfers>0?(t.transfers+(t.transfers===1?' prestop':(t.transfers===2?' prestopa':' prestopi'))):'direktno');}
 // Prtljaga: privzeta politika prevoznika (nizkocenovnik → samo majhna torba; klasični prevoznik →
 // ročna, na dolgih letih tudi oddana). Konkretna vozovnica se lahko razlikuje — tako tudi piše.
@@ -1703,7 +1705,7 @@ function detailHTML(d){
     '<li><a href="'+t.url+'" target="_blank" rel="noopener">'
     +'<span class="term__l"><span class="term__date">'+fmtRangeISO(t.depart,t.ret)
     +holChip(t)+'</span>'
-    +'<span class="term__sub">'+termSub(t)+(t.nights?' · '+t.nights+' noči':'')+bagHTML(t.bag)+'</span></span>'
+    +'<span class="term__sub">'+termSub(t)+dniTxt(t)+bagHTML(t.bag)+'</span></span>'
     +'<span class="term__r"><span class="term__price">od '+t.price+' €</span>'
     +'<svg class="term__go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>').join('');
   return ''
@@ -1920,7 +1922,7 @@ function ponudbaHTML(key){
     return '<li><a href="'+t.url+'" target="_blank" rel="noopener">'
       +'<span class="term__l"><span class="term__date">'+fmtRangeISO(t.depart,t.ret)
         +holChip(t)+'</span>'
-      +'<span class="term__sub">'+termSub(t)+(t.nights?' · '+t.nights+' noči':'')+bagHTML(t.bag)+'</span></span>'
+      +'<span class="term__sub">'+termSub(t)+dniTxt(t)+bagHTML(t.bag)+'</span></span>'
       +'<span class="term__r"><span class="term__price">'+t.price+' €</span>'
       +'<svg class="term__go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>';
   }).join('');
