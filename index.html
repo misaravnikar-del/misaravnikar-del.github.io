@@ -913,8 +913,10 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 .about{position:relative}
 .about__hero,.about__stats,.about__story,.wm__legend{position:relative;z-index:1}
 
+/* Svet sega od roba do roba risbe, zato mora biti zemljevid natanko čez širino
+   zaslona — širši bi odrezal Aljasko na levi in Avstralijo oz. Novo Zelandijo na desni. */
 .wm{position:absolute;z-index:0;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:150vw;max-width:none;pointer-events:none;
+  width:100vw;max-width:100vw;pointer-events:none;
   -webkit-mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent);
   mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent)}
 .wm__stage{position:relative;line-height:0;pointer-events:none}
@@ -953,7 +955,7 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
   .about__stats .about__stat:last-child{grid-column:1/-1}
   .wm__tip{max-width:170px;padding:9px 12px}
   .wm__tip b{font-size:.98rem}
-  .wm{width:200vw}
+
 }
 
 </style>
@@ -2092,6 +2094,13 @@ function initAbout(){
     box.hidden=false;
     var lg=document.getElementById('wmLegend'); if(lg) lg.hidden=false;
     stage.insertAdjacentHTML('afterbegin', WMAP.svg);
+    // Odrežemo prazen ocean okoli kopnega (spodaj ga je ~130 px), da zemljevid
+    // zavzame več prostora, ne da bi karkoli izpadlo.
+    try{
+      var _svg=stage.querySelector('svg'), _g=_svg.querySelector('.wm__land'), _b=_g.getBBox();
+      if(_b.width&&_b.height) _svg.setAttribute('viewBox',
+        (_b.x-4)+' '+(_b.y-4)+' '+(_b.width+8)+' '+(_b.height+8));
+    }catch(e){}
 
     var set={}; visited.forEach(function(c){set[c]=1;});
     [].forEach.call(stage.querySelectorAll('[data-cc]'),function(el){
@@ -2168,7 +2177,7 @@ function initAbout(){
       paintPhoto(cc, p?p.photo:null);
       var c=WMAP.centers[cc]; if(!c) return;
       var rect=stage.getBoundingClientRect(), vb=svg.viewBox.baseVal;
-      var x=c[0]/vb.width*rect.width, y=c[1]/vb.height*rect.height;
+      var x=(c[0]-vb.x)/vb.width*rect.width, y=(c[1]-vb.y)/vb.height*rect.height;
       nm.textContent=m.sl||cc;
       sub.textContent=m.cont||'';
       ct.textContent=p?('na sliki: '+p.city):'';
