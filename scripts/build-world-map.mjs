@@ -4,9 +4,12 @@
 // Zagon: node scripts/build-world-map.mjs
 import { writeFileSync, mkdirSync } from 'node:fs';
 
-const SRC = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson';
-const W = 1000;                    // širina risbe
-const MIN_AREA = 0.55;             // izpusti drobne otoke (v enotah risbe²)
+// 50m namesto 110m: bistveno natančnejši obrisi in prave oblike majhnih držav in otokov
+// (Malta, Maldivi, Singapur, Karibi … v 110m sploh niso obstajali).
+const SRC = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson';
+const W = Number(process.env.MAP_W || 1800);   // širina risbe (večja = natančneje)
+const MIN_AREA = Number(process.env.MIN_AREA || 0.09);  // izpusti le res drobne pikice
+const EPS = Number(process.env.EPS || 0.20);   // poenostavitev obrisa v pikslih risbe
 
 // ---- Robinsonova projekcija (standardna tabela na 5° širine) ----
 const RX = [1,0.9986,0.9954,0.99,0.9822,0.973,0.96,0.9427,0.9216,0.8962,0.8679,0.835,0.7986,0.7597,0.7186,0.6732,0.6213,0.5722,0.5322];
@@ -24,30 +27,81 @@ const S = W / (2 * XMAX), H = Math.round(2 * YMAX * S);
 const px = (lon, lat) => { const [x,y] = robinson(lon, lat); return [ (x + XMAX) * S, (YMAX - y) * S ]; };
 
 const r1 = n => Math.round(n * 10) / 10;
-function ringPath(ring){
-  let d = '', prev = null, area = 0;
-  for (const [lon, lat] of ring) {
-    const [x, y] = px(lon, lat);
+// Douglas–Peucker: odvrže točke, ki se od ravne črte odmikajo manj kot EPS — obris ostane
+// na oko enak, datoteka pa je nekajkrat manjša.
+// ⚠️ Obroči držav so SKLENJENI (prva točka = zadnja). Če DP poženemo kar čez cel obroč,
+// sta sidri enaki in razdalja do "črte" je neskončna — zato obroč najprej razrežemo na
+// dva dela pri najbolj oddaljeni točki in vsakega poenostavimo posebej.
+function dp(pts, eps){
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length-1] = 1;
+  const stack = [[0, pts.length-1]];
+  while (stack.length) {
+    const [a, b] = stack.pop();
+    if (b - a < 2) continue;
+    const [ax, ay] = pts[a], [bx, by] = pts[b];
+    const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
+    let max = -1, idx = -1;
+    for (let i = a + 1; i < b; i++) {
+      const [x, y] = pts[i];
+      const dist = len < 1e-9
+        ? Math.hypot(x - ax, y - ay)
+        : Math.abs(dy * x - dx * y + bx * ay - by * ax) / len;
+      if (dist > max) { max = dist; idx = i; }
+    }
+    if (max > eps && idx > 0) { keep[idx] = 1; stack.push([a, idx], [idx, b]); }
+  }
+  const out = []; for (let i = 0; i < pts.length; i++) if (keep[i]) out.push(pts[i]);
+  return out;
+}
+function simplify(pts, eps){
+  let p = pts;
+  const n = p.length;
+  if (n > 2 && p[0][0] === p[n-1][0] && p[0][1] === p[n-1][1]) p = p.slice(0, n-1);
+  if (p.length < 5) return p;
+  let far = 1, best = -1;
+  for (let i = 1; i < p.length; i++) {
+    const d = Math.hypot(p[i][0] - p[0][0], p[i][1] - p[0][1]);
+    if (d > best) { best = d; far = i; }
+  }
+  const a = dp(p.slice(0, far + 1), eps);
+  const b = dp(p.slice(far), eps);
+  return a.concat(b.slice(1));
+}
+function ringPath(ring, min){
+  let pts = [];
+  for (const [lon, lat] of ring) pts.push(px(lon, lat));
+  let area = 0;
+  for (let i = 0; i < pts.length; i++) { const [x1,y1]=pts[i], [x2,y2]=pts[(i+1)%pts.length]; area += x1*y2 - x2*y1; }
+  area = Math.abs(area) / 2;
+  if (area < (min == null ? MIN_AREA : min)) return { d:'', area };
+  pts = simplify(pts, EPS);
+  if (pts.length < 3) return { d:'', area };
+  let d = '', prev = null;
+  for (const [x, y] of pts) {
     const X = r1(x), Y = r1(y);
-    if (prev && X === prev[0] && Y === prev[1]) continue;     // poenostavi
+    if (prev && X === prev[0] && Y === prev[1]) continue;
     d += (prev ? 'L' : 'M') + X + ' ' + Y;
-    if (prev) area += prev[0] * Y - X * prev[1];
     prev = [X, Y];
   }
-  return { d: d ? d + 'Z' : '', area: Math.abs(area) / 2 };
+  return { d: d ? d + 'Z' : '', area };
 }
-function polyPath(coords, type){
+function polyPath(coords, type, minArea){
   const polys = type === 'Polygon' ? [coords] : coords;
+  const min = minArea == null ? MIN_AREA : minArea;
   let out = '';
   for (const poly of polys) {
-    const outer = ringPath(poly[0]);
-    if (outer.area < MIN_AREA) continue;                      // drobni otoki ven
+    const outer = ringPath(poly[0], min);
+    if (!outer.d) continue;                                   // drobni otoki ven
     out += outer.d;
     for (let i = 1; i < poly.length; i++) {                   // luknje (npr. Lesoto v JAR)
-      const hole = ringPath(poly[i]);
-      if (hole.area >= MIN_AREA) out += hole.d;
+      const hole = ringPath(poly[i], min);
+      if (hole.d) out += hole.d;
     }
   }
+  // Država, ki je sestavljena iz samih drobnih otokov (Maldivi, Monako …), bi sicer izpadla.
+  // Raje ji spustimo prag, kot da bi jo narisali kot piko.
+  if (!out && min > 0.004) return polyPath(coords, type, min / 6);
   return out;
 }
 

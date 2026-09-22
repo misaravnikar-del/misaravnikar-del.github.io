@@ -922,16 +922,19 @@ section{scroll-margin-top:78px}
   border:2px solid var(--accent-2);opacity:.65;animation:wmPulse 2s ease-out infinite}
 @keyframes wmPulse{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.7);opacity:0}}
 
-.wm__card{position:absolute;z-index:6;width:200px;background:var(--surface);border:1px solid var(--line);
-  border-radius:14px;box-shadow:var(--shadow-lg);overflow:hidden;pointer-events:none;line-height:1.4;
-  opacity:0;transform:translateY(8px) scale(.97);transition:opacity .22s,transform .22s}
-.wm__card.on{opacity:1;transform:translateY(0) scale(1)}
-.wm__card img{width:100%;height:118px;object-fit:cover;display:block;background:var(--bg-2)}
-.wm__card b{display:block;padding:10px 12px 2px;font-size:.95rem;color:var(--ink)}
-.wm__card small{display:block;padding:0 12px 11px;color:var(--muted);font-size:.8rem}
-.wm__hint{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;
-  color:var(--muted);font-size:.85rem;text-align:center}
-.wm__hint svg{flex:none;opacity:.7}
+.wm__shape{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:26px;align-items:center;
+  margin-top:16px;padding:18px 20px;border-top:1px solid var(--line);min-height:210px}
+.wm__shape svg{width:100%;height:190px;display:block;overflow:visible;
+  filter:drop-shadow(0 10px 22px rgba(16,32,31,.28))}
+.wm__shape path{stroke:var(--surface);stroke-width:1.6;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.wm__meta h3{font-size:clamp(1.5rem,3.6vw,2.3rem);margin:0;letter-spacing:-.01em}
+.wm__meta .sub{color:var(--muted);font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;
+  text-transform:uppercase;margin-top:8px}
+.wm__meta .city{color:var(--ink-2);margin-top:12px;font-size:1rem}
+.wm__meta .city b{color:var(--ink)}
+.wm__empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:.95rem;padding:30px 0}
+.wm__fade{animation:wmIn .45s ease both}
+@keyframes wmIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .wm__legend{display:flex;gap:18px;justify-content:center;margin-top:10px;font-size:.82rem;color:var(--muted)}
 .wm__legend i{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-right:7px}
 .wm__legend .a{background:var(--accent)} .wm__legend .b{background:var(--bg-2);border:1px solid var(--line)}
@@ -948,7 +951,8 @@ section{scroll-margin-top:78px}
   .about__stats{grid-template-columns:1fr 1fr;max-width:420px}
   .about__stats .about__stat:last-child{grid-column:1/-1}
   .wm{padding:10px;border-radius:16px}
-  .wm__card{width:158px} .wm__card img{height:92px}
+  .wm__shape{grid-template-columns:1fr;gap:12px;text-align:center;padding:14px 6px;min-height:0}
+  .wm__shape svg{height:150px}
 }
 
 </style>
@@ -2043,10 +2047,9 @@ function onasHTML(){
         +'<div class="about__stat"><b>vsak dan</b><span>lov na cene</span></div>'
       +'</div>'
       +'<div class="wm" id="wmBox" hidden>'
-        +'<div class="wm__stage" id="wmStage">'
-          +'<div class="wm__pin" id="wmPin"></div>'
-          +'<div class="wm__card" id="wmCard"><img id="wmImg" alt=""><b id="wmName"></b><small id="wmCity"></small></div>'
-        +'</div>'
+        +'<div class="wm__stage" id="wmStage"><div class="wm__pin" id="wmPin"></div></div>'
+        +'<div class="wm__shape" id="wmShape"><div id="wmSil"></div>'
+          +'<div class="wm__meta"><h3 id="wmName">—</h3><div class="sub" id="wmSub"></div><div class="city" id="wmCity"></div></div></div>'
         +'<div class="wm__legend"><span><i class="a"></i>kjer sem že bila</span><span><i class="b"></i>še na seznamu</span></div>'
         +'<div class="wm__hint"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 7 16 2-7 7-2z"/></svg><span>Povleci miško čez zemljevid — vsaka država skriva svojo sliko.</span></div>'
       +'</div>'
@@ -2097,45 +2100,109 @@ function initAbout(){
     var cs={}; visited.forEach(function(c){ var m=WMAP.meta[c]; if(m&&m.cont) cs[m.cont]=1; });
     document.getElementById('abConts').textContent=Object.keys(cs).length||1;
 
-    var pin=document.getElementById('wmPin'), card=document.getElementById('wmCard');
-    var img=document.getElementById('wmImg'), nm=document.getElementById('wmName'), ct=document.getElementById('wmCity');
+    var pin=document.getElementById('wmPin');
+    var sil=document.getElementById('wmSil'), nm=document.getElementById('wmName');
+    var sub=document.getElementById('wmSub'), ct=document.getElementById('wmCity');
     var svg=stage.querySelector('svg');
-    var timer=null, idx=0, hovering=0;
+    var timer=null, idx=0, hovering=0, cur=null, uid=0;
     var withPhoto=visited.filter(function(c){return WMAP.photos[c]&&WMAP.photos[c].length;});
     var pool=withPhoto.length?withPhoto:visited;
 
+    // Fotografijo obrežemo v obliko države (SVG vzorec + pot te države).
+    // ⚠️ Nekatere države imajo v podatkih tudi čezmorska ozemlja (Francija → Francoska Gvajana
+    // in Reunion, ZDA → Aljaska in Havaji, Španija → Kanarski otoki). Če bi vzeli kar celoten
+    // obseg, bi bila matična država videti kot pika. Zato obdržimo samo glavni kos in otoke,
+    // ki so mu blizu.
+    var measurer=null;
+    function measure(d){
+      if(!measurer){
+        measurer=document.createElementNS('http://www.w3.org/2000/svg','svg');
+        measurer.setAttribute('width','0'); measurer.setAttribute('height','0');
+        measurer.style.cssText='position:absolute;left:-9999px;top:0;overflow:hidden';
+        document.body.appendChild(measurer);
+      }
+      var pe=document.createElementNS('http://www.w3.org/2000/svg','path');
+      pe.setAttribute('d',d); measurer.appendChild(pe);
+      var b; try{ b=pe.getBBox(); }catch(e){ b=null; }
+      measurer.removeChild(pe);
+      return b;
+    }
+    var silCache={};
+    function mainShape(cc, d){
+      if(silCache[cc]) return silCache[cc];
+      var parts=d.split('M').filter(Boolean).map(function(x){return 'M'+x;});
+      var boxes=[];
+      for(var i=0;i<parts.length;i++){
+        var b=measure(parts[i]); if(!b||!b.width||!b.height) continue;
+        boxes.push({d:parts[i],b:b,a:b.width*b.height,
+          cx:b.x+b.width/2, cy:b.y+b.height/2});
+      }
+      if(!boxes.length) return null;
+      boxes.sort(function(x,y){return y.a-x.a;});
+      var main=boxes[0], reach=Math.max(main.b.width,main.b.height)*3+18;
+      var keep=boxes.filter(function(o){
+        return o===main || Math.hypot(o.cx-main.cx,o.cy-main.cy)<=reach;
+      });
+      var x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity,dd='';
+      keep.forEach(function(o){ dd+=o.d;
+        x0=Math.min(x0,o.b.x); y0=Math.min(y0,o.b.y);
+        x1=Math.max(x1,o.b.x+o.b.width); y1=Math.max(y1,o.b.y+o.b.height); });
+      var res={d:dd, x:x0, y:y0, w:x1-x0, h:y1-y0};
+      silCache[cc]=res; return res;
+    }
+    function silhouette(cc, photo){
+      var src=stage.querySelector('path[data-cc="'+cc+'"]'); if(!src) return;
+      var sh=mainShape(cc, src.getAttribute('d')); if(!sh||!sh.w||!sh.h) return;
+      var pad=Math.max(sh.w,sh.h)*0.04;
+      var vb=(sh.x-pad)+' '+(sh.y-pad)+' '+(sh.w+pad*2)+' '+(sh.h+pad*2);
+      // vzorec pokrije kvadraten obseg, da slika ni raztegnjena
+      var side=Math.max(sh.w,sh.h);
+      var pxx=sh.x+sh.w/2-side/2, pyy=sh.y+sh.h/2-side/2;
+      var id='wmp'+(++uid);
+      var defs=photo
+        ? '<defs><pattern id="'+id+'" patternUnits="userSpaceOnUse" x="'+pxx+'" y="'+pyy+'" width="'+side+'" height="'+side+'">'
+          +'<image href="'+photo+'" xlink:href="'+photo+'" x="0" y="0" width="'+side+'" height="'+side+'" preserveAspectRatio="xMidYMid slice"/>'
+          +'</pattern></defs>' : '';
+      sil.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" '
+        +'viewBox="'+vb+'" preserveAspectRatio="xMidYMid meet" class="wm__fade">'+defs
+        +'<path d="'+sh.d+'" fill="'+(photo?'url(#'+id+')':'var(--accent)')+'"/></svg>';
+    }
+
     function show(cc){
-      var c=WMAP.centers[cc]; if(!c) return;
-      var rect=stage.getBoundingClientRect(), vb=svg.viewBox.baseVal;
-      var x=c[0]/vb.width*rect.width, y=c[1]/vb.height*rect.height;
-      pin.style.left=x+'px'; pin.style.top=y+'px'; pin.classList.add('on');
+      if(cc===cur) return; cur=cc;
+      var c=WMAP.centers[cc];
+      if(c){
+        var rect=stage.getBoundingClientRect(), vb=svg.viewBox.baseVal;
+        pin.style.left=(c[0]/vb.width*rect.width)+'px';
+        pin.style.top=(c[1]/vb.height*rect.height)+'px';
+        pin.classList.add('on');
+      }
       var m=WMAP.meta[cc]||{}, list=WMAP.photos[cc]||[];
+      var p=list.length?list[Math.floor(Math.random()*list.length)]:null;
       nm.textContent=m.sl||cc;
-      if(list.length){ var p=list[Math.floor(Math.random()*list.length)];
-        img.src=p.photo; img.alt=p.city; img.hidden=false; ct.textContent=p.city+(m.cont?' · '+m.cont:''); }
-      else { img.hidden=true; img.removeAttribute('src'); ct.textContent=m.cont||''; }
-      card.classList.add('on');
-      var cw=card.offsetWidth||200, ch=card.offsetHeight||190;
-      card.style.left=Math.min(Math.max(x-cw/2,6), Math.max(6,rect.width-cw-6))+'px';
-      card.style.top=(y-ch-16<6 ? y+18 : y-ch-16)+'px';
+      sub.textContent=m.cont||'';
+      ct.innerHTML=p?('na sliki: <b>'+p.city+'</b>'):'fotografije še nimamo';
+      silhouette(cc, p?p.photo:null);
     }
     function mark(cc){
       [].forEach.call(stage.querySelectorAll('.v.on'),function(e){e.classList.remove('on');});
       var el=stage.querySelector('[data-cc="'+cc+'"]'); if(el) el.classList.add('on');
     }
-    function cycle(){ if(hovering||!pool.length) return; var cc=pool[idx%pool.length]; idx++; mark(cc); show(cc); }
+    function pick(cc){ mark(cc); show(cc); }
+    function cycle(){ if(hovering||!pool.length) return; pick(pool[idx%pool.length]); idx++; }
 
     stage.addEventListener('mousemove',function(e){
       var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null;
-      if(t&&t.classList.contains('v')){ hovering=1; mark(t.getAttribute('data-cc')); show(t.getAttribute('data-cc')); }
+      if(t&&t.classList.contains('v')) { hovering=1; pick(t.getAttribute('data-cc')); }
     });
     stage.addEventListener('mouseleave',function(){ hovering=0; });
     stage.addEventListener('click',function(e){
       var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null;
-      if(t&&t.classList.contains('v')){ hovering=1; mark(t.getAttribute('data-cc')); show(t.getAttribute('data-cc'));
-        setTimeout(function(){hovering=0;},5000); }
+      if(t&&t.classList.contains('v')){ hovering=1; pick(t.getAttribute('data-cc'));
+        setTimeout(function(){hovering=0;},6000); }
     });
-    addEventListener('resize',function(){ if(!box.hidden&&pool.length) show(pool[(idx-1+pool.length)%pool.length]); });
+    addEventListener('resize',function(){ var k=cur; cur=null; if(k) show(k); });
+
     idx=Math.floor(Math.random()*pool.length);
     cycle(); timer=setInterval(cycle,2600);
   }).catch(function(){});
