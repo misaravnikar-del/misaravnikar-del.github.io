@@ -904,21 +904,28 @@ section{scroll-margin-top:78px}
 .about__stat span{display:block;margin-top:7px;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.16em;
   text-transform:uppercase;color:var(--muted)}
 
-/* ---- zemljevid: čez celo širino strani, brez okvirja ---- */
-/* Stran O nas dobi belo ozadje (v temni temi ustrezno temno). */
+/* ---- zemljevid kot PODLAGA cele strani, besedilo čezenj ---- */
 body.about-page{background:var(--surface)}
-body.about-page .page{overflow-x:clip}            /* da polna širina ne naredi vodoravnega drsnika */
-body.about-page .about__stat{background:var(--bg-2);border-color:transparent}
+body.about-page .page{overflow-x:clip}
+body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,transparent);
+  border-color:var(--line);backdrop-filter:blur(3px)}
 
-.wm{position:relative;width:100vw;max-width:100vw;margin-inline:calc(50% - 50vw);
-  margin-top:.5rem;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
-.wm__stage{position:relative;line-height:0}
+.about{position:relative}
+.about__hero,.about__stats,.about__story,.wm__legend{position:relative;z-index:1}
+
+.wm{position:absolute;z-index:0;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:150vw;max-width:none;pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent);
+  mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent)}
+.wm__stage{position:relative;line-height:0;pointer-events:none}
 .wm__stage>svg{width:100%;height:auto;display:block;overflow:visible}
-/* Zemljevid je mehko prosojen — deluje kot ozadje, ne kot glavni grafični element. */
-.wm__land path,.wm__land circle{fill:var(--ink);fill-opacity:.06;
-  stroke:var(--surface);stroke-width:.9;transition:fill-opacity .25s ease}
-.wm__land .v{fill:var(--accent);fill-opacity:.38;cursor:pointer}
-.wm__land .v:hover,.wm__land .v.on{fill-opacity:.82}
+/* Zemljevid je podlaga: zelo mehak, da besedilo nad njim ostane berljivo.
+   Klikati in loviti z miško se da samo države same, ne cela škatla. */
+.wm__land path,.wm__land circle{fill:var(--ink);fill-opacity:.05;
+  stroke:var(--surface);stroke-width:.9;transition:fill-opacity .25s ease;pointer-events:auto}
+.wm__land .v{fill:var(--accent);fill-opacity:.30;cursor:pointer}
+.wm__land .v:hover,.wm__land .v.on{fill-opacity:.72}
+
 .wm__tip{position:absolute;z-index:6;max-width:230px;background:var(--surface);
   border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);
   padding:11px 15px;pointer-events:none;line-height:1.35;
@@ -929,12 +936,10 @@ body.about-page .about__stat{background:var(--bg-2);border-color:transparent}
   letter-spacing:.15em;text-transform:uppercase;margin-top:5px}
 .wm__tip .city{display:none}
 .wm__land .shot{stroke:var(--surface);stroke-width:1.4}
-.wm__legend{display:flex;gap:20px;justify-content:center;margin-top:18px;font-size:.84rem;color:var(--muted)}
+.wm__legend{display:flex;gap:20px;justify-content:center;margin-top:2.6rem;font-size:.84rem;color:var(--muted)}
 .wm__legend i{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-right:7px}
-.wm__legend .a{background:var(--accent)} .wm__legend .b{background:var(--bg-2)}
-.wm__hint{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;
-  color:var(--muted);font-size:.85rem;text-align:center}
-.wm__hint svg{flex:none;opacity:.7}
+.wm__legend .a{background:color-mix(in srgb,var(--accent) 45%,transparent)}
+.wm__legend .b{background:color-mix(in srgb,var(--ink) 10%,transparent)}
 .about__story{max-width:62ch;margin:3.2rem auto 0}
 .about__story h2{font-size:clamp(1.5rem,3.4vw,2.1rem);margin:0 0 .8rem}
 .about__story p{color:var(--ink-2);line-height:1.75;margin:0 0 1.05rem;font-size:1.02rem}
@@ -948,6 +953,7 @@ body.about-page .about__stat{background:var(--bg-2);border-color:transparent}
   .about__stats .about__stat:last-child{grid-column:1/-1}
   .wm__tip{max-width:170px;padding:9px 12px}
   .wm__tip b{font-size:.98rem}
+  .wm{width:200vw}
 }
 
 </style>
@@ -2031,6 +2037,11 @@ var WM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 function onasHTML(){
   return '<div class="page"><div class="container">'+BACK
     +'<div class="about">'
+      +'<div class="wm" id="wmBox" hidden>'
+        +'<div class="wm__stage" id="wmStage">'
+          +'<div class="wm__tip" id="wmTip"><b id="wmName"></b><span id="wmSub"></span><span class="city" id="wmCity"></span></div>'
+        +'</div>'
+      +'</div>'
       +'<div class="about__hero">'
         +'<p class="eyebrow">O nas</p>'
         +'<h1>Potovanja so strast. <em>Nizke cene</em> so šport.</h1>'
@@ -2041,12 +2052,6 @@ function onasHTML(){
         +'<div class="about__stat"><b id="abConts">6</b><span>celin</span></div>'
         +'<div class="about__stat"><b>vsak dan</b><span>lov na cene</span></div>'
       +'</div>'
-      +'<div class="wm" id="wmBox" hidden>'
-        +'<div class="wm__stage" id="wmStage">'
-          +'<div class="wm__tip" id="wmTip"><b id="wmName"></b><span id="wmSub"></span><span class="city" id="wmCity"></span></div></div>'
-        +'<div class="wm__legend"><span><i class="a"></i>kjer sem že bila</span><span><i class="b"></i>še na seznamu</span></div>'
-        +'<div class="wm__hint"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 7 16 2-7 7-2z"/></svg><span>Povleci miško čez zemljevid.</span></div>'
-      +'</div>'
       +'<div class="about__story">'
         +'<h2>Kako je nastal Bookiraj.si</h2>'
         +'<p>Vse se je začelo z navado. Vsako jutro sem <strong>preverjala cene letalskih kart</strong> — ne zato, ker bi morala, ampak ker me je zanimalo, kam se da tisti teden odleteti za manj, kot stane vikend doma.</p>'
@@ -2056,6 +2061,7 @@ function onasHTML(){
         +'<p>Brez desetih odprtih zavihkov in brez ugibanja, ali je cena dobra. Kar vidiš na strani, je preverjeno isti dan.</p>'
         +'<div class="about__cta"><a class="btn btn--lg" href="#letalske-karte">Poglej današnje akcije</a></div>'
       +'</div>'
+      +'<div class="wm__legend" id="wmLegend" hidden><span><i class="a"></i>kjer sem že bila</span><span><i class="b"></i>še na seznamu</span></div>'
     +'</div>'
   +'</div></div>';
 }
@@ -2084,6 +2090,7 @@ function initAbout(){
     var stage=document.getElementById('wmStage');
     if(!stage||!document.body.contains(stage)) return;
     box.hidden=false;
+    var lg=document.getElementById('wmLegend'); if(lg) lg.hidden=false;
     stage.insertAdjacentHTML('afterbegin', WMAP.svg);
 
     var set={}; visited.forEach(function(c){set[c]=1;});
@@ -2176,7 +2183,6 @@ function initAbout(){
       var el=stage.querySelector('[data-cc="'+cc+'"]'); if(el) el.classList.add('on');
     }
     function pick(cc){ mark(cc); show(cc); }
-    function cycle(){ if(hovering||!pool.length) return; pick(pool[idx%pool.length]); idx++; }
 
     stage.addEventListener('mousemove',function(e){
       var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null;
@@ -2190,8 +2196,8 @@ function initAbout(){
     });
     addEventListener('resize',function(){ var k=cur; cur=null; if(k) show(k); });
 
-    idx=Math.floor(Math.random()*pool.length);
-    cycle(); timer=setInterval(cycle,2600);
+    // Zemljevid je podlaga: nič se ne premika samo od sebe. Ime države se pokaže
+    // samo takrat, ko greš z miško čeznjo.
   }).catch(function(){});
 }
 
