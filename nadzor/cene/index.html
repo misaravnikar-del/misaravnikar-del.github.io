@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Zgodovina cen — Bookiraj.si</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --accent:#0C7F93; --accent2:#37C1D5; --ink:#12292f; --ink2:#3c5359;
+  --muted:#6c8188; --bg:#f4f8f9; --bg2:#eaf2f4; --surface:#ffffff;
+  --line:#e0eaec; --good:#1f9d6b; --warn:#d9822b; --bad:#c0392b;
+  --shadow:0 6px 22px rgba(18,41,47,.07); --radius:18px;
+  --fd:"Playfair Display",Georgia,serif; --fb:"Hanken Grotesk",system-ui,sans-serif; --fm:"IBM Plex Mono",monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:var(--fb);color:var(--ink);background:
+  radial-gradient(1200px 500px at 80% -10%, #dff1f4 0, transparent 60%),
+  radial-gradient(900px 500px at -10% 10%, #eaf3ea 0, transparent 55%), var(--bg);
+  min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.wrap{max-width:1100px;margin:0 auto;padding:26px 18px 60px}
+
+.gate{min-height:82vh;display:flex;align-items:center;justify-content:center}
+.gate__card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:34px 30px;max-width:400px;width:100%;text-align:center}
+.gate__logo{font-family:var(--fd);font-weight:800;font-size:26px;letter-spacing:-.5px}
+.gate__logo span{color:var(--accent)}
+.gate__sub{color:var(--muted);margin:.35rem 0 1.4rem;font-size:14.5px}
+input[type=password],input[type=text],select{width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:12px;font:inherit;font-size:15px;color:var(--ink);background:#fbfdfd;outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--accent2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;border:0;border-radius:12px;font:inherit;font-weight:700;font-size:15px;padding:13px 20px;background:var(--accent);color:#fff;transition:filter .15s,transform .05s;width:100%;text-decoration:none}
+.btn:hover{filter:brightness(1.07)} .btn:active{transform:translateY(1px)}
+.btn--ghost{background:var(--bg2);color:var(--ink2);width:auto;padding:9px 15px;font-size:13.5px}
+.err{color:var(--bad);font-size:13.5px;min-height:18px;margin-top:6px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.brand{font-family:var(--fd);font-weight:800;font-size:24px;letter-spacing:-.5px}
+.brand span{color:var(--accent)}
+.brand small{display:block;font-family:var(--fb);font-weight:500;font-size:12.5px;color:var(--muted);letter-spacing:.2px}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tools select,.tools input{width:auto;padding:9px 12px;font-size:13.5px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+.panel h2{font-family:var(--fd);font-weight:700;font-size:18px;margin:0 0 3px}
+.panel .hint{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:14px}
+th,td{text-align:right;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;
+  cursor:pointer;user-select:none;position:sticky;top:0;background:var(--surface)}
+th:hover{color:var(--accent)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--bg2)}
+tbody tr[aria-selected=true]{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+td.num{font-family:var(--fm);font-variant-numeric:tabular-nums}
+.route{font-family:var(--fm);font-weight:600;color:var(--accent);font-size:13px}
+.trend{font-weight:700;font-family:var(--fm)}
+.trend.dn{color:var(--good)} .trend.up{color:var(--bad)} .trend.eq{color:var(--muted)}
+
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty h3{font-family:var(--fd);color:var(--ink);font-size:20px;margin:0 0 8px}
+.empty p{margin:0 auto;max-width:52ch;font-size:14px;line-height:1.6}
+
+.chart{width:100%;height:260px;display:block}
+.chart .gridln{stroke:var(--line);stroke-width:1}
+.chart .lavg{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.chart .lmin{fill:none;stroke:var(--accent2);stroke-width:2;stroke-dasharray:4 4}
+.chart text{fill:var(--muted);font-size:11px;font-family:var(--fb)}
+.lgd{display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin-top:6px}
+.lgd i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.lgd .a{background:var(--accent)} .lgd .b{background:var(--accent2)}
+@media(max-width:640px){ .wrap{padding:18px 14px 50px} .panel{padding:16px} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<div class="gate" id="gate">
+  <form class="gate__card" id="loginForm" autocomplete="off">
+    <div class="gate__logo">Bookiraj<span>.si</span></div>
+    <div class="gate__sub">Zgodovina cen 📈</div>
+    <input id="pw" type="password" placeholder="Geslo" autocomplete="current-password">
+    <button class="btn" type="submit" style="margin-top:12px">Odpri</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <div class="top">
+    <div class="brand">Bookiraj<span>.si</span><small id="sub">Zgodovina povprečnih cen</small></div>
+    <div class="tools">
+      <input id="q" type="text" placeholder="Išči mesto ali državo…">
+      <select id="days">
+        <option value="30">zadnjih 30 dni</option>
+        <option value="90" selected>zadnjih 90 dni</option>
+        <option value="365">zadnje leto</option>
+        <option value="3650">vse</option>
+      </select>
+      <button class="btn btn--ghost" id="csv">⬇ Prenesi CSV</button>
+      <a class="btn btn--ghost" href="/nadzor/">← Nadzorna plošča</a>
+    </div>
+  </div>
+
+  <div class="panel" id="chartPanel" hidden>
+    <h2 id="chartTitle">—</h2>
+    <p class="hint" id="chartHint">Dnevni potek cene za izbrano progo.</p>
+    <svg class="chart" id="chart" viewBox="0 0 800 260" preserveAspectRatio="none" aria-label="Potek cen"></svg>
+    <div class="lgd"><span><i class="a"></i>povprečna cena</span><span><i class="b"></i>najnižja najdena</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Proge in njihove cene</h2>
+    <p class="hint" id="cnt">—</p>
+    <div class="tblwrap"><table id="tbl">
+      <thead><tr>
+        <th data-k="route">Proga</th>
+        <th data-k="city">Destinacija</th>
+        <th data-k="avg">Povprečje obdobja</th>
+        <th data-k="last_avg">Zadnje povprečje</th>
+        <th data-k="last_min">Zadnja najnižja</th>
+        <th data-k="min">Najnižja doslej</th>
+        <th data-k="trend">Trend</th>
+        <th data-k="days">Dni</th>
+      </tr></thead>
+      <tbody id="tb"></tbody>
+    </table></div>
+    <div class="empty" id="empty" hidden>
+      <h3>Zgodovina se šele nabira</h3>
+      <p>Vsako noč ob 2:00 se tu zapiše povprečna in najnižja cena za vsako progo, ki jo preverjamo.
+      Po nekaj dneh boš videla, ali cene rastejo ali padajo — in bo jasno, kdaj je neka akcija res akcija.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+(function(){
+  var U='https://fliwoulbwqcnufdfgvcj.supabase.co';
+  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+  var $=function(id){return document.getElementById(id);};
+  var PW='', ROWS=[], sortK='avg', sortDir=1, sel=null;
+
+  function rpc(fn,body){
+    return fetch(U+'/rest/v1/rpc/'+fn,{method:'POST',
+      headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},
+      body:JSON.stringify(body||{})}).then(function(r){
+        if(!r.ok) throw new Error(r.status);
+        return r.text();
+      }).then(function(t){return t?JSON.parse(t):null;});
+  }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+  function fmtD(d){var p=String(d).slice(0,10).split('-');return (+p[2])+'. '+(+p[1])+'.';}
+
+  // ---- prijava ----
+  $('loginForm').onsubmit=function(e){
+    e.preventDefault();
+    PW=$('pw').value.trim(); if(!PW) return;
+    $('loginErr').textContent='Preverjam…';
+    load().then(function(){
+      $('gate').hidden=true; $('app').hidden=false;
+      try{sessionStorage.setItem('bkrj_pw',PW);}catch(err){}
+    }).catch(function(){ $('loginErr').textContent='Napačno geslo.'; });
+  };
+
+  function load(){
+    return rpc('price_history_summary',{pass:PW,days:+$('days').value}).then(function(j){
+      ROWS=(j&&j.rows)||[];
+      ROWS.forEach(function(r){
+        r.route=r.from_code+'→'+r.code;
+        r.trend=(r.last_avg&&r.avg)?Math.round((r.last_avg-r.avg)/r.avg*100):0;
+      });
+      $('sub').textContent=j&&j.updated?('Zadnji zapis '+fmtD(j.updated)):'Zgodovina povprečnih cen';
+      draw();
+    });
+  }
+
+  function draw(){
+    var q=$('q').value.trim().toLowerCase();
+    var list=ROWS.filter(function(r){
+      return !q || (r.city||'').toLowerCase().indexOf(q)>=0 || (r.country||'').toLowerCase().indexOf(q)>=0
+        || (r.route||'').toLowerCase().indexOf(q)>=0;
+    });
+    list.sort(function(a,b){
+      var x=a[sortK], y=b[sortK];
+      if(typeof x==='string'||typeof y==='string') return String(x).localeCompare(String(y),'sl')*sortDir;
+      return ((x||0)-(y||0))*sortDir;
+    });
+    $('cnt').textContent=list.length? (list.length+' prog · klikni vrstico za graf')
+      : (ROWS.length? 'Ni zadetkov za to iskanje.' : '');
+    $('empty').hidden=ROWS.length>0;
+    $('tb').innerHTML=list.map(function(r){
+      var t=r.trend, cls=t<-2?'dn':(t>2?'up':'eq'), sign=t>0?'+':'';
+      return '<tr data-f="'+esc(r.from_code)+'" data-c="'+esc(r.code)+'"'+(sel===r.from_code+'-'+r.code?' aria-selected="true"':'')+'>'
+        +'<td><span class="route">'+esc(r.route)+'</span></td>'
+        +'<td>'+esc(r.city||r.code)+' <span style="color:var(--muted);font-size:12.5px">'+esc(r.country||'')+'</span></td>'
+        +'<td class="num">'+r.avg+' €</td>'
+        +'<td class="num">'+(r.last_avg!=null?r.last_avg+' €':'—')+'</td>'
+        +'<td class="num">'+(r.last_min!=null?r.last_min+' €':'—')+'</td>'
+        +'<td class="num">'+r.min+' €</td>'
+        +'<td class="num trend '+cls+'">'+(r.days>1?sign+t+' %':'—')+'</td>'
+        +'<td class="num">'+r.days+'</td></tr>';
+    }).join('');
+    [].forEach.call($('tb').querySelectorAll('tr'),function(tr){
+      tr.onclick=function(){ openRoute(tr.getAttribute('data-f'), tr.getAttribute('data-c')); };
+    });
+  }
+
+  [].forEach.call(document.querySelectorAll('th[data-k]'),function(th){
+    th.onclick=function(){ var k=th.getAttribute('data-k');
+      if(sortK===k) sortDir=-sortDir; else { sortK=k; sortDir=(k==='city'||k==='route')?1:-1; }
+      draw(); };
+  });
+  $('q').oninput=draw;
+  $('days').onchange=function(){ load().catch(function(){}); };
+
+  // ---- graf ene proge ----
+  function openRoute(f,c){
+    sel=f+'-'+c;
+    var r=ROWS.filter(function(x){return x.from_code===f&&x.code===c;})[0]||{};
+    $('chartTitle').textContent=(r.city||c)+' · '+f+'→'+c;
+    $('chartPanel').hidden=false;
+    $('chartHint').textContent='Nalagam…';
+    draw();
+    rpc('price_history_route',{pass:PW,p_from:f,p_code:c,days:+$('days').value}).then(function(pts){
+      renderChart(pts||[]);
+      $('chartHint').textContent=(pts&&pts.length>1)
+        ? ('Dnevni potek · '+pts.length+' dni meritev')
+        : 'Za graf potrebujemo vsaj dva dneva meritev — jutri bo že kaj videti.';
+      $('chartPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+    }).catch(function(){ $('chartHint').textContent='Podatkov ni bilo mogoče naložiti.'; });
+  }
+
+  function renderChart(pts){
+    var W=800,H=260,P={t:18,r:14,b:26,l:46};
+    var svg=$('chart');
+    if(!pts.length){ svg.innerHTML='<text x="400" y="130" text-anchor="middle">Ni podatkov</text>'; return; }
+    var vals=pts.map(function(p){return p.avg;}).concat(pts.map(function(p){return p.min;}));
+    var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+    if(hi===lo){ hi=lo+10; lo=Math.max(0,lo-10); }
+    var pad=(hi-lo)*0.12; lo=Math.max(0,lo-pad); hi=hi+pad;
+    var x=function(i){return P.l+(pts.length===1?(W-P.l-P.r)/2:i*(W-P.l-P.r)/(pts.length-1));};
+    var y=function(v){return P.t+(hi-v)/(hi-lo)*(H-P.t-P.b);};
+    var line=function(key){return pts.map(function(p,i){return (i?'L':'M')+x(i).toFixed(1)+' '+y(p[key]).toFixed(1);}).join(' ');};
+    var g='';
+    for(var i=0;i<=4;i++){
+      var v=hi-(hi-lo)*i/4, yy=y(v);
+      g+='<line class="gridln" x1="'+P.l+'" y1="'+yy.toFixed(1)+'" x2="'+(W-P.r)+'" y2="'+yy.toFixed(1)+'"/>'
+       + '<text x="'+(P.l-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">'+Math.round(v)+' €</text>';
+    }
+    var step=Math.max(1,Math.ceil(pts.length/6));
+    for(var j=0;j<pts.length;j+=step)
+      g+='<text x="'+x(j).toFixed(1)+'" y="'+(H-7)+'" text-anchor="middle">'+fmtD(pts[j].day)+'</text>';
+    g+='<path class="lmin" d="'+line('min')+'"/><path class="lavg" d="'+line('avg')+'"/>';
+    svg.innerHTML=g;
+  }
+
+  // ---- CSV ----
+  $('csv').onclick=function(){
+    if(!ROWS.length) return;
+    var head=['proga','odhod','prihod','mesto','drzava','povprecje_obdobja','zadnje_povprecje','zadnja_najnizja','najnizja_doslej','trend_%','dni','prvi_dan','zadnji_dan'];
+    var lines=[head.join(';')].concat(ROWS.map(function(r){
+      return [r.route,r.from_code,r.code,r.city||'',r.country||'',r.avg,r.last_avg,r.last_min,r.min,r.trend,r.days,r.first_day,r.last_day]
+        .map(function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}).join(';');
+    }));
+    var blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='bookiraj-cene-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
+  };
+
+  // samodejna prijava v isti seji
+  try{ var s=sessionStorage.getItem('bkrj_pw');
+    if(s){ PW=s; load().then(function(){ $('gate').hidden=true; $('app').hidden=false; }).catch(function(){}); }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
