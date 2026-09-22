@@ -890,6 +890,67 @@ section{scroll-margin-top:78px}
   .sec__head{flex-direction:column;align-items:flex-start;gap:10px}
   .sec__head p{max-width:none}
 }
+/* ===================== STRAN O NAS — zemljevid sveta ===================== */
+.about{padding-block:0 4rem}
+.about__hero{text-align:center;max-width:56ch;margin:0 auto 2.6rem}
+.about__hero h1{font-size:clamp(2.3rem,5.4vw,3.9rem);letter-spacing:-.02em;text-wrap:balance;margin:.5rem 0 0}
+.about__hero h1 em{font-style:italic;color:var(--accent)}
+.about__lead{color:var(--ink-2);font-size:1.1rem;line-height:1.65;margin-top:1.1rem}
+
+.about__stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:660px;margin:0 auto 2.8rem}
+.about__stat{text-align:center;padding:18px 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.about__stat b{display:block;font-family:var(--font-display);font-weight:700;font-size:clamp(1.9rem,4.6vw,2.7rem);
+  line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.about__stat span{display:block;margin-top:7px;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted)}
+
+/* ---- zemljevid ---- */
+.wm{position:relative;border:1px solid var(--line);border-radius:22px;background:var(--surface);
+  box-shadow:var(--shadow);padding:18px;overflow:hidden}
+.wm__stage{position:relative;line-height:0}
+.wm__stage>svg{width:100%;height:auto;display:block;overflow:visible}
+.wm__land path,.wm__land circle{fill:var(--bg-2);stroke:var(--surface);stroke-width:.7;
+  transition:fill .25s ease}
+.wm__land .v{fill:var(--accent);cursor:pointer}
+.wm__land .v:hover,.wm__land .v.on{fill:var(--accent-2)}
+.wm__dots circle{stroke-width:.5}
+.wm__pin{position:absolute;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;
+  background:var(--accent-2);border:2.5px solid var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.30);
+  pointer-events:none;opacity:0;transform:scale(.4);transition:opacity .4s,transform .4s;z-index:3}
+.wm__pin.on{opacity:1;transform:scale(1)}
+.wm__pin::after{content:"";position:absolute;inset:-7px;border-radius:50%;
+  border:2px solid var(--accent-2);opacity:.65;animation:wmPulse 2s ease-out infinite}
+@keyframes wmPulse{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.7);opacity:0}}
+
+.wm__card{position:absolute;z-index:6;width:200px;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;box-shadow:var(--shadow-lg);overflow:hidden;pointer-events:none;line-height:1.4;
+  opacity:0;transform:translateY(8px) scale(.97);transition:opacity .22s,transform .22s}
+.wm__card.on{opacity:1;transform:translateY(0) scale(1)}
+.wm__card img{width:100%;height:118px;object-fit:cover;display:block;background:var(--bg-2)}
+.wm__card b{display:block;padding:10px 12px 2px;font-size:.95rem;color:var(--ink)}
+.wm__card small{display:block;padding:0 12px 11px;color:var(--muted);font-size:.8rem}
+.wm__hint{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;
+  color:var(--muted);font-size:.85rem;text-align:center}
+.wm__hint svg{flex:none;opacity:.7}
+.wm__legend{display:flex;gap:18px;justify-content:center;margin-top:10px;font-size:.82rem;color:var(--muted)}
+.wm__legend i{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-right:7px}
+.wm__legend .a{background:var(--accent)} .wm__legend .b{background:var(--bg-2);border:1px solid var(--line)}
+
+.about__story{max-width:62ch;margin:3.2rem auto 0}
+.about__story h2{font-size:clamp(1.5rem,3.4vw,2.1rem);margin:0 0 .8rem}
+.about__story p{color:var(--ink-2);line-height:1.75;margin:0 0 1.05rem;font-size:1.02rem}
+.about__story p strong{color:var(--ink)}
+.about__quote{margin:2.2rem auto;max-width:52ch;padding-left:20px;border-left:3px solid var(--accent);
+  font-family:var(--font-display);font-size:1.22rem;font-style:italic;line-height:1.55;color:var(--ink)}
+.about__cta{text-align:center;margin-top:2.6rem}
+
+@media(max-width:760px){
+  .about__stats{grid-template-columns:1fr 1fr;max-width:420px}
+  .about__stats .about__stat:last-child{grid-column:1/-1}
+  .wm{padding:10px;border-radius:16px}
+  .wm__card{width:158px} .wm__card img{height:92px}
+}
+
 </style>
 
 <script>
@@ -1962,6 +2023,125 @@ function pocitniceHTML(hidx){
 }
 window.__selHoliday=function(i){detailEl.innerHTML=pocitniceHTML(+i);};
 
+// ===================== STRAN »O NAS«: zemljevid obiskanih držav =====================
+// Seznam obiskanih držav ureja Miša sama na bookiraj.si/nadzor/svet — stran ga prebere od tam.
+var WMAP = { svg:null, centers:null, photos:null, meta:null, visited:null };
+var WM_DB = 'https://fliwoulbwqcnufdfgvcj.supabase.co';
+var WM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+
+function onasHTML(){
+  return '<div class="page"><div class="container">'+BACK
+    +'<div class="about">'
+      +'<div class="about__hero">'
+        +'<p class="eyebrow">O nas</p>'
+        +'<h1>Potovanja so strast. <em>Nizke cene</em> so šport.</h1>'
+        +'<p class="about__lead">Za Bookiraj.si ne stoji agencija, ampak popotnica, ki že leta vsak dan lovi cene letalskih kart — najprej zase, zdaj za vse.</p>'
+      +'</div>'
+      +'<div class="about__stats">'
+        +'<div class="about__stat"><b id="abCountries">78</b><span>obiskanih držav</span></div>'
+        +'<div class="about__stat"><b id="abConts">6</b><span>celin</span></div>'
+        +'<div class="about__stat"><b>vsak dan</b><span>lov na cene</span></div>'
+      +'</div>'
+      +'<div class="wm" id="wmBox" hidden>'
+        +'<div class="wm__stage" id="wmStage">'
+          +'<div class="wm__pin" id="wmPin"></div>'
+          +'<div class="wm__card" id="wmCard"><img id="wmImg" alt=""><b id="wmName"></b><small id="wmCity"></small></div>'
+        +'</div>'
+        +'<div class="wm__legend"><span><i class="a"></i>kjer sem že bila</span><span><i class="b"></i>še na seznamu</span></div>'
+        +'<div class="wm__hint"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 7 16 2-7 7-2z"/></svg><span>Povleci miško čez zemljevid — vsaka država skriva svojo sliko.</span></div>'
+      +'</div>'
+      +'<div class="about__story">'
+        +'<h2>Kako je nastal Bookiraj.si</h2>'
+        +'<p>Vse se je začelo z navado. Vsako jutro sem <strong>preverjala cene letalskih kart</strong> — ne zato, ker bi morala, ampak ker me je zanimalo, kam se da tisti teden odleteti za manj, kot stane vikend doma.</p>'
+        +'<p>Tako sem prišla do večine držav na zemljevidu. Nobena ni bila draga. Nekatere so bile smešno poceni — ujeti je bilo treba le pravi trenutek in vedeti, s katerega letališča se splača vzleteti.</p>'
+        +'<blockquote class="about__quote">Ni treba biti bogat, da vidiš svet. Treba je biti potrpežljiv — ali pa imeti nekoga, ki gleda namesto tebe.</blockquote>'
+        +'<p>Ker mi je iskanje šlo v kri, sem se odločila, da to počnem <strong>za vse</strong>. Bookiraj.si vsak dan pregleda cene z letališč v Ljubljani, Trstu, Benetkah, Zagrebu in okolici — in pokaže samo ponudbe, ki so res občutno pod povprečjem proge.</p>'
+        +'<p>Brez desetih odprtih zavihkov in brez ugibanja, ali je cena dobra. Kar vidiš na strani, je preverjeno isti dan.</p>'
+        +'<div class="about__cta"><a class="btn btn--lg" href="#letalske-karte">Poglej današnje akcije</a></div>'
+      +'</div>'
+    +'</div>'
+  +'</div></div>';
+}
+
+function wmLoad(){
+  return Promise.all([
+    WMAP.svg     ? WMAP.svg     : fetch('map/world.svg').then(function(r){return r.text();}),
+    WMAP.centers ? WMAP.centers : fetch('map/centers.json').then(function(r){return r.json();}),
+    WMAP.photos  ? WMAP.photos  : fetch('map/photos.json').then(function(r){return r.json();}),
+    WMAP.meta    ? WMAP.meta    : fetch('map/meta.json').then(function(r){return r.json();})
+  ]).then(function(a){ WMAP.svg=a[0];WMAP.centers=a[1];WMAP.photos=a[2];WMAP.meta=a[3]; return WMAP; });
+}
+function wmVisited(){
+  if(WMAP.visited) return Promise.resolve(WMAP.visited);
+  return fetch(WM_DB+'/rest/v1/rpc/public_settings',{method:'POST',
+    headers:{apikey:WM_KEY,Authorization:'Bearer '+WM_KEY,'Content-Type':'application/json'},body:'{}'})
+    .then(function(r){return r.json();})
+    .then(function(j){ WMAP.visited=(j&&j.visited_countries)||[]; return WMAP.visited; })
+    .catch(function(){ WMAP.visited=[]; return WMAP.visited; });
+}
+
+function initAbout(){
+  var box=document.getElementById('wmBox'); if(!box) return;
+  Promise.all([wmLoad(), wmVisited()]).then(function(r){
+    var visited=r[1]||[]; if(!visited.length) return;      // dokler seznam ni izbran, zemljevida ne kažemo
+    var stage=document.getElementById('wmStage');
+    if(!stage||!document.body.contains(stage)) return;
+    box.hidden=false;
+    stage.insertAdjacentHTML('afterbegin', WMAP.svg);
+
+    var set={}; visited.forEach(function(c){set[c]=1;});
+    [].forEach.call(stage.querySelectorAll('[data-cc]'),function(el){
+      if(set[el.getAttribute('data-cc')]) el.classList.add('v');
+    });
+    document.getElementById('abCountries').textContent=visited.length;
+    var cs={}; visited.forEach(function(c){ var m=WMAP.meta[c]; if(m&&m.cont) cs[m.cont]=1; });
+    document.getElementById('abConts').textContent=Object.keys(cs).length||1;
+
+    var pin=document.getElementById('wmPin'), card=document.getElementById('wmCard');
+    var img=document.getElementById('wmImg'), nm=document.getElementById('wmName'), ct=document.getElementById('wmCity');
+    var svg=stage.querySelector('svg');
+    var timer=null, idx=0, hovering=0;
+    var withPhoto=visited.filter(function(c){return WMAP.photos[c]&&WMAP.photos[c].length;});
+    var pool=withPhoto.length?withPhoto:visited;
+
+    function show(cc){
+      var c=WMAP.centers[cc]; if(!c) return;
+      var rect=stage.getBoundingClientRect(), vb=svg.viewBox.baseVal;
+      var x=c[0]/vb.width*rect.width, y=c[1]/vb.height*rect.height;
+      pin.style.left=x+'px'; pin.style.top=y+'px'; pin.classList.add('on');
+      var m=WMAP.meta[cc]||{}, list=WMAP.photos[cc]||[];
+      nm.textContent=m.sl||cc;
+      if(list.length){ var p=list[Math.floor(Math.random()*list.length)];
+        img.src=p.photo; img.alt=p.city; img.hidden=false; ct.textContent=p.city+(m.cont?' · '+m.cont:''); }
+      else { img.hidden=true; img.removeAttribute('src'); ct.textContent=m.cont||''; }
+      card.classList.add('on');
+      var cw=card.offsetWidth||200, ch=card.offsetHeight||190;
+      card.style.left=Math.min(Math.max(x-cw/2,6), Math.max(6,rect.width-cw-6))+'px';
+      card.style.top=(y-ch-16<6 ? y+18 : y-ch-16)+'px';
+    }
+    function mark(cc){
+      [].forEach.call(stage.querySelectorAll('.v.on'),function(e){e.classList.remove('on');});
+      var el=stage.querySelector('[data-cc="'+cc+'"]'); if(el) el.classList.add('on');
+    }
+    function cycle(){ if(hovering||!pool.length) return; var cc=pool[idx%pool.length]; idx++; mark(cc); show(cc); }
+
+    stage.addEventListener('mousemove',function(e){
+      var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null;
+      if(t&&t.classList.contains('v')){ hovering=1; mark(t.getAttribute('data-cc')); show(t.getAttribute('data-cc')); }
+    });
+    stage.addEventListener('mouseleave',function(){ hovering=0; });
+    stage.addEventListener('click',function(e){
+      var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null;
+      if(t&&t.classList.contains('v')){ hovering=1; mark(t.getAttribute('data-cc')); show(t.getAttribute('data-cc'));
+        setTimeout(function(){hovering=0;},5000); }
+    });
+    addEventListener('resize',function(){ if(!box.hidden&&pool.length) show(pool[(idx-1+pool.length)%pool.length]); });
+    idx=Math.floor(Math.random()*pool.length);
+    cycle(); timer=setInterval(cycle,2600);
+  }).catch(function(){});
+}
+
+
 // --- Ena akcija = en par odhod→prihod, z VSEMI razpoložljivimi datumi ---
 // Vsak termin je gumb na Aviasales (Mišin affiliate) — nikoli na drugo primerjalno stran.
 function ponudbaHTML(key){
@@ -2284,6 +2464,12 @@ function route(){
     detailEl.innerHTML=blogHTML();
     showView('detail');
     document.title='Blog — Bookiraj.si'; window.scrollTo(0,0); return;
+  }
+  if(pslug==='o-nas'){
+    detailEl.innerHTML=onasHTML();
+    showView('detail');
+    document.title='O nas — Bookiraj.si'; window.scrollTo(0,0);
+    initAbout(); return;
   }
   if(PAGES[pslug]){
     detailEl.innerHTML=pageHTML(pslug);

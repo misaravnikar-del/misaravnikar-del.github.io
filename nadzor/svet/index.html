@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Kje sem že bila — Bookiraj.si</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --accent:#0C7F93; --accent2:#37C1D5; --ink:#12292f; --ink2:#3c5359;
+  --muted:#6c8188; --bg:#f4f8f9; --bg2:#e3ecee; --surface:#ffffff;
+  --line:#e0eaec; --good:#1f9d6b; --bad:#c0392b;
+  --shadow:0 6px 22px rgba(18,41,47,.07); --radius:18px;
+  --fd:"Playfair Display",Georgia,serif; --fb:"Hanken Grotesk",system-ui,sans-serif; --fm:"IBM Plex Mono",monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:var(--fb);color:var(--ink);background:
+  radial-gradient(1200px 500px at 80% -10%, #dff1f4 0, transparent 60%),
+  radial-gradient(900px 500px at -10% 10%, #eaf3ea 0, transparent 55%), var(--bg);
+  min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+
+.gate{min-height:82vh;display:flex;align-items:center;justify-content:center}
+.gate__card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:34px 30px;max-width:400px;width:100%;text-align:center}
+.gate__logo{font-family:var(--fd);font-weight:800;font-size:26px;letter-spacing:-.5px}
+.gate__logo span{color:var(--accent)}
+.gate__sub{color:var(--muted);margin:.35rem 0 1.4rem;font-size:14.5px}
+input[type=password],input[type=text]{width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:12px;font:inherit;font-size:15px;color:var(--ink);background:#fbfdfd;outline:none;transition:border-color .15s}
+input:focus{border-color:var(--accent2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;border:0;border-radius:12px;font:inherit;font-weight:700;font-size:15px;padding:13px 20px;background:var(--accent);color:#fff;transition:filter .15s,transform .05s;text-decoration:none}
+.btn:hover{filter:brightness(1.07)} .btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.5;cursor:default}
+.btn--ghost{background:var(--bg2);color:var(--ink2);padding:9px 15px;font-size:13.5px;font-weight:600}
+.err{color:var(--bad);font-size:13.5px;min-height:18px;margin-top:6px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.brand{font-family:var(--fd);font-weight:800;font-size:23px;letter-spacing:-.5px}
+.brand span{color:var(--accent)}
+.brand small{display:block;font-family:var(--fb);font-weight:500;font-size:12.5px;color:var(--muted)}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tools input{width:200px;padding:9px 12px;font-size:13.5px}
+
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:12px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.bar .n{font-family:var(--fd);font-weight:800;font-size:30px;line-height:1;color:var(--accent)}
+.bar .lbl{font-size:13.5px;color:var(--muted)}
+.bar .sp{flex:1}
+.saved{font-size:13px;color:var(--good);font-weight:600;opacity:0;transition:opacity .3s}
+.saved.on{opacity:1}
+
+.mapbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:12px;overflow:hidden;position:relative}
+.mapbox svg{width:100%;height:auto;display:block}
+.wm__land path,.wm__land circle{fill:var(--bg2);stroke:var(--surface);stroke-width:.7;cursor:pointer;transition:fill .12s}
+.wm__land path:hover,.wm__land circle:hover{fill:#b9ccd0}
+.wm__land .v{fill:var(--accent)}
+.wm__land .v:hover{fill:var(--accent2)}
+.wm__land .hit{fill:#f0a33a!important}
+.wm__dots circle{stroke-width:.5}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;font-size:12.5px;padding:5px 9px;
+  border-radius:7px;white-space:nowrap;opacity:0;transition:opacity .12s;z-index:5}
+.tip.on{opacity:1}
+
+.list{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px 20px}
+.list h2{font-family:var(--fd);font-weight:700;font-size:17px;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 8px 5px 11px;border-radius:999px;
+  background:var(--bg2);color:var(--ink2);font-size:13px;font-weight:600}
+.chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+.chip button:hover{color:var(--bad)}
+.hint{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.6}
+@media(max-width:640px){ .tools input{width:150px} .bar .n{font-size:24px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="gate" id="gate">
+  <form class="gate__card" id="loginForm" autocomplete="off">
+    <div class="gate__logo">Bookiraj<span>.si</span></div>
+    <div class="gate__sub">Kje sem že bila 🌍</div>
+    <input id="pw" type="password" placeholder="Geslo" autocomplete="current-password">
+    <button class="btn" type="submit" style="width:100%;margin-top:12px">Odpri zemljevid</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <div class="top">
+    <div class="brand">Bookiraj<span>.si</span><small>Zemljevid obiskanih držav</small></div>
+    <div class="tools">
+      <input id="q" type="text" placeholder="Poišči državo…">
+      <a class="btn btn--ghost" href="/nadzor/">← Nadzorna plošča</a>
+      <a class="btn btn--ghost" href="/#o-nas" target="_blank">Poglej stran O nas ↗</a>
+    </div>
+  </div>
+
+  <p class="hint">Klikni državo na zemljevidu, da jo označiš kot obiskano — in znova, da jo odznačiš.
+    Manjše države (Malta, Maldivi, Singapur, Karibi …) so narisane kot pike. Spremembe shrani z gumbom.</p>
+
+  <div class="bar">
+    <div><div class="n" id="cnt">0</div><div class="lbl">obiskanih držav</div></div>
+    <div><div class="n" id="cntC">0</div><div class="lbl">celin</div></div>
+    <div class="sp"></div>
+    <span class="saved" id="saved">Shranjeno ✓</span>
+    <button class="btn btn--ghost" id="undo" type="button">Razveljavi</button>
+    <button class="btn" id="save" type="button">Shrani</button>
+  </div>
+
+  <div class="mapbox" id="mapbox"><div class="tip" id="tip"></div></div>
+
+  <div class="list">
+    <h2>Izbrane države (<span id="cnt2">0</span>)</h2>
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+(function(){
+  var U='https://fliwoulbwqcnufdfgvcj.supabase.co';
+  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+  var $=function(i){return document.getElementById(i);};
+  var PW='', META={}, SEL={}, LAST=null, dirty=false;
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+
+  $('loginForm').onsubmit=function(e){
+    e.preventDefault(); PW=$('pw').value.trim(); if(!PW) return;
+    $('loginErr').textContent='Preverjam…';
+    // geslo preverimo tako, da poskusimo prebrati nastavitve z njim
+    fetch(U+'/rest/v1/rpc/set_setting',{method:'POST',
+      headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},
+      body:JSON.stringify({pass:PW,k:'about_stats',v:{ping:Date.now()}})})
+      .then(function(r){ if(!r.ok) throw new Error(r.status);
+        $('gate').hidden=true; $('app').hidden=false; boot();
+      }).catch(function(){ $('loginErr').textContent='Napačno geslo.'; });
+  };
+
+  function boot(){
+    Promise.all([
+      fetch('/map/world.svg').then(function(r){return r.text();}),
+      fetch('/map/meta.json').then(function(r){return r.json();}),
+      fetch(U+'/rest/v1/rpc/public_settings',{method:'POST',
+        headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:'{}'})
+        .then(function(r){return r.json();}).catch(function(){return {};})
+    ]).then(function(a){
+      META=a[1];
+      ((a[2]&&a[2].visited_countries)||[]).forEach(function(c){SEL[c]=1;});
+      $('mapbox').insertAdjacentHTML('beforeend', a[0]);
+      paint(); wire(); render();
+    });
+  }
+
+  function paint(){
+    [].forEach.call(document.querySelectorAll('#mapbox [data-cc]'),function(el){
+      el.classList.toggle('v', !!SEL[el.getAttribute('data-cc')]);
+    });
+  }
+  function render(){
+    var list=Object.keys(SEL);
+    $('cnt').textContent=list.length; $('cnt2').textContent=list.length;
+    var cs={}; list.forEach(function(c){var m=META[c]; if(m&&m.cont) cs[m.cont]=1;});
+    $('cntC').textContent=Object.keys(cs).length;
+    list.sort(function(x,y){return (name(x)).localeCompare(name(y),'sl');});
+    $('chips').innerHTML=list.map(function(c){
+      return '<span class="chip">'+esc(name(c))+'<button type="button" data-x="'+c+'" title="odstrani">×</button></span>';
+    }).join('')||'<span style="color:var(--muted);font-size:13.5px">Še nič izbranega — klikni državo na zemljevidu.</span>';
+    [].forEach.call($('chips').querySelectorAll('button[data-x]'),function(b){
+      b.onclick=function(){ delete SEL[b.getAttribute('data-x')]; dirty=true; paint(); render(); };
+    });
+    $('save').disabled=!dirty;
+  }
+  function name(cc){ return (META[cc]&&META[cc].sl)||cc; }
+
+  function wire(){
+    var box=$('mapbox'), tip=$('tip');
+    box.addEventListener('click',function(e){
+      var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null; if(!t) return;
+      var cc=t.getAttribute('data-cc');
+      LAST={cc:cc, was:!!SEL[cc]};
+      if(SEL[cc]) delete SEL[cc]; else SEL[cc]=1;
+      dirty=true; t.classList.toggle('v', !!SEL[cc]); render();
+    });
+    box.addEventListener('mousemove',function(e){
+      var t=e.target&&e.target.closest?e.target.closest('[data-cc]'):null;
+      if(!t){ tip.classList.remove('on'); return; }
+      var r=box.getBoundingClientRect();
+      tip.textContent=name(t.getAttribute('data-cc'));
+      tip.style.left=(e.clientX-r.left+12)+'px'; tip.style.top=(e.clientY-r.top-30)+'px';
+      tip.classList.add('on');
+    });
+    box.addEventListener('mouseleave',function(){ tip.classList.remove('on'); });
+
+    $('undo').onclick=function(){
+      if(!LAST) return;
+      if(LAST.was) SEL[LAST.cc]=1; else delete SEL[LAST.cc];
+      LAST=null; dirty=true; paint(); render();
+    };
+    $('save').onclick=function(){
+      var b=$('save'); b.disabled=true; b.textContent='Shranjujem…';
+      fetch(U+'/rest/v1/rpc/set_setting',{method:'POST',
+        headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},
+        body:JSON.stringify({pass:PW,k:'visited_countries',v:Object.keys(SEL)})})
+        .then(function(r){ if(!r.ok) throw new Error(r.status);
+          dirty=false; $('saved').classList.add('on'); setTimeout(function(){$('saved').classList.remove('on');},2200);
+        }).catch(function(){ alert('Shranjevanje ni uspelo. Poskusi znova.'); dirty=true; })
+        .then(function(){ b.textContent='Shrani'; b.disabled=!dirty; });
+    };
+    $('q').oninput=function(){
+      var q=$('q').value.trim().toLowerCase();
+      [].forEach.call(document.querySelectorAll('#mapbox [data-cc]'),function(el){
+        var hit=q && name(el.getAttribute('data-cc')).toLowerCase().indexOf(q)===0;
+        el.classList.toggle('hit', !!hit);
+      });
+    };
+    addEventListener('beforeunload',function(e){ if(dirty){ e.preventDefault(); e.returnValue=''; } });
+  }
+})();
+</script>
+</body>
+</html>
