@@ -1529,7 +1529,7 @@ window.bkrjSend = function(kind, o){
         <p class="nform__note">Se lahko odjaviš z enim klikom. Spoštujemo tvojo zasebnost.</p>
         <div class="nsuccess" role="status">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          <div><b>Dobrodošel na krovu!</b><br><span style="opacity:.8">Od zdaj boš prvi izvedel za najboljše akcije.</span></div>
+          <div class="news__msg"><b>Dobrodošla na krovu!</b><br><span style="opacity:.8">Od zdaj boš prva izvedela za najboljše akcije.</span></div>
         </div>
       </div>
     </div>
@@ -2831,16 +2831,49 @@ if(burger&&navLinks){
   navLinks.addEventListener('click',e=>{if(e.target.closest('a')){navLinks.classList.remove('open');burger.setAttribute('aria-expanded','false');}});
 }
 
-// newsletter — prijava se shrani v Bookiraj bazo (nadzorna plošča → Sporočila)
-// in, ko je vpisan ključ Web3Forms, tudi pošlje na info@bookiraj.si.
+// ---- Prijava na novice ----
+// Gre na TRI mesta: v Mailchimp (Mišino občinstvo »Bookiraj.si«), v njeno bazo
+// (nadzorna plošča → Sporočila) in po e-pošti na info@bookiraj.si.
+// Mailchimp ne dovoli navadnega klica iz brskalnika (CORS), zato uporabimo njihov
+// uradni JSONP vmesnik post-json — isti, ki ga uporablja njihova vgrajena koda.
+const MC = { base:'https://bookiraj.us6.list-manage.com/subscribe/post-json',
+             u:'0915a75124dd7ad055f504183', id:'33919d0290', f_id:'003dd8e1f0' };
+function mcSubscribe(email){
+  return new Promise(function(resolve){
+    var cb='mcb'+Date.now()+Math.floor(Math.random()*1000);
+    var sc=document.createElement('script'), done=false;
+    function finish(r){ if(done) return; done=true;
+      try{ delete window[cb]; }catch(e){ window[cb]=undefined; }
+      if(sc.parentNode) sc.parentNode.removeChild(sc);
+      resolve(r);
+    }
+    window[cb]=function(res){ finish(res); };
+    sc.onerror=function(){ finish(null); };
+    sc.src=MC.base+'?u='+MC.u+'&id='+MC.id+'&f_id='+MC.f_id
+      +'&c='+cb+'&EMAIL='+encodeURIComponent(email)+'&b_'+MC.u+'_'+MC.id+'=';
+    document.head.appendChild(sc);
+    setTimeout(function(){ finish(null); }, 9000);
+  });
+}
 document.addEventListener('submit',e=>{
   if(e.target.id!=='nform')return;
   e.preventDefault();
   const inp=document.getElementById('nemail'); const v=inp.value.trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){inp.focus();return;}
-  const done=()=>{document.querySelector('.news').classList.add('done');try{localStorage.setItem('bkr-sub',v);}catch(err){}};
+  const box=document.querySelector('.news');
+  const done=(msg)=>{
+    box.classList.add('done');
+    if(msg){ var el=box.querySelector('.news__msg'); if(el) el.innerHTML='<b>'+msg+'</b>'; }
+    try{localStorage.setItem('bkr-sub',v);}catch(err){}
+  };
+  // v bazo in na e-pošto gre vedno; Mailchimp pove, ali je naslov že na seznamu
   window.bkrjSend('novice',{email:v,subject:'Nova prijava na Bookiraj.si novice',
-    message:'Nova prijava na novice: '+v}).then(done,done);
+    message:'Nova prijava na novice: '+v}).catch(function(){});
+  mcSubscribe(v).then(function(r){
+    if(r && r.result==='error' && /already subscribed/i.test(r.msg||''))
+      done('Ta naslov je že na seznamu — novice ti že pošiljamo.');
+    else done(null);
+  }, function(){ done(null); });
 });
 
 // router
