@@ -27,15 +27,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;600;700&display=swap">
 
-<!-- Travelpayouts Drive (auto-monetizacija; marker 575644) -->
-<script nowprocket data-noptimize="1" data-cfasync="false" data-wpfc-render="false" seraph-accel-crit="1" data-no-defer="1" data-cmp-ab="2">
-  (function () {
-      var script = document.createElement("script");
-      script.async = 1;
-      script.setAttribute("data-cmp-ab","2");
-      script.src = 'https://tpembars.com/NTc1NjQ0.js?t=575644';
-      document.head.appendChild(script);
-  })();
+<!-- Travelpayouts Drive (auto-monetizacija; marker 575644)
+     Skript je od tretje osebe in postavlja svoje piškotke, zato se naloži ŠELE,
+     ko obiskovalec privoli. Sproži ga pasica o piškotkih (window.bkrjStartDrive). -->
+<script>
+window.bkrjStartDrive = function () {
+  if (window.__bkrjDrive) return; window.__bkrjDrive = 1;
+  var script = document.createElement("script");
+  script.async = 1;
+  script.setAttribute("data-cmp-ab","2");
+  script.src = 'https://tpembars.com/NTc1NjQ0.js?t=575644';
+  document.head.appendChild(script);
+};
 </script>
 
 <style>
@@ -1062,6 +1065,25 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
   border-radius:999px;background:var(--surface);font-weight:600;color:var(--accent)}
 .about__soc a:hover{border-color:var(--accent);background:var(--accent);color:var(--on-accent)}
 
+/* ===================== PASICA O PIŠKOTKIH ===================== */
+.ckbar{position:fixed;left:0;right:0;bottom:0;z-index:300;padding:14px;display:none}
+.ckbar.on{display:block}
+.ckbar__in{max-width:1000px;margin:0 auto;background:var(--surface);border:1px solid var(--line);
+  border-radius:16px;box-shadow:var(--shadow-lg);padding:18px 20px;
+  display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;justify-content:space-between}
+.ckbar p{flex:1 1 360px;min-width:0;margin:0;color:var(--ink-2);font-size:.92rem;line-height:1.55}
+.ckbar p a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.ckbar__btns{display:flex;flex-wrap:wrap;gap:10px}
+.ckbar__btns .btn{white-space:nowrap}
+.cktable{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.93rem}
+.cktable th,.cktable td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.cktable th{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cktable td code{font-family:var(--font-mono);font-size:.85rem;background:var(--surface-2);
+  padding:1px 5px;border-radius:5px}
+.ckstate{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:1.6rem;padding:16px 18px;
+  border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.ckstate b{font-family:var(--font-mono);font-size:.85rem}
+
 </style>
 
 <script>
@@ -1599,6 +1621,19 @@ window.bkrjSend = function(kind, o){
 </section>
 </div><!-- /#home -->
 
+<!-- ===================== PIŠKOTKI ===================== -->
+<div class="ckbar" id="ckbar" role="dialog" aria-live="polite" aria-label="Obvestilo o piškotkih">
+  <div class="ckbar__in">
+    <p><b>Uporabljamo piškotke.</b> Nujni skrbijo, da stran deluje — brez njih ne gre.
+      Merjenje obiska in partnerske oznake vklopimo samo, če se strinjaš.
+      Več v <a href="#piskotki">obvestilu o piškotkih</a>.</p>
+    <div class="ckbar__btns">
+      <button class="btn btn--ghost" type="button" data-ck="necessary">Samo nujni</button>
+      <button class="btn" type="button" data-ck="all">Sprejmi vse</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== KOŠARICA ===================== -->
 <button class="cartbtn" id="cartBtn" type="button" aria-label="Odpri košarico">
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.6 8.2a2 2 0 0 1-2 1.6H9.2a2 2 0 0 1-2-1.6L5.4 3H3"/><circle cx="10" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>
@@ -1783,7 +1818,7 @@ window.bkrjSend = function(kind, o){
       <div><h4>Pravno</h4><ul>
         <li><a href="#news">Zasebnost</a></li>
         <li><a href="#news">Pogoji uporabe</a></li>
-        <li><a href="#news">Piškotki</a></li>
+        <li><a href="#piskotki">Piškotki</a></li>
         <li><a href="mailto:info@bookiraj.si">Kontakt</a></li>
       </ul></div>
     </div>
@@ -2897,6 +2932,37 @@ function cartClose(){
   cartBadge();
 })();
 
+// ===================== OBVESTILO O PIŠKOTKIH =====================
+function piskotkiHTML(){
+  return '<div class="page"><div class="container">'+BACK
+  +'<p class="eyebrow">Pravno</p>'
+  +'<h1 class="page__h">Obvestilo o piškotkih.</h1>'
+  +'<div class="page__body">'
+    +'<p class="page__p">Bookiraj.si shrani v tvoj brskalnik samo tisto, kar je nujno za delovanje strani. Vse ostalo se vklopi šele, ko to sama dovoliš — in dokler ne privoliš, se ne naloži noben zunanji skript, ki bi te lahko spremljal.</p>'
+    +'<h2 style="margin-top:2rem">Kaj shranimo</h2>'
+    +'<table class="cktable"><thead><tr><th>Ime</th><th>Za kaj</th><th>Kako dolgo</th><th>Skupina</th></tr></thead><tbody>'
+      +'<tr><td><code>bkrj_consent</code></td><td>Zapomni si tvojo odločitev o piškotkih, da te ne sprašujemo ob vsakem obisku.</td><td>Dokler je ne pobrišeš</td><td>Nujno</td></tr>'
+      +'<tr><td><code>bkrj_cart</code></td><td>Ohrani vsebino košarice, če stran osvežiš ali se vrneš pozneje.</td><td>Dokler je ne izprazniš</td><td>Nujno</td></tr>'
+      +'<tr><td><code>bkrj_sid</code></td><td>Naključna oznaka brskalnika, da vemo, koliko različnih ljudi je obiskalo stran. Ne vsebuje imena, e-naslova ali naslova IP.</td><td>Dokler je ne pobrišeš</td><td>Merjenje obiska</td></tr>'
+      +'<tr><td><code>Travelpayouts</code></td><td>Partnerski skript, ki zabeleži, da je obiskovalec prišel z naše strani — tako nam ponudnik lahko izplača provizijo. Zate cena ostane enaka.</td><td>Določi ponudnik</td><td>Partnerski</td></tr>'
+    +'</tbody></table>'
+    +'<h2 style="margin-top:2rem">Česa ne počnemo</h2>'
+    +'<p class="page__p">Ne uporabljamo oglaševalskih omrežij, ne prodajamo podatkov in ne sestavljamo profilov o tebi. Podatkov o obisku ne povezujemo z e-naslovom, tudi če si prijavljena na novice.</p>'
+    +'<h2 style="margin-top:2rem">Kako si premisliš</h2>'
+    +'<p class="page__p">Odločitev lahko kadar koli spremeniš spodaj. Če izbereš »samo nujni«, oznako obiska takoj pobrišemo iz tvojega brskalnika.</p>'
+    +'<div class="ckstate"><span>Tvoja trenutna izbira: <b id="ckNow">–</b></span>'
+      +'<button class="btn btn--ghost" type="button" onclick="bkrjSetConsent(\'necessary\')">Samo nujni</button>'
+      +'<button class="btn" type="button" onclick="bkrjSetConsent(\'all\')">Sprejmi vse</button>'
+    +'</div>'
+    +'<p class="page__p" style="margin-top:1.6rem;color:var(--muted);font-size:.9rem">Za vprašanja o podatkih piši na <a href="mailto:info@bookiraj.si">info@bookiraj.si</a>. Upravljavec: Miša Ravnikar s.p.</p>'
+  +'</div></div></div>';
+}
+function ckLabel(){
+  var v = window.bkrjConsent && window.bkrjConsent();
+  return v==='all' ? 'sprejmem vse' : v==='necessary' ? 'samo nujni' : 'še nisi izbrala';
+}
+window.__ckRefresh=function(){ var el=document.getElementById('ckNow'); if(el) el.textContent=ckLabel(); };
+
 function route(){
   document.body.classList.remove('about-page');
   const h=location.hash;
@@ -2926,6 +2992,11 @@ function route(){
     detailEl.innerHTML=ponudbaHTML(_pk);
     showView('detail');
     document.title=(_pd?_pd.fromCity+' → '+_pd.city:'Akcija')+' — Bookiraj.si'; window.scrollTo(0,0); return;
+  }
+  if(pslug==='piskotki'){
+    detailEl.innerHTML=piskotkiHTML();
+    showView('detail');
+    document.title='Piškotki — Bookiraj.si'; window.scrollTo(0,0); window.__ckRefresh(); return;
   }
   if(pslug==='storitve-nakup'){
     detailEl.innerHTML=storitveHTML();
@@ -3225,6 +3296,37 @@ route();
 })();
 </script>
 
+<!-- Privolitev za piškotke. Postavljena PRED merjenje obiska, da se to ne zažene brez nje. -->
+<script>
+(function(){
+  var KEY='bkrj_consent';
+  window.bkrjConsent=function(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } };
+  window.bkrjSetConsent=function(v){
+    try{ localStorage.setItem(KEY,v); localStorage.setItem(KEY+'_ts', new Date().toISOString()); }catch(e){}
+    var bar=document.getElementById('ckbar'); if(bar) bar.classList.remove('on');
+    if(v==='all'){
+      if(window.bkrjStartAnalytics) window.bkrjStartAnalytics();
+      if(window.bkrjStartDrive) window.bkrjStartDrive();
+    } else {
+      // preklic: pobriši oznako obiska, da za obiskovalcem ne ostane nič
+      try{ localStorage.removeItem('bkrj_sid'); }catch(e){}
+    }
+    if(window.__ckRefresh) window.__ckRefresh();
+  };
+  function start(){
+    var bar=document.getElementById('ckbar'); if(!bar) return;
+    if(!window.bkrjConsent()) bar.classList.add('on');
+    bar.addEventListener('click',function(e){
+      var b=e.target.closest&&e.target.closest('[data-ck]');
+      if(b) window.bkrjSetConsent(b.getAttribute('data-ck'));
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
+  // če je obiskovalec že prej privolil, takoj naloži partnerski skript
+  if(window.bkrjConsent()==='all' && window.bkrjStartDrive) window.bkrjStartDrive();
+})();
+</script>
+
 <!-- Bookiraj: uveljavi OBJAVLJENE popravke + nevidno stetje obiskov. Osnutki se strankam NE pokazejo. -->
 <script>
 (function(){
@@ -3237,16 +3339,21 @@ route();
   if(EDIT) return; // urejevalnik (nadzor/uredi) prevzame prikaz osnutka + urejanje
   // ziva stran: uveljavi samo OBJAVLJENE popravke
   fetch(U+'/rest/v1/rpc/published_content',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json();}).then(function(rows){window.__bkrjApply(rows);}).catch(function(){});
-  // nevidno stetje obiskov
-  var sid;
-  try{sid=localStorage.getItem('bkrj_sid');if(!sid){sid=Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem('bkrj_sid',sid);}}catch(e){sid='anon';}
+  // Štetje obiska: teče ŠELE ob privolitvi, ker oznaka obiska ostane shranjena
+  // v brskalniku. Pasica o piškotkih pokliče window.bkrjStartAnalytics().
+  var sid, started = false;
   function track(t,n){try{fetch(U+'/rest/v1/events',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({type:t,name:(n||'').slice(0,120),session:sid}),keepalive:true}).catch(function(){});}catch(e){}}
   window.bkrjTrack=track;   // da ga lahko uporabi tudi košarica
   function onRoute(){var h=location.hash||'/';track('pageview',h);if(h.indexOf('#deal/')===0)track('deal_open',h.slice(6));}
-  onRoute();
-  addEventListener('hashchange',onRoute);
-  var seen={},ids=['tedna','akcije','esim','zakaj','storitve','mnenja','nasveti','news'];
-  try{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!seen[e.target.id]){seen[e.target.id]=1;track('section_view',e.target.id);}});},{threshold:0.4});
-  ids.forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el);});}catch(e){}
+  window.bkrjStartAnalytics = function(){
+    if (started) return; started = true;
+    try{sid=localStorage.getItem('bkrj_sid');if(!sid){sid=Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem('bkrj_sid',sid);}}catch(e){sid='anon';}
+    onRoute();
+    addEventListener('hashchange',onRoute);
+    var seen={},ids=['tedna','akcije','esim','zakaj','storitve','mnenja','nasveti','news'];
+    try{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!seen[e.target.id]){seen[e.target.id]=1;track('section_view',e.target.id);}});},{threshold:0.4});
+    ids.forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el);});}catch(e){}
+  };
+  if (window.bkrjConsent && window.bkrjConsent() === 'all') window.bkrjStartAnalytics();
 })();
 </script>

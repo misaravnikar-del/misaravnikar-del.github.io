@@ -82,6 +82,15 @@ const SUNNY = new Set(['tropic','desert','southern','equator','safari']);   // s
 const WINTER_HOL = new Set(['Novoletne','Zimske (vzhodna Slovenija)','Zimske (zahodna in osrednja SLO)']);
 const SUN_MIN_KM = Number(process.env.SUN_MIN_KM || 2500);   // »bolj oddaljene«
 const SUN_QUOTA  = Number(process.env.SUN_QUOTA  || 90);     // koliko takih prog vedno pride v izbor
+// Miša (23.9.2026): »jaz si želim več oddaljenih destinacij, a lahko pregledaš res čisto
+// vse opcije«. Zato zdaj v dveh korakih:
+//   SITO  – vsaka najdena proga dobi EN klic (letni pregled). Poceni, a pove, ali proga
+//           sploh ima kakšen termin, ki ustreza pravilu, in kakšno je povprečje.
+//   GLOBINA – mesec-po-mesec iščemo samo pri progah, ki so sito prestale, pri čemer imajo
+//           oddaljene prednost pred cenenimi evropskimi skoki.
+const SCREEN_ALL = process.env.SCREEN_ALL !== '0';           // preseji čisto vse najdene proge
+const FAR_KM     = Number(process.env.FAR_KM     || 2500);   // od kod naprej šteje za »oddaljeno«
+const FAR_SHARE  = Number(process.env.FAR_SHARE  || 0.65);   // toliko mest v globinskem iskanju gre oddaljenim
 
 // ---- DOLŽINA POTOVANJA (Miša, 22.9.2026) ----
 // »Evropske ne smejo biti krajše kot 4 dni, lahko so 3 dni če je cena res zelo nizka,
@@ -611,7 +620,7 @@ const wishKeys = new Set(wishPairs.map(d=>d.fromCode+'|'+d.code));
 console.log(`Zimsko sonce (tropske/oddaljene za božič in zimske počitnice): ${pairs.filter(d=>d.winterSun).length} najdenih, jemljem ${sunPairs.length}`);
 
 // uravnotežen izbor po celinah, da pridejo zraven tudi eksotične
-const CAPS = {evropa:120, azija:60, afrika:45, 'sev-amerika':25, 'sred-amerika':40, 'juz-amerika':20, oceanija:10};
+const CAPS = {evropa:90, azija:140, afrika:110, 'sev-amerika':60, 'sred-amerika':80, 'juz-amerika':60, oceanija:30};
 const groups = {};
 pairs.forEach(d=>{ const k=d.fromCode+'|'+d.code; if(!sunKeys.has(k) && !wishKeys.has(k)) (groups[d.continent]=groups[d.continent]||[]).push(d); });
 let rest = [];
@@ -631,10 +640,45 @@ const PER_ORIGIN = Number(process.env.PER_ORIGIN || 30);
   }
   rest = firstPass.concat(laterPass);
 }
-let picked = wishPairs.concat(sunPairs, rest);
+let ordered = wishPairs.concat(sunPairs, rest);
+
+// ---- SITO: en klic na VSAKO najdeno progo -------------------------------------------
+// Tako res pregledamo vse opcije, ne le najcenejših MAX_PAIRS. Klic je isti, ki bi ga
+// globinsko iskanje naredilo tako in tako (letni pregled), zato ni zavržen — rezultat
+// shranimo in ga spodaj ponovno uporabimo.
+const SCREEN = new Map();   // 'ODHOD|CILJ' → {base, avg}
+if (SCREEN_ALL) {
+  let ok = 0, dead = 0;
+  console.log(`\nSito: preverjam vseh ${ordered.length} najdenih prog (po en klic) …`);
+  for (const d of ordered) {
+    const base = await forDates(d.fromCode, d.code); await sleep(SLEEP_MS);
+    if (!base.length) { dead++; continue; }
+    const avg = routeAvg(base, d.fromCode, d.code, {city:d.city, country:d.country});
+    if (avg == null) { dead++; continue; }
+    const hits = pickTerms(base, avg, distKm(d.fromCode, d.code),
+      {cont:d.continent, from:d.fromCode, wish:d.wish});
+    SCREEN.set(d.fromCode+'|'+d.code, {base, avg});
+    d.screenHits = hits.length;
+    d.km = distKm(d.fromCode, d.code) || 0;
+    if (hits.length) ok++;
+  }
+  console.log(`Sito končano: ${ok} prog ima vsaj en termin po pravilu · ${dead} brez uporabnih podatkov.`);
+  // Naprej gredo samo proge, ki so sito prestale.
+  ordered = ordered.filter(d => d.screenHits > 0);
+  // Miša želi več oddaljenih: najprej napolnimo FAR_SHARE mest z oddaljenimi (najdlje prve),
+  // preostanek pa z bližnjimi po ceni. Brez tega evropski skoki spet zasedejo vse.
+  const far   = ordered.filter(d => d.km >= FAR_KM).sort((a,b)=>b.km-a.km);
+  const near  = ordered.filter(d => d.km <  FAR_KM);
+  const farN  = Math.min(far.length, Math.round(MAX_PAIRS * FAR_SHARE));
+  ordered = far.slice(0, farN).concat(near, far.slice(farN));
+  console.log(`Oddaljenih (nad ${FAR_KM} km) je ${far.length}, v globinsko iskanje jih gre ${Math.min(farN, MAX_PAIRS)}.`);
+}
+
+let picked = ordered;
 if (picked.length > MAX_PAIRS) picked = picked.slice(0, MAX_PAIRS);
 const perOut = {}; picked.forEach(d=>{ perOut[d.fromCode]=(perOut[d.fromCode]||0)+1; });
-console.log(`Preverjam prave cene za ${picked.length} prog (od tega ${picked.filter(d=>d.winterSun).length} zimsko sonce) …`);
+const farOut = picked.filter(d=>(d.km||distKm(d.fromCode,d.code)||0) >= FAR_KM).length;
+console.log(`\nGlobinsko iskanje datumov za ${picked.length} prog (${farOut} oddaljenih, ${picked.filter(d=>d.winterSun).length} zimsko sonce) …`);
 console.log(`Po odhodnih letališčih: ${Object.entries(perOut).sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+' '+v).join(' · ')}`);
 
 // 2b) GLOBOKO ISKANJE DATUMOV
@@ -656,9 +700,11 @@ const kept = [];
 let noDeal = 0, noData = 0, calls = 0, holTerms = 0;
 for (const d of picked) {
   const meta = {city:d.city, country:d.country};
-  const base = await forDates(d.fromCode, d.code); calls++; await sleep(SLEEP_MS);
+  const cached = SCREEN.get(d.fromCode+'|'+d.code);        // klic iz sita, da ga ne ponavljamo
+  let base = cached ? cached.base : null;
+  if (!base) { base = await forDates(d.fromCode, d.code); calls++; await sleep(SLEEP_MS); }
   if (!base.length) { noData++; continue; }
-  const avg = routeAvg(base, d.fromCode, d.code, meta);
+  const avg = cached ? cached.avg : routeAvg(base, d.fromCode, d.code, meta);
   if (avg == null) { noDeal++; continue; }
   const km = distKm(d.fromCode, d.code);
 
