@@ -675,10 +675,12 @@ button.svc__cta{border:0;cursor:pointer;font:inherit}
   background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);
   font-size:.72rem;font-weight:600;letter-spacing:.02em}
 .card__more{color:var(--muted);font-size:.82rem;margin:8px 0 0}
-.bag{display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 6px;border-radius:999px;
-  border:1px solid var(--line);background:var(--bg-2,transparent);color:var(--ink-2);
-  font-family:var(--font-sans);font-size:.74rem;font-weight:600;white-space:nowrap;line-height:1.5}
-.bag svg{flex:none;opacity:.85}
+.bag{display:inline-flex;align-items:center;justify-content:center;padding:3px;border-radius:8px;
+  border:1px solid var(--line);background:var(--bg-2,transparent);color:var(--ink-2);line-height:0}
+.bag svg{flex:none;opacity:.9}
+.baglegend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px}
+.baglegend__i{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:600;color:var(--ink-2)}
+.baglegend .bag{padding:2px}
 .bag--oddana{color:#1f7a55;border-color:color-mix(in srgb,#1f7a55 30%,var(--line))}
 .bag--rocna{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
 .bag--osebna{color:var(--muted)}
@@ -1969,18 +1971,40 @@ function dniTxt(t){var d=t.days!=null?t.days:(t.nights!=null?t.nights+1:null);if
 function termSub(t){return (airOf(t)?esc(airOf(t))+' · ':'')+(t.transfers>0?(t.transfers+(t.transfers===1?' prestop':(t.transfers===2?' prestopa':' prestopi'))):'direktno');}
 // Prtljaga: privzeta politika prevoznika (nizkocenovnik → samo majhna torba; klasični prevoznik →
 // ročna, na dolgih letih tudi oddana). Konkretna vozovnica se lahko razlikuje — tako tudi piše.
+// Miša (23.9.2026): »nočem da piše tako majhna torba, ampak da so take oznake:
+// ta kovček je če je samo personal bag, kovček je za carry on bag, in ta kovček
+// na progi za checked in bag«. Zato samo ikone, brez besedila:
+//   osebna = aktovka · ročna = kovček na kolesih · oddana = kovček na tekočem traku
 var BAGS={
-  osebna:{t:'samo majhna torba',d:'<path d="M9 9V7.5a3 3 0 0 1 6 0V9"/><rect x="6.5" y="9" width="11" height="10" rx="2.5"/>'},
-  rocna:{t:'ročna prtljaga',d:'<path d="M12 8V3.5"/><path d="M9.5 3.5h5"/><rect x="6" y="8" width="12" height="11" rx="2"/><circle cx="9" cy="20.6" r="1"/><circle cx="15" cy="20.6" r="1"/>'},
-  oddana:{t:'tudi oddana prtljaga',d:'<rect x="4.5" y="7" width="12" height="13" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h0A1.5 1.5 0 0 1 12 5.5V7"/><path d="M16.5 12H19a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2.5"/>'}
+  osebna:{ t:'samo osebna torba (gre pod sedež)', s:'osebna torba', d:
+     '<path d="M10.1 7.2V6.1a1.15 1.15 0 0 1 1.15-1.15h1.5A1.15 1.15 0 0 1 13.9 6.1v1.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<rect x="4.6" y="7.5" width="14.8" height="10.4" rx="1.9"/>'},
+  rocna:{ t:'ročna prtljaga (gre v kabino)', s:'ročna prtljaga', d:
+     '<path d="M8.9 8.5V4.5a1.5 1.5 0 0 1 1.5-1.5h3.2a1.5 1.5 0 0 1 1.5 1.5v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<path d="M11.3 8.5V6.4h1.4v2.1" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>'
+    +'<path fill-rule="evenodd" d="M7.3 8.7h9.4a2.1 2.1 0 0 1 2.1 2.1v6.6a2.1 2.1 0 0 1-2.1 2.1H7.3a2.1 2.1 0 0 1-2.1-2.1v-6.6a2.1 2.1 0 0 1 2.1-2.1Zm1.5 2.1v7.6h1.2v-7.6H8.8Zm3.2 0v7.6h1.2v-7.6H12Z"/>'
+    +'<circle cx="8.5" cy="20.6" r="1.1"/><circle cx="15.5" cy="20.6" r="1.1"/>'},
+  oddana:{ t:'tudi oddana prtljaga (gre v prtljažnik)', s:'oddana prtljaga', d:
+     '<path d="M10.5 6.7V5.8a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v.9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<rect x="9" y="7" width="6" height="7.6" rx="1"/>'
+    +'<rect x="5.7" y="8.3" width="2.5" height="6.3" rx=".9"/><rect x="15.8" y="8.3" width="2.5" height="6.3" rx=".9"/>'
+    +'<path fill-rule="evenodd" d="M4.7 15.9h14.6a2.4 2.4 0 0 1 0 4.8H4.7a2.4 2.4 0 0 1 0-4.8Zm1.8 1.5a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8Zm3.2 0a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8Zm3.2 0a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8Zm3.2 0a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8Z"/>'}
 };
 function bagHTML(b){
   var x=BAGS[b]; if(!x) return '';
-  return '<span class="bag bag--'+b+'" title="'+x.t+' — privzeta prtljaga prevoznika, potrdi ob nakupu">'
-    +'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+x.d+'</svg>'
-    +x.t+'</span>';
+  return '<span class="bag bag--'+b+'" role="img" aria-label="'+x.t+'"'
+    +' title="'+x.t+' — privzeta prtljaga prevoznika, potrdi ob nakupu">'
+    +'<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">'+x.d+'</svg>'
+  +'</span>';
 }
-var BAGNOTE='<p class="terms__note">Prikazana prtljaga je <strong>privzeta politika prevoznika</strong> — pri nakupu preveri, kaj je vključeno v izbrano ceno.</p>';
+// Ker pri terminu ni več besedila, je pod seznamom legenda, da je pomen ikon jasen
+// tudi brez miške (na telefonu namiga ni).
+function bagLegend(){
+  return '<span class="baglegend">'+['osebna','rocna','oddana'].map(function(k){
+    return '<span class="baglegend__i">'+bagHTML(k)+BAGS[k].s+'</span>';
+  }).join('')+'</span>';
+}
+var BAGNOTE='<p class="terms__note">'+bagLegend()+'Prikazana prtljaga je <strong>privzeta politika prevoznika</strong> — pri nakupu preveri, kaj je vključeno v izbrano ceno.</p>';
 // Oznaka počitniškega termina; če je cena dobra glede na TISTO obdobje, pokažemo tudi odstotek.
 function holChip(t){
   if(!t.hol||!t.hol.length) return '';
