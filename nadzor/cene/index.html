@@ -168,7 +168,7 @@ td.num{font-family:var(--fm);font-variant-numeric:tabular-nums}
     $('loginErr').textContent='Preverjam…';
     load().then(function(){
       $('gate').hidden=true; $('app').hidden=false;
-      try{sessionStorage.setItem('bkrj_pw',PW);}catch(err){}
+      try{localStorage.setItem('bkrj_admin_pw',PW);}catch(err){}
     }).catch(function(){ $('loginErr').textContent='Napačno geslo.'; });
   };
 
@@ -280,8 +280,8 @@ td.num{font-family:var(--fm);font-variant-numeric:tabular-nums}
     setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
   };
 
-  // samodejna prijava v isti seji
-  try{ var s=sessionStorage.getItem('bkrj_pw');
+  // samodejna prijava z geslom, shranjenim v nadzorni plošči (skupno vsem zavihkom)
+  try{ var s=localStorage.getItem('bkrj_admin_pw') || sessionStorage.getItem('bkrj_pw');
     if(s){ PW=s; load().then(function(){ $('gate').hidden=true; $('app').hidden=false; }).catch(function(){}); }
   }catch(e){}
 })();

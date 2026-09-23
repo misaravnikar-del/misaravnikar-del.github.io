@@ -96,6 +96,25 @@ input:focus{border-color:var(--accent2)}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media(max-width:820px){ .cards{grid-template-columns:1fr 1fr} .two{grid-template-columns:1fr} }
 @media(max-width:460px){ .cards{grid-template-columns:1fr 1fr} .brand{font-size:21px} }
+.segs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.seg{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;
+  border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--ink)}
+.seg b{font-family:var(--fd);font-size:15px}
+.seg.clovek{border-color:#1f7a55;color:#1f7a55;background:#f0f8f4}
+.seg.verjetno{border-color:#0C7F93;color:#0C7F93;background:#eff8fa}
+.seg.bot{border-color:#b8452c;color:#b8452c;background:#fdf3f0}
+.sess{display:flex;flex-direction:column;gap:7px;max-height:420px;overflow:auto}
+.srow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  padding:10px 12px;border:1px solid var(--line);border-radius:11px;font-size:13px}
+.srow .tag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.srow .tag.clovek{background:#e6f4ed;color:#1f7a55}
+.srow .tag.verjetno{background:#e6f4f7;color:#0C7F93}
+.srow .tag.bot{background:#fbe9e4;color:#b8452c}
+.srow .tag.sumljivo{background:#f3f1e8;color:#8a7a3f}
+.srow .meta{color:var(--muted);font-size:12px}
+.srow .meta b{color:var(--ink);font-weight:600}
+.srow .kdaj{color:var(--muted);font-size:12px;white-space:nowrap;text-align:right}
+
 </style>
 </head>
 <body>
@@ -132,6 +151,13 @@ input:focus{border-color:var(--accent2)}
       <div class="card stat"><div class="ic">👁️</div><div class="k">Ogledi strani</div><div class="v" id="s_views">–</div></div>
       <div class="card stat"><div class="ic">📅</div><div class="k">Ogledi danes</div><div class="v" id="s_today">–</div></div>
       <div class="card stat"><div class="ic">🔥</div><div class="k">Obiski (7 dni)</div><div class="v" id="s_7d">–</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Kdo je bil na strani</h2>
+      <p class="hint">Vsaka vrstica je en brskalnik. Imena, e-naslova ali naslova IP ne zbiramo — vidiš samo vzorec vedenja, iz katerega se pozna, ali je bil obisk resničen ali strojni.</p>
+      <div class="segs" id="segs"></div>
+      <div class="sess" id="sess"></div>
     </div>
 
     <div class="panel">
@@ -179,6 +205,41 @@ input:focus{border-color:var(--accent2)}
   function nice(n){ n=n||0; return n>=1000?(n/1000).toFixed(n>=10000?0:1)+'k':(''+n); }
   function cap(s){ if(!s)return '—'; s=(''+s).replace(/^#?deal\//,''); return s.charAt(0).toUpperCase()+s.slice(1).replace(/-/g,' '); }
   function fmtDay(d){ var p=(''+d).split('-'); return p.length===3?(+p[2])+'.'+(+p[1])+'.':d; }
+
+  function callSessions(pw){
+    return fetch(U+'/rest/v1/rpc/admin_sessions',{
+      method:'POST',
+      headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},
+      body:JSON.stringify({pass:pw})
+    }).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); });
+  }
+  var VRSTE={clovek:'človek', verjetno:'verjetno človek', bot:'robot / pajek', sumljivo:'strojno'};
+  function fmtTs(t){
+    var d=new Date(t);
+    return d.toLocaleDateString('sl-SI',{day:'numeric',month:'numeric'})+' '+
+           d.toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'});
+  }
+  function renderSessions(arr){
+    var segEl=$('segs'), el=$('sess'); if(!el) return;
+    arr=arr||[];
+    if(!arr.length){ el.innerHTML='<div class="empty">Še ni obiskov.</div>'; segEl.innerHTML=''; return; }
+    var c={clovek:0,verjetno:0,bot:0,sumljivo:0};
+    arr.forEach(function(x){ c[x.vrsta]=(c[x.vrsta]||0)+1; });
+    segEl.innerHTML =
+        '<span class="seg clovek"><b>'+c.clovek+'</b> ljudi</span>'
+      + '<span class="seg verjetno"><b>'+c.verjetno+'</b> verjetno ljudi</span>'
+      + '<span class="seg bot"><b>'+(c.bot+c.sumljivo)+'</b> robotov in pajkov</span>';
+    el.innerHTML = arr.map(function(x){
+      var kje = x.vstop && x.vstop!=='/' ? String(x.vstop).replace(/^#/,'') : 'domača stran';
+      return '<div class="srow">'
+        +'<span class="tag '+x.vrsta+'">'+(VRSTE[x.vrsta]||x.vrsta)+'</span>'
+        +'<span class="meta"><b>'+x.ogledov+'</b> ogledov · <b>'+x.minut+'</b> min'
+          +(x.akcij?' · <b>'+x.akcij+'</b> odprtih akcij':'')
+          +' · vstop: '+kje+'</span>'
+        +'<span class="kdaj">'+fmtTs(x.prvi)+'</span>'
+      +'</div>';
+    }).join('');
+  }
 
   function callStats(pw){
     return fetch(U+'/rest/v1/rpc/admin_stats',{
@@ -246,6 +307,7 @@ input:focus{border-color:var(--accent2)}
 
   function render(d){
     d=d||{};
+    callSessions(PW).then(renderSessions).catch(function(){});
     $('s_visits').textContent=nice(d.total_visits);
     $('s_views').textContent=nice(d.total_pageviews);
     $('s_today').textContent=nice(d.pageviews_today);

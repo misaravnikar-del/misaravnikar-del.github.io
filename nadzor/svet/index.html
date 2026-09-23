@@ -144,9 +144,22 @@ input:focus{border-color:var(--accent2)}
       headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},
       body:JSON.stringify({pass:PW,k:'about_stats',v:{ping:Date.now()}})})
       .then(function(r){ if(!r.ok) throw new Error(r.status);
+        try{localStorage.setItem('bkrj_admin_pw',PW);}catch(err){}
         $('gate').hidden=true; $('app').hidden=false; boot();
       }).catch(function(){ $('loginErr').textContent='Napačno geslo.'; });
   };
+
+  // samodejna prijava z geslom, shranjenim v nadzorni plošči (skupno vsem zavihkom)
+  (function(){
+    var s=null; try{ s=localStorage.getItem('bkrj_admin_pw'); }catch(e){}
+    if(!s) return;
+    fetch(U+'/rest/v1/rpc/set_setting',{method:'POST',
+      headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},
+      body:JSON.stringify({pass:s,k:'about_stats',v:{ping:Date.now()}})})
+      .then(function(r){ if(!r.ok) throw new Error(r.status);
+        PW=s; $('gate').hidden=true; $('app').hidden=false; boot();
+      }).catch(function(){});
+  })();
 
   function boot(){
     Promise.all([
