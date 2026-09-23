@@ -1,6 +1,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bookiraj.si</title>
+<meta name="description" content="Vsak dan preverjene akcije letalskih kart iz Ljubljane, Trsta, Benetk, Zagreba in Dunaja — samo termini, ki so res pod povprečno ceno proge.">
+<link rel="canonical" href="https://bookiraj.si/">
+
+<!-- Predogled, ko povezavo deliš na Facebooku, Instagramu ali TikToku -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Bookiraj.si">
+<meta property="og:locale" content="sl_SI">
+<meta property="og:url" content="https://bookiraj.si/">
+<meta property="og:title" content="Bookiraj.si — poceni letalske karte iz Slovenije">
+<meta property="og:description" content="Vsak dan preverjene akcije letalskih kart iz Ljubljane, Trsta, Benetk, Zagreba in Dunaja — samo termini, ki so res pod povprečno ceno proge.">
+<meta property="og:image" content="https://bookiraj.si/img/hero.jpg">
+<meta property="og:image:width" content="2000">
+<meta property="og:image:height" content="1328">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- Poveže stran z družbenimi omrežji (Google jih tako pripiše istemu podjetju) -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"Bookiraj.si",
+"url":"https://bookiraj.si/","logo":"https://bookiraj.si/img/logo.png",
+"email":"info@bookiraj.si","founder":{"@type":"Person","name":"Miša Ravnikar"},
+"sameAs":["https://www.instagram.com/bookiraj.si/","https://www.facebook.com/profile.php?id=61557471428545","https://www.tiktok.com/@bookiraj.si"]}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;600;700&display=swap">
@@ -1031,6 +1053,15 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 .cart__vat{color:var(--muted);font-size:.78rem;margin:0 0 16px}
 .cart__empty{color:var(--muted);text-align:center;padding:26px 0}
 
+.news__soc{display:block;margin-top:8px;font-size:.86rem;opacity:.85}
+.news__soc a{text-decoration:underline;text-underline-offset:2px}
+.about__soc{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;
+  margin-top:20px;font-size:.92rem;color:var(--ink-2)}
+.about__soc span{font-weight:600}
+.about__soc a{display:inline-flex;align-items:center;padding:6px 14px;border:1px solid var(--line);
+  border-radius:999px;background:var(--surface);font-weight:600;color:var(--accent)}
+.about__soc a:hover{border-color:var(--accent);background:var(--accent);color:var(--on-accent)}
+
 </style>
 
 <script>
@@ -1560,7 +1591,7 @@ window.bkrjSend = function(kind, o){
         <p class="nform__note">Se lahko odjaviš z enim klikom. Spoštujemo tvojo zasebnost.</p>
         <div class="nsuccess" role="status">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          <div class="news__msg"><b>Dobrodošla na krovu!</b><br><span style="opacity:.8">Od zdaj boš prva izvedela za najboljše akcije.</span></div>
+          <div class="news__msg"><b>Dobrodošla na krovu!</b><br><span style="opacity:.8">Od zdaj boš prva izvedela za najboljše akcije.</span><br><span class="news__soc">Najdeš nas tudi na <a href="https://www.instagram.com/bookiraj.si/" target="_blank" rel="noopener">Instagramu</a>, <a href="https://www.facebook.com/profile.php?id=61557471428545" target="_blank" rel="noopener">Facebooku</a> in <a href="https://www.tiktok.com/@bookiraj.si" target="_blank" rel="noopener">TikToku</a>.</span></div>
         </div>
       </div>
     </div>
@@ -1725,9 +1756,9 @@ window.bkrjSend = function(kind, o){
           info@bookiraj.si
         </a>
         <div class="foot__soc">
-          <a class="icon-btn" href="#news" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
-          <a class="icon-btn" href="#news" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3V6h-3c-2 0-3.5 1.5-3.5 3.5V11H8v3h2.5v7h3v-7H16l.5-3h-3V9.8c0-.5.4-.8 1-.8z"/></svg></a>
-          <a class="icon-btn" href="#news" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 3c.3 2.2 1.6 3.7 3.8 3.9v2.7c-1.4.1-2.7-.3-3.8-1v5.9c0 3.3-2.4 5.6-5.5 5.6C7.5 20 5.4 17.9 5.4 15c0-2.7 2-4.9 4.9-4.9.3 0 .6 0 .9.1v2.9c-.3-.1-.6-.2-.9-.2-1.2 0-2 .9-2 2.1s.9 2.1 2.1 2.1c1.3 0 2.2-1 2.2-2.5V3z"/></svg></a>
+          <a class="icon-btn" href="https://www.instagram.com/bookiraj.si/" target="_blank" rel="noopener" aria-label="Bookiraj.si na Instagramu (odpre se v novem zavihku)" title="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          <a class="icon-btn" href="https://www.facebook.com/profile.php?id=61557471428545" target="_blank" rel="noopener" aria-label="Bookiraj.si na Facebooku (odpre se v novem zavihku)" title="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3V6h-3c-2 0-3.5 1.5-3.5 3.5V11H8v3h2.5v7h3v-7H16l.5-3h-3V9.8c0-.5.4-.8 1-.8z"/></svg></a>
+          <a class="icon-btn" href="https://www.tiktok.com/@bookiraj.si" target="_blank" rel="noopener" aria-label="Bookiraj.si na TikToku (odpre se v novem zavihku)" title="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 3c.3 2.2 1.6 3.7 3.8 3.9v2.7c-1.4.1-2.7-.3-3.8-1v5.9c0 3.3-2.4 5.6-5.5 5.6C7.5 20 5.4 17.9 5.4 15c0-2.7 2-4.9 4.9-4.9.3 0 .6 0 .9.1v2.9c-.3-.1-.6-.2-.9-.2-1.2 0-2 .9-2 2.1s.9 2.1 2.1 2.1c1.3 0 2.2-1 2.2-2.5V3z"/></svg></a>
         </div>
       </div>
       <div><h4>Destinacije</h4><ul>
@@ -1742,6 +1773,12 @@ window.bkrjSend = function(kind, o){
         <li><a href="#faq">Pogosta vprašanja</a></li>
         <li><a href="#o-nas">O nas</a></li>
         <li><a href="#tedna">Akcija tedna</a></li>
+      </ul></div>
+      <div><h4>Sledi nam</h4><ul>
+        <li><a href="https://www.instagram.com/bookiraj.si/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.facebook.com/profile.php?id=61557471428545" target="_blank" rel="noopener">Facebook</a></li>
+        <li><a href="https://www.tiktok.com/@bookiraj.si" target="_blank" rel="noopener">TikTok</a></li>
+        <li><a href="mailto:info@bookiraj.si">info@bookiraj.si</a></li>
       </ul></div>
       <div><h4>Pravno</h4><ul>
         <li><a href="#news">Zasebnost</a></li>
@@ -2274,6 +2311,11 @@ function onasHTML(){
         +'<p>Ker mi je iskanje šlo v kri, sem se odločila, da to počnem <strong>za vse</strong>. Bookiraj.si vsak dan pregleda cene z letališč v Ljubljani, Trstu, Benetkah, Zagrebu in okolici — in pokaže samo ponudbe, ki so res občutno pod povprečjem proge.</p>'
         +'<p>Brez desetih odprtih zavihkov in brez ugibanja, ali je cena dobra. Kar vidiš na strani, je preverjeno isti dan.</p>'
         +'<div class="about__cta"><a class="btn btn--lg" href="#letalske-karte">Poglej današnje akcije</a></div>'
+        +'<div class="about__soc"><span>Sledi mi:</span>'
+          +'<a href="https://www.instagram.com/bookiraj.si/" target="_blank" rel="noopener">Instagram</a>'
+          +'<a href="https://www.facebook.com/profile.php?id=61557471428545" target="_blank" rel="noopener">Facebook</a>'
+          +'<a href="https://www.tiktok.com/@bookiraj.si" target="_blank" rel="noopener">TikTok</a>'
+        +'</div>'
       +'</div>'
       +'<div class="wm__legend" id="wmLegend" hidden><span><i class="a"></i>kjer sem že bila</span><span><i class="b"></i>še na seznamu</span></div>'
     +'</div>'
