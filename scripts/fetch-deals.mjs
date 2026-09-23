@@ -41,7 +41,21 @@ const ALWAYS_UNDER = Number(process.env.ALWAYS_UNDER || 50);   // … ali cena p
 // dodaj še take ponudbe«. Razlog: klasični prevozniki imajo bistveno ožji razpon cen kot
 // nizkocenovniki, zato skoraj nikoli ne padejo 40 % pod povprečje proge (npr. VCE→BKK:
 // China Eastern −33 %, Air China −30 %, ITA −25 %). Zanje zato velja nižji prag.
-const MIN_DISCOUNT_FULL = Number(process.env.MIN_DISCOUNT_FULL || 0.20);
+// Miša (23.9.2026): »pa dodaj še turkish airlines«. Izmerjeno na 140 progah:
+// Turkish Airlines ne pade nikoli 40 % pod povprečje, najboljša ponudba je −33 %.
+// Pri pragu −20 % ustreza 10 ponudb, pri −15 % pa 21. Zato prag za klasične
+// prevoznike (TK, QR, EK, LH, AF …) spuščen na 15 %. V absolutnem znesku je to
+// več kot −40 % pri nizkocenovniku: −15 % na 600 € dolgi let je 90 € prihranka.
+const MIN_DISCOUNT_FULL = Number(process.env.MIN_DISCOUNT_FULL || 0.15);
+// Miša (23.9.2026): »ja spusti na 30«. Ljubljana ima malo prog in majhne cenovne skoke —
+// od 38 prog z dovolj podatki jih le 4 sploh kdaj pade 40 % pod povprečje, nobena karta
+// pa ni pod 50 €. Zato zanjo velja nižji prag; za ostala letališča ostane 40 %.
+// 23.9.2026: »ljubljano spusti na 10%«. Izmerjeno na vseh ljubljanskih progah:
+// prag −40 % doseže 4 proge, −30 % jih 9, −25 % jih 14, −10 % pa 28 od 38 — se pravi
+// skoraj vse. Ljubljana ima malo prog in ozke cenovne razpone; Miša je odločila, da
+// ji je pokritost pomembnejša od strogosti. Za ostala letališča ostane −40 %.
+const MIN_DISCOUNT_BY_ORIGIN = { LJU: Number(process.env.MIN_DISCOUNT_LJU || 0.10) };
+const discFor = from => (from && MIN_DISCOUNT_BY_ORIGIN[from] != null) ? MIN_DISCOUNT_BY_ORIGIN[from] : MIN_DISCOUNT;
 const MAX_PAIRS    = Number(process.env.MAX_PAIRS    || 300);  // varovalka za število API klicev
 // »še išči datume, tudi nepočitniške, dokler ne rečem da je dovolj« — koliko mesecev naprej
 // pregledamo za vsako progo. Več mesecev = več terminov, a daljši zagon. Zvišaj, ko reče »še«.
@@ -170,6 +184,55 @@ const SEASON = {
 // ---- katalog dovoljenih držav (ISO2 → SL ime, celina, sezona, eksotika) ----
 // Kar ni tu, se izpusti (tako izločimo nevarne/neobljudene države).
 const C = (sl,cont,season,x)=>({sl,cont,season,x:!!x});
+// ===================== MIŠIN ŽELENI SEZNAM (23.9.2026) =====================
+// »iz ljubljane dodaš London v vseh mesecih, španijo do konca novembra, ciper in malta
+//  zdaj do konca oktobra, francija za vse mesece, jug italije za vse mesece, švedska in
+//  finska in norveška od oktobra naprej, islandija, turčija kadarkoli, grčija do konec
+//  novembra, maroko, tunizija, nizozemska, dubaj, abudhabi kadarkoli, vse azijske države
+//  kadarkoli, afriške za safari kadarkoli … iz benetk kanarske otoke ali madeiro od
+//  oktobra do marca«
+//
+// Kaj naredi ta seznam:
+//  a) preskoči splošno sezonsko pravilo (npr. Skandinavija pozimi sicer izpade),
+//  b) omeji odhode na Mišino okno (from/until, prazno = kadarkoli),
+//  c) tem progam da prednost pri izbiri, da jih cenene evropske ne izrinejo.
+// Ne izmisli si prog: če leta iz Ljubljane v Laos ni, ga tudi tukaj ne bo.
+const SOUTH_IT = ['NAP','BRI','BDS','SUF','PMO','CTA','REG','TPS','CAG','OLB','AHO','PSR','CRV','QSR'];
+const CANARY   = ['TFS','TFN','TCI','LPA','ACE','FUE','SPC','GMZ','VDE'];
+const MADEIRA  = ['FNC','PXO'];
+const ASIA_CC  = ['CN','JP','SG','MY','VN','LA','KH','ID','LK','PH','TH','IN','MV','NP','KR','TW','HK','MO','AE','QA','OM','SA','JO','IL','GE','AM'];
+const SAFARI_CC= ['ZA','UG','NA','KE','TZ','MG','MU','SC'];
+const WISH = [
+  { from:'LJU', what:'London',              codes:['LON','LHR','LGW','STN','LTN','LCY'] },
+  { from:'LJU', what:'Španija',             cc:['ES'],                until:'2026-11-30' },
+  { from:'LJU', what:'Ciper in Malta',      cc:['CY','MT'],           until:'2026-10-31' },
+  { from:'LJU', what:'Francija',            cc:['FR'] },
+  { from:'LJU', what:'Jug Italije',         codes:SOUTH_IT },
+  { from:'LJU', what:'Skandinavija',        cc:['SE','FI','NO'],      since:'2026-10-01' },
+  { from:'LJU', what:'Islandija',           cc:['IS'] },
+  { from:'LJU', what:'Turčija',             cc:['TR'] },
+  { from:'LJU', what:'Grčija',              cc:['GR'],                until:'2026-11-30' },
+  { from:'LJU', what:'Maroko',              cc:['MA'] },
+  { from:'LJU', what:'Tunizija',            cc:['TN'] },
+  { from:'LJU', what:'Nizozemska',          cc:['NL'] },
+  { from:'LJU', what:'Azija in Zaliv',      cc:ASIA_CC },
+  { from:'LJU', what:'Afrika za safari',    cc:SAFARI_CC },
+  { from:'VCE', what:'Kanarski otoki in Madeira', codes:CANARY.concat(MADEIRA),
+                since:'2026-10-01', until:'2027-03-31' },
+];
+// vrne pravilo z želenega seznama za to progo (ali null)
+function wishFor(from, dest){
+  const ci = CITY[dest];
+  for (const w of WISH) {
+    if (w.from !== from) continue;
+    if (w.codes && w.codes.includes(dest)) return w;
+    if (w.cc && ci && w.cc.includes(ci.cc)) return w;
+  }
+  return null;
+}
+// ali odhod pade v Mišino okno za to progo
+const wishDateOK = (w, dep) => !w || ((!w.since || dep >= w.since) && (!w.until || dep <= w.until));
+
 const CATALOG = {
   // Evropa
   ES:C('Španija','evropa','medcity'), IT:C('Italija','evropa','medcity'), PT:C('Portugalska','evropa','medcity'),
@@ -195,9 +258,11 @@ const CATALOG = {
   IN:C('Indija','azija','tropic',1), MV:C('Maldivi','azija','tropic',1), PH:C('Filipini','azija','tropic',1),
   KH:C('Kambodža','azija','tropic',1), NP:C('Nepal','azija','temperate',1), JP:C('Japonska','azija','temperate',1),
   KR:C('Južna Koreja','azija','temperate',1), CN:C('Kitajska','azija','temperate',1),
+  TW:C('Tajvan','azija','tropic',1), HK:C('Hongkong','azija','tropic',1), MO:C('Macao','azija','tropic',1),   // Miša, 23.9.2026: »vse azijske države«
   // Afrika
   MA:C('Maroko','afrika','desert',1), EG:C('Egipt','afrika','desert',1), TN:C('Tunizija','afrika','beach',1),
   KE:C('Kenija','afrika','safari',1), TZ:C('Tanzanija','afrika','tropic',1), ZA:C('Južna Afrika','afrika','southern',1),
+  UG:C('Uganda','afrika','safari',1), MG:C('Madagaskar','afrika','tropic',1),   // Miša, 23.9.2026: safari
   NA:C('Namibija','afrika','southern',1), MU:C('Mauritius','afrika','tropic',1), SC:C('Sejšeli','afrika','tropic',1),
   CV:C('Zelenortski otoki','afrika','equator',1), SN:C('Senegal','afrika','tropic',1),
   // Severna Amerika
@@ -380,8 +445,9 @@ function routeAvg(data, fromCode, code, meta){
 }
 const isLowcost = code => !!(AIR[code] && AIR[code].lowcost);
 function pickTerms(data, avg, km, opt){
-  const cutLow  = avg * (1 - MIN_DISCOUNT);        // nizkocenovniki: strog prag
-  const cutFull = avg * (1 - MIN_DISCOUNT_FULL);   // klasični prevozniki: nižji prag
+  const minDisc = discFor(opt && opt.from);        // prag velja glede na odhodno letališče
+  const cutLow  = avg * (1 - minDisc);             // nizkocenovniki: strog prag
+  const cutFull = avg * (1 - Math.min(MIN_DISCOUNT_FULL, minDisc));   // klasični prevozniki: nikoli strožji
   const win = (opt && opt.window) || null;                  // {start,end} za počitniško iskanje
   const seen = new Set();
   return data
@@ -392,6 +458,8 @@ function pickTerms(data, avg, km, opt){
       const ret = d.return_at ? d.return_at.slice(0,10) : dep;
       return dep >= win.start && dep <= win.end && ret <= win.endPlus;   // potovanje ostane v počitnicah
     })
+    // Mišino okno z želenega seznama (npr. Španija samo do konca novembra)
+    .filter(d => wishDateOK(opt && opt.wish, (d.departure_at||'').slice(0,10)))
     .sort((a,b)=>a.price-b.price)
     .filter(d => { const k = (d.departure_at||'').slice(0,10); if (!k || seen.has(k)) return false; seen.add(k); return true; })
     .map(d => {
@@ -430,7 +498,7 @@ function contOf(code){ const ci = CITY[code]; const cat = ci && CATALOG[ci.cc]; 
 function routeTerms(data, fromCode, code, meta){
   const avg = routeAvg(data, fromCode, code, meta);
   if (avg == null) return null;
-  const terms = pickTerms(data, avg, distKm(fromCode, code), {cont:contOf(code)}).slice(0,MAX_TERMS).sort((a,b)=>a.depart<b.depart?-1:1);
+  const terms = pickTerms(data, avg, distKm(fromCode, code), {cont:contOf(code), from:fromCode, wish:wishFor(fromCode, code)}).slice(0,MAX_TERMS).sort((a,b)=>a.depart<b.depart?-1:1);
   if (!terms.length) return null;
   const r = cardStats(terms, avg);
   r.rawAvg = avg;
@@ -471,15 +539,16 @@ for (const o of ORIGINS) {
     const ci = CITY[dest]; if (!ci) continue;
     const cat = CATALOG[ci.cc]; if (!cat) { dropCat++; continue; }      // samo dovoljene države
     if (tooClose(o.code, dest)) { dropClose++; continue; }              // PRAVILO 1
+    const wish = wishFor(o.code, dest);                  // Mišin želeni seznam
     const depMonth = +it.depart_date.slice(5,7);
-    if (!SEASON[cat.season].m.includes(depMonth)) { dropSeason++; continue; }
+    if (!wish && !SEASON[cat.season].m.includes(depMonth)) { dropSeason++; continue; }
     const nights = nightsBetween(it.depart_date, it.return_date);
     if (!tripOK(nights, cat.cont, it.distance||distKm(o.code,dest), it.value)) { dropNights++; continue; }
     const key = o.code+'|'+dest;
     if (cand[key] && cand[key].hint <= it.value) continue;
     cand[key] = { fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
       en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
-      season:SEASON[cat.season].note, hint:Math.round(it.value),
+      season:SEASON[cat.season].note, hint:Math.round(it.value), wish:wish||null,
       homeKm:distKm(HOME,dest), routeKm:distKm(o.code,dest) };
   }
 }
@@ -502,7 +571,8 @@ for (const mth of holMonths) {
       const ci = CITY[dest]; if (!ci) continue;
       const cat = CATALOG[ci.cc]; if (!cat) continue;
       if (tooClose(o.code, dest)) continue;
-      if (!SEASON[cat.season].m.includes(+it.depart_date.slice(5,7))) continue;
+      const wish = wishFor(o.code, dest);
+      if (!wish && !SEASON[cat.season].m.includes(+it.depart_date.slice(5,7))) continue;
       const key = o.code+'|'+dest;
       // zimsko sonce: tropska/topla destinacija, dovolj daleč, v božičnih ali zimskih počitnicah
       const winterSun = SUNNY.has(cat.season) && (distKm(HOME,dest)||0) >= SUN_MIN_KM
@@ -514,7 +584,7 @@ for (const mth of holMonths) {
       }
       cand[key] = { fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
         en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
-        season:SEASON[cat.season].note, hint:Math.round(it.value), winterSun,
+        season:SEASON[cat.season].note, hint:Math.round(it.value), winterSun, wish:wish||null,
         homeKm:distKm(HOME,dest), routeKm:distKm(o.code,dest) };
       holAdded++;
     }
@@ -529,12 +599,21 @@ console.log(`Izpuščeno: ${dropClose} prebližu (<${MIN_HOME_KM} km od Ljubljan
 // pridejo v izbor pred cenenimi evropskimi skoki (te bi sicer vedno zasedle mesta).
 const sunPairs = pairs.filter(d => d.winterSun).slice(0, SUN_QUOTA);
 const sunKeys = new Set(sunPairs.map(d=>d.fromCode+'|'+d.code));
+// MIŠIN ŽELENI SEZNAM IMA PREDNOST: te proge gredo v preverjanje pred vsemi drugimi,
+// sicer jih cenene evropske proge izrinejo iz kvote MAX_PAIRS.
+const wishPairs = pairs.filter(d => d.wish && !sunKeys.has(d.fromCode+'|'+d.code));
+const wishKeys = new Set(wishPairs.map(d=>d.fromCode+'|'+d.code));
+{
+  const byWhat = {};
+  wishPairs.forEach(d => { byWhat[d.wish.what] = (byWhat[d.wish.what]||0)+1; });
+  console.log(`Z Mišinega želenega seznama najdenih ${wishPairs.length} prog: ${Object.entries(byWhat).map(([k,v])=>k+' '+v).join(' · ')||'nobene'}`);
+}
 console.log(`Zimsko sonce (tropske/oddaljene za božič in zimske počitnice): ${pairs.filter(d=>d.winterSun).length} najdenih, jemljem ${sunPairs.length}`);
 
 // uravnotežen izbor po celinah, da pridejo zraven tudi eksotične
 const CAPS = {evropa:120, azija:60, afrika:45, 'sev-amerika':25, 'sred-amerika':40, 'juz-amerika':20, oceanija:10};
 const groups = {};
-pairs.forEach(d=>{ if(!sunKeys.has(d.fromCode+'|'+d.code)) (groups[d.continent]=groups[d.continent]||[]).push(d); });
+pairs.forEach(d=>{ const k=d.fromCode+'|'+d.code; if(!sunKeys.has(k) && !wishKeys.has(k)) (groups[d.continent]=groups[d.continent]||[]).push(d); });
 let rest = [];
 for (const k in groups) rest = rest.concat(groups[k].slice(0, CAPS[k]||25));
 rest.sort((a,b)=>a.hint-b.hint);
@@ -552,7 +631,7 @@ const PER_ORIGIN = Number(process.env.PER_ORIGIN || 30);
   }
   rest = firstPass.concat(laterPass);
 }
-let picked = sunPairs.concat(rest);
+let picked = wishPairs.concat(sunPairs, rest);
 if (picked.length > MAX_PAIRS) picked = picked.slice(0, MAX_PAIRS);
 const perOut = {}; picked.forEach(d=>{ perOut[d.fromCode]=(perOut[d.fromCode]||0)+1; });
 console.log(`Preverjam prave cene za ${picked.length} prog (od tega ${picked.filter(d=>d.winterSun).length} zimsko sonce) …`);
@@ -583,11 +662,11 @@ for (const d of picked) {
   if (avg == null) { noDeal++; continue; }
   const km = distKm(d.fromCode, d.code);
 
-  let found = pickTerms(base, avg, km, {cont:d.continent});   // najcenejši čez celo leto
+  let found = pickTerms(base, avg, km, {cont:d.continent, from:d.fromCode, wish:d.wish});   // najcenejši čez celo leto
   for (const mth of monthList) {
     const data = await forDates(d.fromCode, d.code, mth); calls++; await sleep(SLEEP_MS);
     if (!data.length) continue;
-    found = found.concat(pickTerms(data, avg, km, {cont:d.continent}));   // pravilo 2 glede na letno povprečje
+    found = found.concat(pickTerms(data, avg, km, {cont:d.continent, from:d.fromCode, wish:d.wish}));   // pravilo 2 glede na letno povprečje
 
     // Počitniški termini se primerjajo tudi s povprečjem SVOJEGA obdobja
     // (božični let skoraj nikoli ni 40 % pod letnim povprečjem — takrat so cene višje za vse).
@@ -600,7 +679,7 @@ for (const d of picked) {
       const wp = inWin.map(x=>x.price);
       if (wp.length < 3) continue;
       const holAvg = wp.reduce((a,b)=>a+b,0)/wp.length;
-      const extra = pickTerms(inWin, holAvg, km, {window:w, cont:d.continent}).map(t => {
+      const extra = pickTerms(inWin, holAvg, km, {window:w, cont:d.continent, from:d.fromCode, wish:d.wish}).map(t => {
         t.holAvg = Math.round(holAvg); t.holName = w.name; t.holDiscount = t.discount;
         t.discount = Math.max(0, Math.round((avg-t.price)/avg*100));
         return t;
@@ -706,7 +785,7 @@ if (MERGE) {
     process.exit(2);
   }
 }
-const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:outCurated, discover:outDiscover };
+const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, minDiscountByOrigin:MIN_DISCOUNT_BY_ORIGIN, alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:outCurated, discover:outDiscover };
 writeFileSync(new URL('../deals.js', import.meta.url), 'window.__BOOKIRAJ_DEALS__ = '+JSON.stringify(payload)+';\n');
 const allTerms = outCurated.concat(outDiscover).reduce((s,d)=>s+d.terms.length,0);
 console.log(`\nKurirane akcije: ${outCurated.length} (${skipCur} brez akcije) · Odkrite kartice: ${outDiscover.length} · skupaj terminov: ${allTerms}`);
