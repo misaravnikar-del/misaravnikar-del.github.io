@@ -25,7 +25,7 @@
 // 12. DOLŽINA POTOVANJA: evropske ≥4 dni (3 dni le pod SHORT_EU_MAX €),
 //     izven Evrope ≥7 dni, zelo oddaljene (≥VERYFAR_KM) ≥10 dni.
 // Zažene GitHub Action (skrivnost TRAVELPAYOUTS_TOKEN); lokalno: TRAVELPAYOUTS_TOKEN=... node scripts/fetch-deals.mjs
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 
 const TOKEN = process.env.TRAVELPAYOUTS_TOKEN;
 const MARKER = process.env.TP_MARKER || '779438';
@@ -101,11 +101,20 @@ function tripOK(nights, cont, km, price, avg){
   return days >= SHORT_EU_DAYS && price < SHORT_EU_MAX;          // 3 dni le pri res nizki ceni
 }
 
-const ORIGINS = [
+const ALL_ORIGINS = [
   {code:'LJU', city:'Ljubljana'}, {code:'TRS', city:'Trst'}, {code:'VCE', city:'Benetke'},
   {code:'ZAG', city:'Zagreb'}, {code:'VIE', city:'Dunaj'}, {code:'MXP', city:'Milano'},
   {code:'TSF', city:'Treviso'}, {code:'MUC', city:'Minhen'}, {code:'BUD', city:'Budimpešta'},
 ];
+// ONLY_ORIGINS=LJU  → iskanje samo za to letališče. Ker so ljubljanske cene v povprečju
+// višje od milanskih ali budimpeštanskih, LJU v skupnem izboru skoraj vedno izpade;
+// usmerjen zagon mu da svoj prostor. Uporabi skupaj z MERGE=1, da ostale kartice ostanejo.
+const ONLY = (process.env.ONLY_ORIGINS||'').toUpperCase().split(',').map(x=>x.trim()).filter(Boolean);
+const ORIGINS = ONLY.length ? ALL_ORIGINS.filter(o=>ONLY.includes(o.code)) : ALL_ORIGINS;
+if (ONLY.length && !ORIGINS.length) { console.error('ONLY_ORIGINS ne ustreza nobenemu letališču:', ONLY.join(',')); process.exit(1); }
+// MERGE=1 → nove kartice se zlijejo z obstoječim deals.js; zamenjajo se SAMO tiste
+// z odhodnih letališč, ki smo jih pravkar preiskali. Ostale ostanejo nedotaknjene.
+const MERGE = process.env.MERGE === '1';
 
 // ---- kurirane proge (slike) ----
 const ROUTES = [
@@ -431,7 +440,9 @@ function routeTerms(data, fromCode, code, meta){
 // =================== 1) KURIRANE (kartice) ===================
 const curated = [];
 let skipCur = 0;
+const ORIGIN_SET = new Set(ORIGINS.map(o=>o.code));
 for (const rt of ROUTES) {
+  if (!ORIGIN_SET.has(rt.fromCode)) continue;   // usmerjen zagon (ONLY_ORIGINS)
   const data = await forDates(rt.fromCode, rt.code); await sleep(250);
   if (!data.length) { console.log(`—  ${rt.fromCode}→${rt.code} ${rt.city}: ni podatkov`); continue; }
   const r = routeTerms(data, rt.fromCode, rt.code, {city:rt.city, country:rt.country});
@@ -527,9 +538,25 @@ pairs.forEach(d=>{ if(!sunKeys.has(d.fromCode+'|'+d.code)) (groups[d.continent]=
 let rest = [];
 for (const k in groups) rest = rest.concat(groups[k].slice(0, CAPS[k]||25));
 rest.sort((a,b)=>a.hint-b.hint);
+// KVOTA NA ODHODNO LETALIŠČE (Miša, 23.9.2026: »poišči mi še akcije iz Ljubljane«).
+// Brez nje skupno razvrščanje po ceni vedno da prednost Milanu in Budimpešti, kjer so
+// cene najnižje, Ljubljana pa izpade — med 149 karticami so bile iz LJU samo štiri.
+// Zdaj vsako letališče najprej dobi svojih PER_ORIGIN najcenejših prog, šele nato
+// preostala mesta zapolnimo po ceni.
+const PER_ORIGIN = Number(process.env.PER_ORIGIN || 30);
+{
+  const seenPer = {}, firstPass = [], laterPass = [];
+  for (const d of rest) {
+    seenPer[d.fromCode] = (seenPer[d.fromCode] || 0) + 1;
+    (seenPer[d.fromCode] <= PER_ORIGIN ? firstPass : laterPass).push(d);
+  }
+  rest = firstPass.concat(laterPass);
+}
 let picked = sunPairs.concat(rest);
 if (picked.length > MAX_PAIRS) picked = picked.slice(0, MAX_PAIRS);
+const perOut = {}; picked.forEach(d=>{ perOut[d.fromCode]=(perOut[d.fromCode]||0)+1; });
 console.log(`Preverjam prave cene za ${picked.length} prog (od tega ${picked.filter(d=>d.winterSun).length} zimsko sonce) …`);
+console.log(`Po odhodnih letališčih: ${Object.entries(perOut).sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+' '+v).join(' · ')}`);
 
 // 2b) GLOBOKO ISKANJE DATUMOV
 // Miša: »še išči datume, tudi nepočitniške, dokler ne rečem da je dovolj.«
@@ -648,9 +675,13 @@ if (badUrl.length) { console.error('NAPAKA: povezave brez Aviasales/markerja:', 
 
 // ---- VAROVALKA: nikoli ne prepiši deals.js s praznimi/okrnjenimi podatki ----
 // Če API omeji klice (429) ali pade, bi sicer stran ostala brez akcij.
-if (curated.length < 3 || discover.length < 25) {
+// Pri usmerjenem zagonu (ONLY_ORIGINS + MERGE) je malo kartic normalno — takrat
+// zahtevamo le, da je zagon sploh kaj našel; celoto preveri check-rules.mjs po zlitju.
+const MIN_CUR = (ONLY.length && MERGE) ? 0 : 3;
+const MIN_DIS = (ONLY.length && MERGE) ? 1 : 25;
+if (curated.length < MIN_CUR || discover.length < MIN_DIS) {
   console.error(`\n❌ PREMALO PODATKOV — deals.js NI bil prepisan (obstoječe akcije ostanejo).`);
-  console.error(`   kurirane ${curated.length} (najmanj 3) · odkrite ${discover.length} (najmanj 25)`);
+  console.error(`   kurirane ${curated.length} (najmanj ${MIN_CUR}) · odkrite ${discover.length} (najmanj ${MIN_DIS})`);
   console.error(`   API: ${apiCalls} klicev · ${rateHits} zavrnjenih zaradi omejitve · ${hardFails} neuspelih.`);
   console.error(`   Najverjetneje začasna omejitev Travelpayouts. Poskusi čez kakšno uro.`);
   process.exit(2);
@@ -659,7 +690,23 @@ if (curated.length < 3 || discover.length < 25) {
 // ---- PRAVILO 7: dnevna zgodovina povprečij v Supabase ----
 await logPrices(priceLog);
 
-const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:curated, discover };
+// ---- ZLITJE: ohrani kartice z letališč, ki jih ta zagon ni preiskal ----
+let outCurated = curated, outDiscover = discover;
+if (MERGE) {
+  try {
+    const prev = readFileSync(new URL('../deals.js', import.meta.url), 'utf8');
+    const old = JSON.parse(prev.slice(prev.indexOf('{'), prev.lastIndexOf('}')+1));
+    const keep = d => !ORIGIN_SET.has(d.fromCode);
+    const keptCur = (old.deals||[]).filter(keep), keptDis = (old.discover||[]).filter(keep);
+    outCurated = keptCur.concat(curated).sort((a,b)=>a.fromPrice-b.fromPrice);
+    outDiscover = keptDis.concat(discover);
+    console.log(`Zlito z obstoječim: obdržanih ${keptCur.length}+${keptDis.length} kartic z drugih letališč, osveženih ${curated.length}+${discover.length} z ${[...ORIGIN_SET].join(', ')}.`);
+  } catch (e) {
+    console.error('Zlitje ni uspelo (obstoječega deals.js ne znam prebrati):', e.message);
+    process.exit(2);
+  }
+}
+const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:outCurated, discover:outDiscover };
 writeFileSync(new URL('../deals.js', import.meta.url), 'window.__BOOKIRAJ_DEALS__ = '+JSON.stringify(payload)+';\n');
-const allTerms = curated.concat(discover).reduce((s,d)=>s+d.terms.length,0);
-console.log(`\nKurirane akcije: ${curated.length} (${skipCur} brez akcije) · Odkrite kartice: ${discover.length} · skupaj terminov: ${allTerms}`);
+const allTerms = outCurated.concat(outDiscover).reduce((s,d)=>s+d.terms.length,0);
+console.log(`\nKurirane akcije: ${outCurated.length} (${skipCur} brez akcije) · Odkrite kartice: ${outDiscover.length} · skupaj terminov: ${allTerms}`);
