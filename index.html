@@ -1094,6 +1094,28 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 .page__ul li{margin-bottom:.45rem}
 .page__ul strong,.page__p strong{color:var(--ink)}
 
+/* ===================== MUST SEE ===================== */
+.must{margin-top:3.4rem;padding-top:2.6rem;border-top:1px solid var(--line)}
+.must__head{margin-bottom:1.8rem}
+.must__head h2{font-size:clamp(1.5rem,3.4vw,2.2rem);max-width:22ch;margin:.3rem 0 0;text-wrap:balance}
+.must__grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.must__c{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.must__img{position:relative;aspect-ratio:4/3;max-width:100%;background:var(--surface-2)}
+.must__img img{width:100%;height:100%;object-fit:cover;display:block}
+.must__n{position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:999px;
+  background:var(--accent);color:var(--on-accent);display:grid;place-items:center;
+  font-family:var(--font-mono);font-size:.82rem;font-weight:600}
+.must__t{padding:16px 18px 20px}
+.must__t h3{font-size:1.08rem;margin:0 0 6px}
+.must__t p{color:var(--ink-2);font-size:.91rem;line-height:1.6;margin:0}
+.must__cta{margin-top:26px;padding:24px 26px;border:1px solid var(--accent);border-radius:var(--radius);
+  background:var(--surface);display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;justify-content:space-between}
+.must__cta h3{font-size:1.2rem;margin:0 0 5px}
+.must__cta p{color:var(--ink-2);font-size:.93rem;line-height:1.55;margin:0;max-width:52ch}
+.must__cta .btn{white-space:nowrap}
+.must__src{color:var(--muted);font-size:.78rem;margin-top:14px}
+
 </style>
 
 <script>
@@ -1834,6 +1856,7 @@ window.bkrjSend = function(kind, o){
 </footer>
 
 <script src="deals.js"></script>
+<script src="sights.js"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
@@ -2506,6 +2529,40 @@ function initAbout(){
 
 // --- Ena akcija = en par odhod→prihod, z VSEMI razpoložljivimi datumi ---
 // Vsak termin je gumb na Aviasales (Mišin affiliate) — nikoli na drugo primerjalno stran.
+// ===================== MUST SEE (znamenitosti destinacije) =====================
+// PREDOGLED: razdelek se prikaže samo, če je v naslovu ?test=1
+// (bookiraj.si/?test=1#ponudba/VIE-DPS). Strankam zaenkrat ni viden.
+// Ko Miša potrdi videz, odstranim pogoj in dopolnim znamenitosti za vse destinacije.
+var SIGHTS = window.__BOOKIRAJ_SIGHTS__ || {};
+var TESTNI = location.search.indexOf('test=1') >= 0;
+
+function mustSeeHTML(code, city){
+  if(!TESTNI) return '';
+  var list = SIGHTS[code];
+  if(!list || list.length < 3) return '';
+  return '<section class="must">'
+    +'<div class="must__head">'
+      +'<p class="eyebrow">Ko prispeš</p>'
+      +'<h2>Kaj si v '+city+' res ne smeš pustiti uiti</h2>'
+    +'</div>'
+    +'<div class="must__grid">'
+      + list.slice(0,5).map(function(x,i){
+          return '<article class="must__c">'
+            +'<div class="must__img"><img src="'+x.img+'" alt="'+x.n+'" loading="lazy" decoding="async">'
+              +'<span class="must__n">'+(i+1)+'</span></div>'
+            +'<div class="must__t"><h3>'+x.n+'</h3><p>'+x.d+'</p></div>'
+          +'</article>';
+        }).join('')
+    +'</div>'
+    +'<div class="must__cta">'
+      +'<div><h3>Potrebuješ personaliziran načrt potovanja?</h3>'
+      +'<p>Povej, koliko dni imaš in kaj te veseli — sestavim ti itinerar po dnevih, z nastanitvami in prevozi.</p></div>'
+      +'<a class="btn btn--lg" href="#storitve-nakup">Poglej cenik</a>'
+    +'</div>'
+    +'<p class="must__src">Fotografije: Wikimedia Commons.</p>'
+  +'</section>';
+}
+
 function ponudbaHTML(key){
   var d=byPair[key];
   if(!d) return '<div class="page"><div class="container">'+BACK
@@ -2533,6 +2590,7 @@ function ponudbaHTML(key){
     +'<ul class="terms">'+rows+'</ul>'
     +'<p class="terms__note">Cene so najnižje najdene ob zadnjem osveževanju ('+fmtUpdated(UPDATED)+'). Končno ceno potrdiš pri ponudniku.</p>'
     +BAGNOTE
+    +mustSeeHTML(d.code, d.city)
     +'</div></div>';
 }
 
