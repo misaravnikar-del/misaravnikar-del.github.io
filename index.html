@@ -2176,6 +2176,7 @@ function detailHTML(d){
       +'</div>'
     +'</aside>'
   +'</div>'
+  +(mustSeeHTML(d.code, d.city) ? '<div class="container">'+mustSeeHTML(d.code, d.city)+'</div>' : '')
   +'<section class="sec sec--alt"><div class="container">'
     +'<div class="sec__head"><div><p class="eyebrow">Morda tudi</p><h2>Podobne akcije</h2></div></div>'
     +'<div class="grid">'+related.map(cardHTML).join('')+'</div>'
@@ -2543,7 +2544,7 @@ function mustSeeHTML(code, city){
   return '<section class="must">'
     +'<div class="must__head">'
       +'<p class="eyebrow">Ko prispeš</p>'
-      +'<h2>Kaj si v '+city+' res ne smeš pustiti uiti</h2>'
+      +'<h2>'+city+': kaj si res ne smeš pustiti uiti</h2>'
     +'</div>'
     +'<div class="must__grid">'
       + list.slice(0,5).map(function(x,i){

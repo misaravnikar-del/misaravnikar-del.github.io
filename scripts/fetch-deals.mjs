@@ -188,6 +188,7 @@ const SEASON = {
   safari:   {m:[1,2,6,7,8,9,10],              note:'suha doba (safari)'},
   andes:    {m:[5,6,7,8,9,10],                note:'suha doba (maj–okt)'},
   equator:  {m:[1,2,3,4,5,6,7,8,9,10,11,12], note:'skozi vse leto'},
+  pacific:  {m:[5,6,7,8,9,10],                note:'suha doba (maj–okt)'},
 };
 
 // ---- katalog dovoljenih držav (ISO2 → SL ime, celina, sezona, eksotika) ----
@@ -210,7 +211,7 @@ const SOUTH_IT = ['NAP','BRI','BDS','SUF','PMO','CTA','REG','TPS','CAG','OLB','A
 const CANARY   = ['TFS','TFN','TCI','LPA','ACE','FUE','SPC','GMZ','VDE'];
 const MADEIRA  = ['FNC','PXO'];
 const ASIA_CC  = ['CN','JP','SG','MY','VN','LA','KH','ID','LK','PH','TH','IN','MV','NP','KR','TW','HK','MO','AE','QA','OM','SA','JO','IL','GE','AM'];
-const SAFARI_CC= ['ZA','UG','NA','KE','TZ','MG','MU','SC'];
+const SAFARI_CC= ['ZA','UG','NA','KE','TZ','MG','MU','SC','RW','BW','ZM','ZW'];
 const WISH = [
   { from:'LJU', what:'London',              codes:['LON','LHR','LGW','STN','LTN','LCY'] },
   { from:'LJU', what:'Španija',             cc:['ES'],                until:'2026-11-30' },
@@ -272,6 +273,8 @@ const CATALOG = {
   MA:C('Maroko','afrika','desert',1), EG:C('Egipt','afrika','desert',1), TN:C('Tunizija','afrika','beach',1),
   KE:C('Kenija','afrika','safari',1), TZ:C('Tanzanija','afrika','tropic',1), ZA:C('Južna Afrika','afrika','southern',1),
   UG:C('Uganda','afrika','safari',1), MG:C('Madagaskar','afrika','tropic',1),   // Miša, 23.9.2026: safari
+  RW:C('Ruanda','afrika','safari',1), BW:C('Bocvana','afrika','safari',1),
+  ZM:C('Zambija','afrika','safari',1), ZW:C('Zimbabve','afrika','safari',1),   // Miša, 23.9.2026: »te vse daj v seznam dovoljenih«
   NA:C('Namibija','afrika','southern',1), MU:C('Mauritius','afrika','tropic',1), SC:C('Sejšeli','afrika','tropic',1),
   CV:C('Zelenortski otoki','afrika','equator',1), SN:C('Senegal','afrika','tropic',1),
   // Severna Amerika
@@ -289,6 +292,7 @@ const CATALOG = {
   EC:C('Ekvador','juz-amerika','equator',1),
   // Oceanija
   AU:C('Avstralija','oceanija','southern',1), NZ:C('Nova Zelandija','oceanija','southern',1),
+  PF:C('Francoska Polinezija','oceanija','pacific',1), FJ:C('Fidži','oceanija','pacific',1),   // Bora Bora, Tahiti, Fidži
 };
 
 // ---- SL imena za pogosta mesta (ostala ostanejo v izvirniku) ----
