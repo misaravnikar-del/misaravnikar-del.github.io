@@ -5,6 +5,7 @@
 //     po MINIMALNI dolžini potovanja in po ODDALJENOSTI (glej PRAVILA spodaj).
 //
 // PRAVILA, KI JIH JE DOLOČILA MIŠA (22.9.2026):
+// 14. Hrvaška, Avstrija in Madžarska niso destinacija (24.9.2026) — sosede, kamor se pelje.
 //  1. Naša odhodna letališča so SAMO odhodna, nikoli prihodna. Stranke so iz Slovenije —
 //     nima smisla, da se peljejo v Benetke, da bi spet čez Slovenijo leteli v Budimpešto.
 //     Zato: destinacija ne sme biti nobeno od ORIGINS (niti drugo letališče istega mesta).
@@ -194,6 +195,13 @@ const SEASON = {
 // ---- katalog dovoljenih držav (ISO2 → SL ime, celina, sezona, eksotika) ----
 // Kar ni tu, se izpusti (tako izločimo nevarne/neobljudene države).
 const C = (sl,cont,season,x)=>({sl,cont,season,x:!!x});
+
+// PRAVILO 14 (Miša, 24.9.2026): »ne letiš na hrvaško, avstrijo, madžarsko«.
+// Isti razlog kot pri pravilu 1: to so sosede, kamor se pelje z avtom ali vlakom —
+// nesmiselno je leteti tja, sploh z letališča, ki je pogosto že v tisti državi.
+// Velja za VSA letališča teh držav (Split, Dubrovnik, Salzburg, Debrecen …),
+// ne le za ZAG, VIE in BUD.
+const NO_DEST_CC = new Set(['HR','AT','HU']);
 // ===================== MIŠIN ŽELENI SEZNAM (23.9.2026) =====================
 // »iz ljubljane dodaš London v vseh mesecih, španijo do konca novembra, ciper in malta
 //  zdaj do konca oktobra, francija za vse mesece, jug italije za vse mesece, švedska in
@@ -248,10 +256,10 @@ const CATALOG = {
   ES:C('Španija','evropa','medcity'), IT:C('Italija','evropa','medcity'), PT:C('Portugalska','evropa','medcity'),
   GR:C('Grčija','evropa','medcity'), FR:C('Francija','evropa','eu'), GB:C('Anglija','evropa','eu'),
   DE:C('Nemčija','evropa','eu'), NL:C('Nizozemska','evropa','eu'), BE:C('Belgija','evropa','eu'),
-  IE:C('Irska','evropa','eu'), AT:C('Avstrija','evropa','eu'), CH:C('Švica','evropa','eu'),
-  CZ:C('Češka','evropa','eu'), PL:C('Poljska','evropa','eu'), HU:C('Madžarska','evropa','eu'),
+  IE:C('Irska','evropa','eu'), CH:C('Švica','evropa','eu'),   // Avstrija: pravilo 14
+  CZ:C('Češka','evropa','eu'), PL:C('Poljska','evropa','eu'),   // Madžarska: pravilo 14
   SK:C('Slovaška','evropa','eu'), RO:C('Romunija','evropa','eu'), BG:C('Bolgarija','evropa','eu'),
-  HR:C('Hrvaška','evropa','medcity'), RS:C('Srbija','evropa','eu'), BA:C('BiH','evropa','eu'),
+  RS:C('Srbija','evropa','eu'), BA:C('BiH','evropa','eu'),   // Hrvaška: pravilo 14
   ME:C('Črna gora','evropa','medcity'), MK:C('Sev. Makedonija','evropa','eu'), AL:C('Albanija','evropa','medcity'),
   MT:C('Malta','evropa','beach'), CY:C('Ciper','evropa','beach'), TR:C('Turčija','evropa','medcity'),
   EE:C('Estonija','evropa','eu'), LV:C('Latvija','evropa','eu'), LT:C('Litva','evropa','eu'),
@@ -417,6 +425,8 @@ const HOME_HUBS = new Set([
 // Pravilo 1b: in nič, kar je tako blizu, da se tja pelješ z avtom (Split, Bratislava, Gradec …).
 function tooClose(origin, dest){
   if (HOME_HUBS.has(dest)) return true;            // naše odhodno letališče ni destinacija
+  const _ci = CITY[dest];
+  if (_ci && NO_DEST_CC.has(_ci.cc)) return true; // pravilo 14: Hrvaška, Avstrija, Madžarska
   const home = distKm(HOME, dest);
   if (home == null) return true;                   // neznana lega → raje izpusti
   if (home < MIN_HOME_KM) return true;

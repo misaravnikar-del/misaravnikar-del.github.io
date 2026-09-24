@@ -26,6 +26,11 @@ const cap = a => a.slice(0, 5).join(', ') + (a.length > 5 ? ` … (+${a.length -
 const hubDest = all.filter(d => HOME_HUBS.has(d.code)).map(d => d.fromCode + '→' + d.code);
 if (hubDest.length) fail.push(`1. Destinacija je naše odhodno letališče: ${cap(hubDest)}`);
 
+// --- 14. sosednje države niso destinacija (Miša, 24.9.2026) ---
+const NO_DEST = new Set(['Hrvaška','Avstrija','Madžarska']);
+const soseda = all.filter(d => NO_DEST.has(d.country)).map(d => d.fromCode + '→' + d.code + ' (' + d.country + ')');
+if (soseda.length) fail.push(`14. Destinacija je sosednja država, kamor se pelje: ${cap(soseda)}`);
+
 // --- 2. vsaj -40 % ali pod 50 € ---
 // Velja tudi, če je termin −40 % glede na povprečje SVOJEGA počitniškega obdobja (holDiscount).
 const badTerm = [];
