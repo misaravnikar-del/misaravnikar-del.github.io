@@ -2126,11 +2126,22 @@ function featuredHTML(d){var t=(d.terms&&d.terms.length)?d.terms.reduce(function
 function renderFeatured(){var el=document.getElementById('featured');var sec=document.getElementById('tedna');if(!el)return;if(!DEALS.length){if(sec)sec.hidden=true;return;}var best=DEALS.slice().sort(function(a,b){return b.discount-a.discount;})[0];el.innerHTML=featuredHTML(best);}
 function renderPreview(){var el=document.getElementById('gridPreview');if(!el)return;var list=DEALS.slice().sort(function(a,b){return b.discount-a.discount;}).slice(0,4);el.innerHTML=list.map(cardHTML).join('');var m=document.querySelector('#akcije .more');if(m)m.hidden=DEALS.length<=4;}
 function renderDiscover(){var el=document.getElementById('discoverList');if(!el)return;var sec=document.getElementById('radar');if(!EXTRA.length){if(sec)sec.hidden=true;return;}var list=EXTRA.slice(0,12);el.innerHTML='<div class="radar">'+list.map(rowHTML).join('')+'</div><div class="more" style="margin-top:26px"><a href="#letalske-karte" class="btn btn--lg">Vseh '+EXTRA.length+' akcij <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>';}
+// Miša (24.9.2026): »vse strani želim da so take kot na 1. sliki« — ista bogata
+// postavitev (slika čez vso širino, ime mesta na njej, stranska kartica s ceno)
+// za VSE akcije, ne le za kurirane. Zato ta funkcija zdaj izriše oboje.
 function detailHTML(d){
-  // termini so urejeni po datumu, zato najcenejšega poiščemo posebej
   const cheapest=(d.terms&&d.terms.length)?d.terms.reduce(function(m,t){return t.price<m.price?t:m;},d.terms[0]):null;
-  const related=DEALS.filter(x=>x.img!==d.img&&x.region===d.region)
-    .concat(DEALS.filter(x=>x.img!==d.img&&x.region!==d.region)).slice(0,3);
+  const slika  = d.photo || ('img/'+d.img+'.jpg');
+  const odCene = (d.fromPrice != null) ? d.fromPrice : d.price;
+  const kljuc  = x => x.img || (x.fromCode+'-'+x.code);
+  const mojKey = kljuc(d), skupina = d.region || d.continent;
+  const vse    = DEALS.concat(EXTRA).filter(x => kljuc(x) !== mojKey);
+  const related = vse.filter(x => (x.region||x.continent) === skupina)
+    .concat(vse.filter(x => (x.region||x.continent) !== skupina)).slice(0,3);
+  // kurirane akcije imajo napisano besedilo; odkrite ga nimajo — zanje ga sestavimo
+  const uvod = d.long || (d.city+', '+d.country+'.'
+    + (d.season ? ' Najlepši čas za obisk: '+d.season+'.' : '')
+    + ' Spodaj so vsi termini, ki so trenutno pod povprečno ceno te proge.');
   const termRows=(d.terms||[]).map(t=>
     '<li><a href="'+t.url+'" target="_blank" rel="noopener">'
     +'<span class="term__l"><span class="term__date">'+fmtRangeISO(t.depart,t.ret)
@@ -2140,7 +2151,7 @@ function detailHTML(d){
     +'<svg class="term__go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>').join('');
   return ''
   +'<div class="detail__hero">'
-    +'<img src="img/'+d.img+'.jpg" alt="'+d.city+', '+d.country+'">'
+    +'<img src="'+slika+'" alt="'+d.city+', '+d.country+'">'
     +'<div class="detail__scrim"></div>'
     +'<div class="container detail__heroin">'
       +'<a class="detail__back" href="#letalske-karte"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Nazaj na vse akcije</a>'
@@ -2151,27 +2162,27 @@ function detailHTML(d){
   +'</div>'
   +'<div class="container detail__body">'
     +'<div class="detail__main">'
-      +'<p class="detail__lead">'+d.long+'</p>'
+      +'<p class="detail__lead">'+uvod+'</p>'
       +'<h3>Izberi termin</h3>'
       +'<p class="terms__hint">Klik na termin te odpelje na nakupno stran z že izbrano progo in datumi.</p>'
       +'<ul class="terms">'+termRows+'</ul>'
       +'<p class="terms__note">Cene so najnižje najdene ob zadnjem osveževanju ('+fmtUpdated(UPDATED)+'). Končno ceno potrdiš pri ponudniku.</p>'
     +BAGNOTE
-      +'<h3>Kaj te čaka</h3>'
-      +'<ul class="detail__hl">'+d.hl.map(h=>'<li>'+CHK+'<span>'+h+'</span></li>').join('')+'</ul>'
+      +((d.hl&&d.hl.length)?'<h3>Kaj te čaka</h3>'
+        +'<ul class="detail__hl">'+d.hl.map(h=>'<li>'+CHK+'<span>'+h+'</span></li>').join('')+'</ul>':'')
       +'<h3>Kaj je vključeno</h3>'
       +'<ul class="detail__inc">'+INCLUDED.map(i=>'<li>'+CHK+i+'</li>').join('')+'</ul>'
     +'</div>'
     +'<aside class="detail__side">'
       +'<div class="bookcard">'
-        +'<div class="price"><small>Povratna karta že od</small>'+priceHTML(d.fromPrice)+'</div>'
+        +'<div class="price"><small>Povratna karta že od</small>'+priceHTML(odCene)+'</div>'
         +'<dl>'
           +'<dt>Proga</dt><dd>'+d.fromCode+' → '+d.code+'</dd>'
           +'<dt>Odhod</dt><dd>'+d.fromCity+'</dd>'
           +'<dt>Povprečna cena</dt><dd>'+d.avg+' €</dd>'
           +'<dt>Prihranek</dt><dd>−'+d.discount+' %</dd>'
         +'</dl>'
-        +(cheapest?'<a class="btn btn--lg" href="'+cheapest.url+'" target="_blank" rel="noopener">Rezerviraj od '+d.fromPrice+' €</a>':'')
+        +(cheapest?'<a class="btn btn--lg" href="'+cheapest.url+'" target="_blank" rel="noopener">Rezerviraj od '+odCene+' €</a>':'')
         +'<p class="note">Nakup poteka pri Aviasalesu, z že izbrano progo in datumi.</p>'
       +'</div>'
     +'</aside>'
@@ -3056,9 +3067,10 @@ function route(){
   }
   if(pslug.indexOf('ponudba/')===0){
     var _pk=pslug.slice(8), _pd=byPair[_pk];
-    detailEl.innerHTML=ponudbaHTML(_pk);
+    // ista postavitev kot pri kuriranih akcijah (Miša, 24.9.2026)
+    detailEl.innerHTML=_pd?detailHTML(_pd):ponudbaHTML(_pk);
     showView('detail');
-    document.title=(_pd?_pd.fromCity+' → '+_pd.city:'Akcija')+' — Bookiraj.si'; window.scrollTo(0,0); return;
+    document.title=(_pd?_pd.city+' — Bookiraj.si':'Akcija — Bookiraj.si'); window.scrollTo(0,0); return;
   }
   if(pslug==='piskotki'){
     detailEl.innerHTML=piskotkiHTML();

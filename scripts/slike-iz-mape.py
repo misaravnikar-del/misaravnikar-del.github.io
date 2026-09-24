@@ -31,7 +31,10 @@ DEALS = os.path.join(KOREN, 'deals.js')
 ARHIV = os.path.join(KOREN, 'arhiv.js')
 SLIKE = os.path.join(KOREN, 'img', 'deals')
 EXT   = ('.jpg', '.jpeg', '.png', '.webp')
-SIRINA, KAKOVOST = 1400, 84
+# Miša (24.9.2026): »ne jih stiskat«. Slike zato ohranimo v izvirni velikosti
+# (2000 px) in skoraj brez izgube (JPEG 95). Pretvorba iz PNG v JPEG je nujna —
+# izvirni PNG-ji so po 4–6 MB in bi stran ustavili.
+SIRINA, KAKOVOST = 2000, 95
 
 # mape, ki niso destinacije
 NE_MAPE = {'Logotip', 'Stampi', 'spletna-stran', 'Dodatno'}
