@@ -776,18 +776,14 @@ async function download(url, code){
     writeFileSync(new URL('../img/deals/'+code+'.jpg', import.meta.url), buf); return true;
   }catch{ return false; }
 }
-const imgOK = new Map();                       // code → ali imamo sliko (ena slika na destinacijo)
+// PRAVILO 15 (Miša, 24.9.2026): »odstrani vse slike, in dodaj samo te, če jih imam jaz
+// v svojih mapah … Slika ne sme biti na platformi nikoli enaka, se pravi ne smeta biti
+// 2 enaki sliki, če se leti iz ljubljane in benetk, potem moraš dati 2 sliki gor.«
+// Zato tu slik NE prenašamo več z Wikipedije in kartic brez slike ne zavržemo —
+// o tem, katera kartica dobi katero sliko (in katera gre v arhiv), odloči
+// scripts/slike-iz-mape.py, ki teče takoj za tem skriptom.
 let discover = [], noImg = 0;
 for (const d of kept){
-  if (!imgOK.has(d.code)) {
-    let ok = existsSync(new URL('../img/deals/'+d.code+'.jpg', import.meta.url));
-    if (!ok) {
-      const src = await photoURL(d.en, d.enCountry); await sleep(120);
-      if (src) { ok = await download(src, d.code); await sleep(120); }
-    }
-    imgOK.set(d.code, ok);
-  }
-  if (!imgOK.get(d.code)) { noImg++; continue; }   // brez slike destinacije ne dodamo
   const c = d.terms.reduce((m,t)=>t.price<m.price?t:m, d.terms[0]);   // najcenejši termin = naslovni
   discover.push({
     fromCode:d.fromCode, fromCity:d.fromCity, code:d.code, city:d.city,
@@ -795,7 +791,7 @@ for (const d of kept){
     price:c.price, avg:d.avg, discount:d.discount,
     depart:c.depart, ret:c.ret, nights:c.nights, transfers:c.transfers, url:c.url,
     airline:c.airline, airlineName:c.airlineName, bag:c.bag,
-    terms:d.terms, holidays:d.holidays, photo:'img/deals/'+d.code+'.jpg',
+    terms:d.terms, holidays:d.holidays, photo:null,   // dodeli slike-iz-mape.py
   });
 }
 discover.sort((a,b)=>a.price-b.price);

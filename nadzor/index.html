@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Nadzorna plošča — Bookiraj.si</title>
 <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+<script src="../arhiv.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -154,6 +155,13 @@ input:focus{border-color:var(--accent2)}
     </div>
 
     <div class="panel">
+      <h2>Čaka na sliko</h2>
+      <p class="hint">Te akcije so najdene in ustrezajo tvojim pravilom, a jih ne objavim, ker zanje v mapi <b>Bookiraj.si</b> ni slike. Vsaka akcija potrebuje svojo — če iz Ljubljane in Benetk letimo v isto mesto, gresta gor dve različni sliki. Ko sliko dodaš v mapo, jo naslednji nočni zagon objavi sam.</p>
+      <div class="segs" id="arhSegs"></div>
+      <div class="sess" id="arhList"></div>
+    </div>
+
+    <div class="panel">
       <h2>Kdo je bil na strani</h2>
       <p class="hint">Vsaka vrstica je en brskalnik. Imena, e-naslova ali naslova IP ne zbiramo — vidiš samo vzorec vedenja, iz katerega se pozna, ali je bil obisk resničen ali strojni.</p>
       <div class="segs" id="segs"></div>
@@ -205,6 +213,27 @@ input:focus{border-color:var(--accent2)}
   function nice(n){ n=n||0; return n>=1000?(n/1000).toFixed(n>=10000?0:1)+'k':(''+n); }
   function cap(s){ if(!s)return '—'; s=(''+s).replace(/^#?deal\//,''); return s.charAt(0).toUpperCase()+s.slice(1).replace(/-/g,' '); }
   function fmtDay(d){ var p=(''+d).split('-'); return p.length===3?(+p[2])+'.'+(+p[1])+'.':d; }
+
+  function renderArhiv(){
+    var A = window.__BOOKIRAJ_ARHIV__ || {};
+    var segEl=$('arhSegs'), el=$('arhList'); if(!el) return;
+    var manjka = A.manjka || [], arhiv = A.arhiv || [];
+    if(!arhiv.length){ segEl.innerHTML=''; el.innerHTML='<div class="empty">Nobena akcija ne čaka na sliko — za vse imaš fotografijo. 🎉</div>'; return; }
+    var slik = manjka.reduce(function(n,m){ return n+m.kartic; }, 0);
+    segEl.innerHTML = '<span class="seg bot"><b>'+arhiv.length+'</b> akcij čaka</span>'
+      + '<span class="seg verjetno"><b>'+manjka.length+'</b> destinacij</span>'
+      + '<span class="seg clovek"><b>'+slik+'</b> slik za dodati</span>';
+    el.innerHTML = manjka.map(function(m){
+      var kje = arhiv.filter(function(a){ return a.city===m.mesto; })
+                     .map(function(a){ return a.fromCity; });
+      return '<div class="srow">'
+        +'<span class="tag bot">'+m.kartic+' slik'+(m.kartic===1?'a':'')+'</span>'
+        +'<span class="meta"><b>'+m.mesto+'</b> · '+m.drzava
+          +'<br><span style="font-size:11.5px">odhodi: '+[...new Set(kje)].join(', ')+'</span></span>'
+        +'<span class="kdaj">'+m.drzava+'</span>'
+      +'</div>';
+    }).join('');
+  }
 
   function callSessions(pw){
     return fetch(U+'/rest/v1/rpc/admin_sessions',{
@@ -308,6 +337,7 @@ input:focus{border-color:var(--accent2)}
   function render(d){
     d=d||{};
     callSessions(PW).then(renderSessions).catch(function(){});
+    renderArhiv();
     $('s_visits').textContent=nice(d.total_visits);
     $('s_views').textContent=nice(d.total_pageviews);
     $('s_today').textContent=nice(d.pageviews_today);

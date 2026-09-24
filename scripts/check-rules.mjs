@@ -26,6 +26,17 @@ const cap = a => a.slice(0, 5).join(', ') + (a.length > 5 ? ` … (+${a.length -
 const hubDest = all.filter(d => HOME_HUBS.has(d.code)).map(d => d.fromCode + '→' + d.code);
 if (hubDest.length) fail.push(`1. Destinacija je naše odhodno letališče: ${cap(hubDest)}`);
 
+// --- 15./16. vsaka kartica ima SVOJO sliko iz Mišine mape (24.9.2026) ---
+const brezSlike = all.filter(d => !d.photo).map(d => d.fromCode + '→' + d.code);
+if (brezSlike.length) fail.push(`15. Kartica brez slike (objavljamo samo akcije s sliko iz mape): ${cap(brezSlike)}`);
+const poSliki = new Map();
+for (const d of all) if (d.photo) {
+  if (poSliki.has(d.photo)) poSliki.get(d.photo).push(d.fromCode + '→' + d.code);
+  else poSliki.set(d.photo, [d.fromCode + '→' + d.code]);
+}
+const podvojene = [...poSliki.entries()].filter(([, v]) => v.length > 1).map(([k, v]) => k + ' → ' + v.join(', '));
+if (podvojene.length) fail.push(`16. Ista slika na več karticah (vsaka akcija mora imeti svojo): ${cap(podvojene)}`);
+
 // --- 14. sosednje države niso destinacija (Miša, 24.9.2026) ---
 const NO_DEST = new Set(['Hrvaška','Avstrija','Madžarska']);
 const soseda = all.filter(d => NO_DEST.has(d.country)).map(d => d.fromCode + '→' + d.code + ' (' + d.country + ')');
@@ -120,8 +131,10 @@ for (const d of all)
 if (badLen.length) fail.push(`9. Prekratko (ali predolgo) potovanje: ${cap(badLen)}`);
 
 // --- 7. zdravje ---
-if (curated.length < 3) fail.push(`7. Premalo kuriranih akcij: ${curated.length} (najmanj 3)`);
-if (discover.length < 25) fail.push(`7. Premalo odkritih kartic: ${discover.length} (najmanj 25)`);
+// Odkar objavljamo samo akcije z Mišino sliko (pravilo 15), je število odvisno od tega,
+// koliko slik je v mapi. Meja je zato nizka — varuje pred prazno stranjo, ne pred manjšim izborom.
+if (curated.length + discover.length < 10)
+  fail.push(`7. Premalo akcij za objavo: ${curated.length + discover.length} (najmanj 10)`);
 
 // --- izpis ---
 const terms = all.reduce((s, d) => s + (d.terms || []).length, 0);
