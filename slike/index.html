@@ -50,7 +50,9 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
 .done{margin-top:26px}
 .done summary{cursor:pointer;font-weight:600;color:var(--ink2);font-size:.92rem;padding:10px 0}
 .done summary::marker{color:var(--muted)}
-.done .row{background:#F4F7F6;opacity:.75}
+.done .row{background:#F4F7F6;opacity:.85;grid-template-columns:auto auto 1fr auto auto}
+.done{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 20px 18px}
+.done summary{padding:14px 0 6px;font-family:var(--fd);font-size:1.1rem;color:var(--ink)}
 .undo{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 11px;
   font:inherit;font-size:.8rem;font-weight:600;color:var(--accent);cursor:pointer}
 .undo:hover{border-color:var(--accent)}
@@ -66,9 +68,11 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
   <h2>Po destinacijah</h2>
   <p class="hint">Številka pove, koliko <b>različnih</b> slik tega kraja potrebujem.</p>
   <div class="rows" id="rows"></div>
-  <details class="done" id="doneBox" hidden>
-    <summary id="doneSum">Urejeno</summary>
+  <details class="done" id="doneBox" hidden open>
+    <summary id="doneSum">Kaj sem odkljukala</summary>
+    <p class="hint" style="margin:0 0 12px">Tu ostanejo vse, ki si jih odkljukala, z datumom. Če se je katera skrila po pomoti, jo z gumbom <b>Vrni</b> postaviš nazaj na seznam.</p>
     <div class="rows" id="doneRows"></div>
+    <div style="margin-top:14px"><button class="undo" type="button" id="vseNazaj">Vrni vse nazaj</button></div>
     <p class="opomba">Odkljukano se skrije samo v tem brskalniku. Ko sliko dejansko dodaš v mapo, akcija izgine s seznama sama.</p>
   </details>
   <div class="kako">
@@ -108,6 +112,13 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
   Object.keys(urejeno).forEach(function(k){ if (!zivi[k]) delete urejeno[k]; });
   pisi(urejeno);
 
+  function kdaj(iso){
+    if (!iso) return '';
+    var d = new Date(iso), danes = new Date();
+    var istiDan = d.toDateString() === danes.toDateString();
+    return (istiDan ? 'danes ' : d.toLocaleDateString('sl-SI', {day:'numeric', month:'numeric'}) + ' ')
+      + d.toLocaleTimeString('sl-SI', {hour:'2-digit', minute:'2-digit'});
+  }
   function vrstica(m, jeUrejena){
     var odhodi = arhiv.filter(function(a){ return a.city === m.mesto; })
                       .map(function(a){ return a.fromCity; });
@@ -119,8 +130,10 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
       + '<span class="n">'+m.kartic+' ×</span>'
       + '<span class="kraj"><b>'+m.mesto+'</b><small>'+m.drzava
         + (odhodi.length ? ' · odhodi: ' + odhodi.join(', ') : '') + '</small></span>'
-      + (jeUrejena ? '<button class="undo" type="button">Vrni</button>'
-                   : '<span class="mapa">'+m.drzava+'/'+m.mesto+'</span>')
+      + (jeUrejena
+          ? '<span class="mapa" style="margin-right:10px">'+kdaj(urejeno[k])+'</span>'
+            + '<button class="undo" type="button">Vrni</button>'
+          : '<span class="mapa">'+m.drzava+'/'+m.mesto+'</span>')
     + '</div>';
   }
 
@@ -139,7 +152,7 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
       : '<div class="ok"><b>Vse si uredila.</b><br>Ko slike razvrstiš v mapo, se akcije objavijo same. 🎉</div>';
     $('doneRows').innerHTML = koncane.map(function(m){ return vrstica(m, true); }).join('');
     $('doneBox').hidden = !koncane.length;
-    $('doneSum').textContent = 'Urejeno (' + koncane.length + ')';
+    $('doneSum').textContent = 'Kaj sem odkljukala (' + koncane.length + ')';
   }
 
   document.addEventListener('change', function(e){
@@ -151,6 +164,10 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
     setTimeout(izrisi, 250);
   });
   document.addEventListener('click', function(e){
+    if (e.target.id === 'vseNazaj') {
+      if (!Object.keys(urejeno).length) return;
+      urejeno = {}; pisi(urejeno); izrisi(); return;
+    }
     if (!e.target.classList || !e.target.classList.contains('undo')) return;
     var k = e.target.closest('.row').getAttribute('data-k');
     delete urejeno[k]; pisi(urejeno); izrisi();
