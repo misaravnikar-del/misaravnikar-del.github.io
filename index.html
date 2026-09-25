@@ -1978,6 +1978,43 @@ const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
 function priceHTML(p){return '<b>'+p+' <i>€</i></b>';}
 function fmtShort(dep,ret){var a=dep.split('-'),b=ret.split('-');var am=MON[+a[1]-1],bm=MON[+b[1]-1];return (+a[2])+'.'+(am===bm?'':' '+am)+'–'+(+b[2])+'. '+bm;}
+// Miša (25.9.2026): »kjer gre za Madeiro, kar napiši Madeira namesto Portugalska.
+// In enako za ostale otoke — za vse otoke vedno napiši ime otoka namesto države.«
+// Ključ je koda letališča, ker isto državo sestavlja več otokov (Tenerife in
+// Lanzarote sta oba Španija, a nista isti kraj).
+var OTOKI = {
+  // Portugalska
+  FNC:'Madeira', PXO:'Porto Santo', PDL:'Azori', TER:'Azori', HOR:'Azori',
+  // Španija — Kanarski otoki
+  TFS:'Tenerife', TFN:'Tenerife', TCI:'Tenerife', LPA:'Gran Canaria', ACE:'Lanzarote',
+  FUE:'Fuerteventura', SPC:'La Palma', GMZ:'La Gomera', VDE:'El Hierro',
+  // Španija — Baleari
+  PMI:'Mallorca', IBZ:'Ibiza', MAH:'Menorca',
+  // Italija
+  CAG:'Sardinija', OLB:'Sardinija', AHO:'Sardinija',
+  PMO:'Sicilija', CTA:'Sicilija', TPS:'Sicilija',
+  // Grčija
+  JTR:'Santorini', HER:'Kreta', CHQ:'Kreta', JSH:'Kreta', RHO:'Rodos', CFU:'Krf',
+  KGS:'Kos', ZTH:'Zakintos', JMK:'Mikonos', MJT:'Lezbos', SMI:'Samos', JKH:'Hios',
+  EFL:'Kefalonija', PVK:'Lefkada', AOK:'Karpatos',
+  // Francija
+  AJA:'Korzika', FSC:'Korzika', BIA:'Korzika', CLY:'Korzika',
+  RUN:'Reunion', PTP:'Guadeloupe', FDF:'Martinik',
+  // Tanzanija
+  ZNZ:'Zanzibar',
+  // Tajska, Vietnam, Malezija, Indonezija, Filipini
+  HKT:'Phuket', USM:'Koh Samui', KBV:'Krabi', PQC:'Phu Quoc',
+  LGK:'Langkawi', PEN:'Penang', BKI:'Borneo',
+  DPS:'Bali', LOP:'Lombok',
+  CEB:'Cebu', MPH:'Boracay', PPS:'Palawan',
+  // ostalo
+  OKA:'Okinava', SYX:'Hainan', HNL:'Havaji', KOA:'Havaji', OGG:'Maui',
+  SID:'Sal', BVC:'Boa Vista', RAI:'Santiago',
+  CUR:'Curaçao', AUA:'Aruba', SXM:'Sint Maarten', BGI:'Barbados'
+};
+// ime kraja za naslov kartice: otok, če gre za otok, sicer država
+function krajIme(d){ return (d && OTOKI[d.code]) || (d && d.country) || ''; }
+
 function cardHTML(d){
   var disc=!!d.photo;
   var nT=(d.terms&&d.terms.length)||0;
@@ -2013,7 +2050,7 @@ function cardHTML(d){
     +'</div>'
     +'<div class="card__body">'
       +'<div class="card__route"><span>'+fromCode+' <span class="arrow">→</span> '+d.code+'</span><span>'+rRight+'</span></div>'
-      +'<h3>'+d.country+'</h3>'
+      +'<h3>'+krajIme(d)+'</h3>'
       +'<div class="card__sub">'+fromCity+' <span class="s-arr">→</span> <strong>'+d.city+'</strong></div>'
       +holTag
       +(nT>1?'<p class="card__more">'+nT+' razpoložljivih terminov</p>':'')
@@ -2041,7 +2078,7 @@ function rowHTML(d){
   // tudi tu velja: nikoli naravnost na Aviasales, vedno prek strani z akcijo
   return '<a class="radar__row" href="#ponudba/'+d.fromCode+'-'+d.code+'">'
     +'<span class="radar__route">'+d.fromCode+'<span class="arrow">→</span>'+d.code+'</span>'
-    +'<span class="radar__city">'+d.city+(d.country?'<small>'+d.country+'</small>':'')+'</span>'
+    +'<span class="radar__city">'+d.city+(krajIme(d)?'<small>'+krajIme(d)+'</small>':'')+'</span>'
     +'<span class="radar__when">'+fmtRangeISO(d.depart,d.ret)+(d.nights?' · '+d.nights+' noči':'')+'</span>'
     +'<span class="radar__price">'+d.price+' €</span></a>';
 }
@@ -2139,7 +2176,7 @@ function detailHTML(d){
   const related = vse.filter(x => (x.region||x.continent) === skupina)
     .concat(vse.filter(x => (x.region||x.continent) !== skupina)).slice(0,3);
   // kurirane akcije imajo napisano besedilo; odkrite ga nimajo — zanje ga sestavimo
-  const uvod = d.long || (d.city+', '+d.country+'.'
+  const uvod = d.long || (d.city+', '+krajIme(d)+'.'
     + (d.season ? ' Najlepši čas za obisk: '+d.season+'.' : '')
     + ' Spodaj so vsi termini, ki so trenutno pod povprečno ceno te proge.');
   const termRows=(d.terms||[]).map(t=>
@@ -2155,7 +2192,7 @@ function detailHTML(d){
     +'<div class="detail__scrim"></div>'
     +'<div class="container detail__heroin">'
       +'<a class="detail__back" href="#letalske-karte"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Nazaj na vse akcije</a>'
-      +'<p class="eyebrow">'+d.country+'</p>'
+      +'<p class="eyebrow">'+krajIme(d)+'</p>'
       +'<h1>'+d.city+'</h1>'
       +'<div class="detail__route">'+d.fromCode+' <span class="arrow">→</span> '+d.code+' · povprečno '+d.avg+' € · '+d.discount+' % pod povprečjem</div>'
     +'</div>'
@@ -2589,7 +2626,7 @@ function ponudbaHTML(key){
       +'<svg class="term__go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>';
   }).join('');
   return '<div class="page"><div class="container">'+BACK
-    +'<p class="eyebrow">'+d.country+(d.discount?' · '+d.discount+' % pod povprečjem':'')+'</p>'
+    +'<p class="eyebrow">'+krajIme(d)+(d.discount?' · '+d.discount+' % pod povprečjem':'')+'</p>'
     +'<h1 class="page__h">'+d.fromCity+' → '+d.city+'</h1>'
     +'<p class="page__p" style="max-width:62ch">'+d.fromCode+' <span class="arrow">→</span> '+d.code
       +(d.avg?' · povprečna cena te proge '+d.avg+' €':'')+(function(){var h=(d.terms||[]).filter(function(t){return t.holAvg;});return h.length?' · v počitniškem terminu povprečno '+h[0].holAvg+' €':'';})()
