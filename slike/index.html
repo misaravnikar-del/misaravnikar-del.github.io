@@ -38,7 +38,24 @@ h2{font-family:var(--fd);font-size:1.3rem;margin:2rem 0 .3rem}
 .kako ol{margin:0;padding-left:1.2rem;color:var(--ink2);font-size:.94rem}
 .kako li{margin-bottom:6px}
 code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;border-radius:5px}
-@media(max-width:560px){.row{grid-template-columns:auto 1fr}.mapa{display:none}}
+.row{grid-template-columns:auto auto 1fr auto;transition:opacity .25s,transform .25s}
+.row.gre{opacity:0;transform:translateX(18px)}
+.tick{appearance:none;width:24px;height:24px;flex:none;margin:0;border:2px solid var(--line);
+  border-radius:7px;background:var(--surface);cursor:pointer;position:relative;transition:.15s}
+.tick:hover{border-color:var(--accent)}
+.tick:checked{background:var(--ok);border-color:var(--ok)}
+.tick:checked::after{content:"";position:absolute;left:7px;top:3px;width:6px;height:11px;
+  border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.tick:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.done{margin-top:26px}
+.done summary{cursor:pointer;font-weight:600;color:var(--ink2);font-size:.92rem;padding:10px 0}
+.done summary::marker{color:var(--muted)}
+.done .row{background:#F4F7F6;opacity:.75}
+.undo{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 11px;
+  font:inherit;font-size:.8rem;font-weight:600;color:var(--accent);cursor:pointer}
+.undo:hover{border-color:var(--accent)}
+.opomba{color:var(--muted);font-size:.82rem;margin:14px 0 0}
+@media(max-width:560px){.row{grid-template-columns:auto auto 1fr}.mapa{display:none}}
 </style>
 <div class="wrap">
   <a class="back" href="/">← Bookiraj.si</a>
@@ -49,6 +66,11 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
   <h2>Po destinacijah</h2>
   <p class="hint">Številka pove, koliko <b>različnih</b> slik tega kraja potrebujem.</p>
   <div class="rows" id="rows"></div>
+  <details class="done" id="doneBox" hidden>
+    <summary id="doneSum">Urejeno</summary>
+    <div class="rows" id="doneRows"></div>
+    <p class="opomba">Odkljukano se skrije samo v tem brskalniku. Ko sliko dejansko dodaš v mapo, akcija izgine s seznama sama.</p>
+  </details>
   <div class="kako">
     <h3>Kako dodaš sliko</h3>
     <ol>
@@ -76,16 +98,64 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
     + '<div class="tile"><b>'+manjka.length+'</b><span>destinacij</span></div>'
     + '<div class="tile"><b>'+drzav+'</b><span>držav</span></div>'
     + '<div class="tile"><b>'+arhiv.length+'</b><span>akcij čaka</span></div>';
-  $('rows').innerHTML = manjka.map(function(m){
+  // Kaj je Miša že uredila — shranjeno v njenem brskalniku.
+  var KEY = 'bkrj_slike_urejeno';
+  function beri(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e) { return {}; } }
+  function pisi(o){ try { localStorage.setItem(KEY, JSON.stringify(o)); } catch(e) {} }
+  var urejeno = beri();
+  // pospravimo zapise za destinacije, ki jih na seznamu ni več (slika je bila dodana)
+  var zivi = {}; manjka.forEach(function(m){ zivi[m.mesto + '|' + m.drzava] = 1; });
+  Object.keys(urejeno).forEach(function(k){ if (!zivi[k]) delete urejeno[k]; });
+  pisi(urejeno);
+
+  function vrstica(m, jeUrejena){
     var odhodi = arhiv.filter(function(a){ return a.city === m.mesto; })
                       .map(function(a){ return a.fromCity; });
     odhodi = odhodi.filter(function(v,i){ return odhodi.indexOf(v) === i; });
-    return '<div class="row">'
+    var k = m.mesto + '|' + m.drzava;
+    return '<div class="row" data-k="'+k.replace(/"/g,'&quot;')+'">'
+      + '<input class="tick" type="checkbox" id="t'+k.replace(/[^A-Za-z0-9]/g,'')+'"'
+        + (jeUrejena ? ' checked' : '') + ' aria-label="Sliko za '+m.mesto+' sem uredila">'
       + '<span class="n">'+m.kartic+' ×</span>'
       + '<span class="kraj"><b>'+m.mesto+'</b><small>'+m.drzava
         + (odhodi.length ? ' · odhodi: ' + odhodi.join(', ') : '') + '</small></span>'
-      + '<span class="mapa">'+m.drzava+'/'+m.mesto+'</span>'
+      + (jeUrejena ? '<button class="undo" type="button">Vrni</button>'
+                   : '<span class="mapa">'+m.drzava+'/'+m.mesto+'</span>')
     + '</div>';
-  }).join('');
+  }
+
+  function izrisi(){
+    var cakajo = manjka.filter(function(m){ return !urejeno[m.mesto + '|' + m.drzava]; });
+    var koncane = manjka.filter(function(m){ return  urejeno[m.mesto + '|' + m.drzava]; });
+    var slik = cakajo.reduce(function(n,m){ return n + m.kartic; }, 0);
+    var drzav = Object.keys(cakajo.reduce(function(a,m){ a[m.drzava]=1; return a; }, {})).length;
+    $('tiles').innerHTML =
+        '<div class="tile"><b>'+slik+'</b><span>slik manjka</span></div>'
+      + '<div class="tile"><b>'+cakajo.length+'</b><span>destinacij</span></div>'
+      + '<div class="tile"><b>'+drzav+'</b><span>držav</span></div>'
+      + '<div class="tile"><b>'+koncane.length+'</b><span>odkljukanih</span></div>';
+    $('rows').innerHTML = cakajo.length
+      ? cakajo.map(function(m){ return vrstica(m, false); }).join('')
+      : '<div class="ok"><b>Vse si uredila.</b><br>Ko slike razvrstiš v mapo, se akcije objavijo same. 🎉</div>';
+    $('doneRows').innerHTML = koncane.map(function(m){ return vrstica(m, true); }).join('');
+    $('doneBox').hidden = !koncane.length;
+    $('doneSum').textContent = 'Urejeno (' + koncane.length + ')';
+  }
+
+  document.addEventListener('change', function(e){
+    var t = e.target; if (!t.classList || !t.classList.contains('tick')) return;
+    var row = t.closest('.row'), k = row.getAttribute('data-k');
+    if (t.checked) urejeno[k] = new Date().toISOString(); else delete urejeno[k];
+    pisi(urejeno);
+    row.classList.add('gre');
+    setTimeout(izrisi, 250);
+  });
+  document.addEventListener('click', function(e){
+    if (!e.target.classList || !e.target.classList.contains('undo')) return;
+    var k = e.target.closest('.row').getAttribute('data-k');
+    delete urejeno[k]; pisi(urejeno); izrisi();
+  });
+
+  izrisi();
 })();
 </script>
