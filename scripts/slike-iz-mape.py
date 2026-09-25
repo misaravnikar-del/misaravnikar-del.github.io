@@ -42,7 +42,17 @@ NE_MAPE = {'Logotip', 'Stampi', 'spletna-stran', 'Dodatno'}
 # ime države na strani → ime mape, kjer se razlikujeta
 DRZAVA_ALIAS = {'zimbabve': 'zimbabwe'}
 # mesto na strani → ime v datoteki, kjer se razlikujeta
-MESTO_ALIAS  = {'paris': 'pariz', 'funchal': 'madeira'}
+MESTO_ALIAS  = {'paris': 'pariz', 'funchal': 'madeira', 'seul': 'seoul'}
+# Ime v mapi, ki pokriva VEČ mest — npr. »Sicilija 1.png« velja za Katanijo in Palermo.
+# Brez tega bi take slike obležale neuporabljene, mesta pa bi po nepotrebnem čakala.
+POKRIVA = {
+    'sicilija':   ['catania', 'palermo', 'trapani'],
+    'sardinija':  ['cagliari', 'olbia', 'alghero'],
+    'madeira':    ['funchal', 'portosanto'],
+    'kreta':      ['heraklion', 'chania'],
+    'baleari':    ['palmademallorca', 'ibiza', 'menorca'],
+    'kanarskiotoki': ['tenerife', 'laspalmasdegrancanaria', 'lanzarote', 'fuerteventura'],
+}
 
 def norm(x):
     x = unicodedata.normalize('NFD', x or '').encode('ascii', 'ignore').decode().lower()
@@ -70,12 +80,16 @@ def preberi_mapo():
     return out
 
 def izberi(pool, mesto):
-    """Najprej slika, ki imenuje TO mesto; sicer slika, poimenovana po državi.
-       Slike drugih mest iste države se NE uporabijo — za Rim ne sme biti Neapelj."""
+    """Najprej slika, ki imenuje TO mesto; sicer slika širšega območja, ki mesto pokriva
+       (npr. »Sicilija« za Katanijo). Slike DRUGIH mest iste države se NE uporabijo —
+       za Rim ne sme biti Neapelj."""
     m = MESTO_ALIAS.get(norm(mesto), norm(mesto))
-    for p in pool:
+    for p in pool:                                   # 1) datoteka imenuje to mesto
         n = norm(p[1])
         if n == m or (m and (m in n or n in m)):
+            return p
+    for p in pool:                                   # 2) datoteka imenuje območje, ki ga pokriva
+        if m in POKRIVA.get(norm(p[1]), []):
             return p
     return None
 
