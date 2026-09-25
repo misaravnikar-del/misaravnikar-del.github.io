@@ -28,6 +28,7 @@ except ImportError:
 KOREN = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAPA  = os.path.expanduser('~/Desktop/Bookiraj.si')
 DEALS = os.path.join(KOREN, 'deals.js')
+VSE   = os.path.join(KOREN, 'deals-vse.js')   # poln seznam, vir za razdelitev
 ARHIV = os.path.join(KOREN, 'arhiv.js')
 SLIKE = os.path.join(KOREN, 'img', 'deals')
 EXT   = ('.jpg', '.jpeg', '.png', '.webp')
@@ -80,7 +81,10 @@ def izberi(pool, mesto):
 
 def main():
     mapa = preberi_mapo()
-    src = io.open(DEALS, encoding='utf-8').read()
+    # Vir je POLN seznam akcij (deals-vse.js). Če bi brali že zožen deals.js, bi ob
+    # vsakem zagonu izgubili akcije, ki čakajo na sliko — arhiv bi se izpraznil.
+    vir = VSE if os.path.exists(VSE) else DEALS
+    src = io.open(vir, encoding='utf-8').read()
     o = json.loads(src[src.index('{'):src.rindex('}') + 1])
     kurirane, odkrite = o.get('deals') or [], o.get('discover') or []
 

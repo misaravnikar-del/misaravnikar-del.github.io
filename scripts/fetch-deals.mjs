@@ -843,5 +843,8 @@ if (MERGE) {
 }
 const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, minDiscountByOrigin:MIN_DISCOUNT_BY_ORIGIN, alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:outCurated, discover:outDiscover };
 writeFileSync(new URL('../deals.js', import.meta.url), 'window.__BOOKIRAJ_DEALS__ = '+JSON.stringify(payload)+';\n');
+// Poln seznam (še brez filtra slik) hranimo posebej: scripts/slike-iz-mape.py ga
+// bere kot vir, da ve tudi za akcije, ki so trenutno v arhivu brez slike.
+writeFileSync(new URL('../deals-vse.js', import.meta.url), 'window.__BOOKIRAJ_VSE__ = '+JSON.stringify(payload)+';\n');
 const allTerms = outCurated.concat(outDiscover).reduce((s,d)=>s+d.terms.length,0);
 console.log(`\nKurirane akcije: ${outCurated.length} (${skipCur} brez akcije) · Odkrite kartice: ${outDiscover.length} · skupaj terminov: ${allTerms}`);

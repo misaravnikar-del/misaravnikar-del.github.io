@@ -1,0 +1,91 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Katere slike manjkajo — Bookiraj.si</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#E4E9E6;--surface:#fff;--ink:#10201F;--ink2:#414F4D;--muted:#69766F;
+  --line:#D3DBD8;--accent:#0C7F93;--hot:#B8452C;--ok:#1f7a55;
+  --fd:"Playfair Display",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif;--fm:"IBM Plex Mono",monospace;
+  --shadow:0 1px 2px rgba(16,32,31,.04),0 18px 40px -24px rgba(16,32,31,.30)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--fb);line-height:1.6}
+.wrap{max-width:900px;margin:0 auto;padding:32px 18px 64px}
+h1{font-family:var(--fd);font-size:clamp(1.8rem,4.5vw,2.6rem);margin:.2rem 0 .4rem;letter-spacing:-.01em}
+.lead{color:var(--ink2);max-width:62ch;margin:0 0 6px}
+.eyebrow{font-family:var(--fm);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0}
+.back{display:inline-block;font-family:var(--fm);font-size:.78rem;color:var(--muted);text-decoration:none;margin-bottom:18px}
+.back:hover{color:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:22px 0 28px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+.tile b{display:block;font-family:var(--fd);font-size:1.9rem;line-height:1.05}
+.tile span{font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h2{font-family:var(--fd);font-size:1.3rem;margin:2rem 0 .3rem}
+.hint{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;padding:12px 15px}
+.n{font-family:var(--fm);font-weight:600;font-size:.76rem;background:#fbe9e4;color:var(--hot);
+  padding:4px 10px;border-radius:999px;white-space:nowrap}
+.kraj b{font-size:1rem}
+.kraj small{display:block;color:var(--muted);font-size:.8rem}
+.mapa{font-family:var(--fm);font-size:.74rem;color:var(--muted);text-align:right;white-space:nowrap}
+.ok{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--ink2)}
+.kako{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:28px}
+.kako h3{margin:0 0 8px;font-size:1.02rem}
+.kako ol{margin:0;padding-left:1.2rem;color:var(--ink2);font-size:.94rem}
+.kako li{margin-bottom:6px}
+code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;border-radius:5px}
+@media(max-width:560px){.row{grid-template-columns:auto 1fr}.mapa{display:none}}
+</style>
+<div class="wrap">
+  <a class="back" href="/">← Bookiraj.si</a>
+  <p class="eyebrow">Slike destinacij</p>
+  <h1>Katere slike še manjkajo</h1>
+  <p class="lead">Te akcije so najdene in ustrezajo tvojim pravilom, a še niso objavljene, ker zanje v mapi <b>Bookiraj.si</b> ni fotografije. Vsaka akcija potrebuje svojo — če v isto mesto letimo iz treh letališč, so potrebne tri različne slike.</p>
+  <div class="tiles" id="tiles"></div>
+  <h2>Po destinacijah</h2>
+  <p class="hint">Številka pove, koliko <b>različnih</b> slik tega kraja potrebujem.</p>
+  <div class="rows" id="rows"></div>
+  <div class="kako">
+    <h3>Kako dodaš sliko</h3>
+    <ol>
+      <li>Sliko odloži v <code>Bookiraj.si/_Uvoz</code> in jo poimenuj po kraju: <code>Rim 1.png</code>, <code>Rim 2.png</code> …</li>
+      <li>Nočno opravilo jo razvrsti v <code>Celina/Država/</code>.</li>
+      <li>Naslednji zagon akcijo objavi sam — ničesar ni treba sporočati.</li>
+    </ol>
+    <p class="hint" style="margin:10px 0 0">Slika mora prikazovati pravi kraj. Slike drugega mesta iste države ne uporabim — za Rim ne bo Neaplja.</p>
+  </div>
+</div>
+<script src="../arhiv.js"></script>
+<script>
+(function(){
+  var A = window.__BOOKIRAJ_ARHIV__ || {}, manjka = A.manjka || [], arhiv = A.arhiv || [];
+  var $ = function(i){ return document.getElementById(i); };
+  if (!manjka.length) {
+    $('tiles').innerHTML = '';
+    $('rows').outerHTML = '<div class="ok"><b>Vse akcije imajo svojo sliko.</b><br>Trenutno ne manjka nobena. 🎉</div>';
+    return;
+  }
+  var slik = manjka.reduce(function(n,m){ return n + m.kartic; }, 0);
+  var drzav = Object.keys(manjka.reduce(function(a,m){ a[m.drzava]=1; return a; }, {})).length;
+  $('tiles').innerHTML =
+      '<div class="tile"><b>'+slik+'</b><span>slik manjka</span></div>'
+    + '<div class="tile"><b>'+manjka.length+'</b><span>destinacij</span></div>'
+    + '<div class="tile"><b>'+drzav+'</b><span>držav</span></div>'
+    + '<div class="tile"><b>'+arhiv.length+'</b><span>akcij čaka</span></div>';
+  $('rows').innerHTML = manjka.map(function(m){
+    var odhodi = arhiv.filter(function(a){ return a.city === m.mesto; })
+                      .map(function(a){ return a.fromCity; });
+    odhodi = odhodi.filter(function(v,i){ return odhodi.indexOf(v) === i; });
+    return '<div class="row">'
+      + '<span class="n">'+m.kartic+' ×</span>'
+      + '<span class="kraj"><b>'+m.mesto+'</b><small>'+m.drzava
+        + (odhodi.length ? ' · odhodi: ' + odhodi.join(', ') : '') + '</small></span>'
+      + '<span class="mapa">'+m.drzava+'/'+m.mesto+'</span>'
+    + '</div>';
+  }).join('');
+})();
+</script>
