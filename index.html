@@ -2018,7 +2018,8 @@ function krajIme(d){ return (d && OTOKI[d.code]) || (d && d.country) || ''; }
 function cardHTML(d){
   var disc=!!d.photo;
   var nT=(d.terms&&d.terms.length)||0;
-  var src=disc?d.photo:'img/'+d.img+'.jpg';
+  // seznam uporabi majhno kopijo (~80 KB); velika ostane za stran akcije
+  var src=disc?(d.photoMini||d.photo):'img/'+d.img+'.jpg';
   // Miša: VEDNO naj bo vmes še ena stran, tudi če je na voljo samo en let.
   // Zato kartica nikoli ne skoči naravnost na Aviasales — šele gumb na vmesni strani.
   var href=disc?('#ponudba/'+d.fromCode+'-'+d.code):('#deal/'+d.img);

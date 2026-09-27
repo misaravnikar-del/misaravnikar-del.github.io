@@ -99,6 +99,19 @@ h2{scroll-margin-top:16px}
 .cel .nujnih{font-family:var(--fm);font-size:.7rem;font-weight:600;color:var(--hot);
   background:#fbe9e4;padding:3px 9px;border-radius:999px;margin-left:8px}
 
+.x{border:1.5px solid var(--line);background:var(--surface);color:var(--muted);width:26px;height:26px;
+  flex:none;border-radius:7px;font:inherit;font-size:14px;line-height:1;cursor:pointer;padding:0;
+  display:grid;place-items:center;transition:.15s}
+.x:hover{border-color:var(--hot);color:var(--hot);background:#fdf3f0}
+.x.on{border-color:var(--hot);background:var(--hot);color:#fff}
+.la{grid-template-columns:auto auto auto 1fr auto}
+.row{grid-template-columns:auto auto auto 1fr auto}
+.la.ni,.row.ni{opacity:.45}
+.la.ni .kraj,.row.ni .kraj{text-decoration:line-through}
+.niBox{margin-top:14px}
+.niBox .row{background:#FAF6F5}
+@media(max-width:560px){.la{grid-template-columns:auto auto auto 1fr}.row{grid-template-columns:auto auto auto 1fr}}
+
 </style>
 <div class="wrap">
   <a class="back" href="/">← Bookiraj.si</a>
@@ -115,7 +128,7 @@ h2{scroll-margin-top:16px}
   </section>
 
   <h2>Vse države</h2>
-  <p class="hint">Razdeljeno po celinah. Klikni celino, nato državo, da se odpre seznam letališč. Kljukica ob državi odkljuka vsa njena letališča naenkrat.</p>
+  <p class="hint">Razdeljeno po celinah. Klikni celino, nato državo, da se odpre seznam letališč. <b>Kljukica</b> pomeni, da si slike dodala; <b>✕</b> pomeni, da slik tam sploh ne rabiš.</p>
   <input class="isci" id="isci" type="search" placeholder="Poišči državo ali letališče …" autocomplete="off">
   <div id="svet"></div>
 
@@ -125,6 +138,13 @@ h2{scroll-margin-top:16px}
     <div class="rows" id="doneRows"></div>
     <div style="margin-top:14px"><button class="undo" type="button" id="vseNazaj">Vrni vse nazaj</button></div>
     <p class="opomba">Odkljukano se shrani v tem brskalniku. Ko sliko dejansko dodaš v mapo, se akcija objavi sama.</p>
+  </details>
+
+  <details class="done niBox" id="niBox" hidden>
+    <summary id="niSum">Za te ne rabim slik</summary>
+    <p class="hint" style="margin:0 0 12px">Kraji, ki si jih označila z ✕, ker tja ne bo akcij. Ne štejejo več med manjkajoče. Z gumbom <b>Vrni</b> jih daš nazaj na seznam.</p>
+    <div class="rows" id="niRows"></div>
+    <div style="margin-top:14px"><button class="undo" type="button" id="niVse">Vrni vse nazaj</button></div>
   </details>
 
   <div class="kako">
@@ -146,10 +166,13 @@ h2{scroll-margin-top:16px}
   var SVET = (window.__BOOKIRAJ_SVET__ || {}).drzave || [];
 
   // --- shramba odkljukanega (v brskalniku) ---
-  var KEY = 'bkrj_slike_urejeno';
-  function beri(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e) { return {}; } }
-  function pisi(o){ try { localStorage.setItem(KEY, JSON.stringify(o)); } catch(e) {} }
-  var urejeno = beri();
+  var KEY = 'bkrj_slike_urejeno', KEY_NI = 'bkrj_slike_nerabim';
+  function beri(k){ try { return JSON.parse(localStorage.getItem(k) || '{}') || {}; } catch(e) { return {}; } }
+  function pisi(k,o){ try { localStorage.setItem(k, JSON.stringify(o)); } catch(e) {} }
+  var urejeno = beri(KEY);
+  // Miša (27.9.2026): »daj še nek x, da lahko označim tiste, katerih slik ne bom
+  // potrebovala, ker ne bo akcij za tja.« Ti kraji ne štejejo več med manjkajoče.
+  var nerabim = beri(KEY_NI);
 
   function kdaj(iso){
     if (!iso) return '';
@@ -168,17 +191,20 @@ h2{scroll-margin-top:16px}
   });
 
   function jeOdkljukan(k){ return !!urejeno[k]; }
+  function niPotreben(k){ return !!nerabim[k]; }
+  function skrit(k){ return jeOdkljukan(k) || niPotreben(k); }
 
   // ---------- NUJNO ----------
   function izrisiNujno(){
     var sez = Object.keys(nujnoPoKodi).map(function(k){
       var o = nujnoPoKodi[k]; o.k = k; return o;
-    }).filter(function(o){ return !jeOdkljukan('la|' + o.k); })
+    }).filter(function(o){ return !skrit('la|' + o.k); })
       .sort(function(a,b){ return b.n - a.n || a.mesto.localeCompare(b.mesto,'sl'); });
     $('nujnoBox').hidden = !sez.length;
     $('nujno').innerHTML = sez.map(function(o){
       return '<div class="row" data-k="la|'+o.k+'">'
         + '<input class="tick" type="checkbox" aria-label="Slike za '+esc(o.mesto)+' sem dodala">'
+        + '<button class="x" type="button" title="Slik za '+esc(o.mesto)+' ne rabim">✕</button>'
         + '<span class="n">'+o.n+' ×</span>'
         + '<span class="kraj"><b>'+esc(o.mesto)+'</b><small>'+esc(o.drzava)
           + ' · odhodi: ' + esc(o.odhodi.join(', ')) + '</small></span>'
@@ -199,12 +225,15 @@ h2{scroll-margin-top:16px}
     });
   }
   function drzavaHTML(d){
-      var vsi = d.letalisca, kljukanih = vsi.filter(function(l){ return jeOdkljukan('la|'+l.k); }).length;
+      var vsi = d.letalisca.filter(function(l){ return !niPotreben('la|'+l.k); });
+      var kljukanih = vsi.filter(function(l){ return jeOdkljukan('la|'+l.k); }).length;
       var polna = kljukanih === vsi.length && vsi.length > 0;
+      if (!vsi.length) return '';
       var vrstice = vsi.map(function(l){
         var k = 'la|' + l.k, ok = jeOdkljukan(k), nuj = nujnoPoKodi[l.k];
         return '<div class="la'+(nuj?' nujna':'')+(ok?' ok':'')+'" data-k="'+k+'">'
           + '<input class="tick" type="checkbox"'+(ok?' checked':'')+' aria-label="'+esc(l.mesto)+'">'
+          + '<button class="x" type="button" title="Slik za '+esc(l.mesto)+' ne rabim">✕</button>'
           + '<span class="k">'+l.k+'</span>'
           + '<span class="kraj">'+esc(l.mesto)+(l.ime?'<small>'+esc(l.ime)+'</small>':'')+'</span>'
           + (nuj ? '<span class="nujno">rabim '+nuj.n+'</span>' : '<span></span>')
@@ -226,11 +255,13 @@ h2{scroll-margin-top:16px}
     var html = Object.keys(CELINE).map(function(ck){
       var dz = vidne.filter(function(d){ return d.cel === ck; });
       if (!dz.length) return '';
-      var let_ = dz.reduce(function(n,d){ return n + d.letalisca.length; }, 0);
+      var let_ = dz.reduce(function(n,d){
+        return n + d.letalisca.filter(function(l){ return !niPotreben('la|'+l.k); }).length; }, 0);
+      if (!let_) return '';
       var kljuk = dz.reduce(function(n,d){
         return n + d.letalisca.filter(function(l){ return jeOdkljukan('la|'+l.k); }).length; }, 0);
       var nuj = dz.reduce(function(n,d){
-        return n + d.letalisca.filter(function(l){ return nujnoPoKodi[l.k] && !jeOdkljukan('la|'+l.k); }).length; }, 0);
+        return n + d.letalisca.filter(function(l){ return nujnoPoKodi[l.k] && !skrit('la|'+l.k); }).length; }, 0);
       return '<details class="cel"'+(filter?' open':'')+' data-cel="'+ck+'">'
         + '<summary><h3>'+CELINE[ck]
           + (nuj ? '<span class="nujnih">'+nuj+' nujnih</span>' : '') + '</h3>'
@@ -263,16 +294,31 @@ h2{scroll-margin-top:16px}
   function izrisiTiles(){
     var vsehLet = SVET.reduce(function(n,d){ return n + d.letalisca.length; }, 0);
     var nujnihSlik = Object.keys(nujnoPoKodi)
-      .filter(function(k){ return !jeOdkljukan('la|'+k); })
+      .filter(function(k){ return !skrit('la|'+k); })
       .reduce(function(n,k){ return n + nujnoPoKodi[k].n; }, 0);
     $('tiles').innerHTML =
         '<div class="tile"><b>'+nujnihSlik+'</b><span>slik nujno rabim</span></div>'
       + '<div class="tile"><b>'+Object.keys(urejeno).length+'</b><span>odkljukanih</span></div>'
-      + '<div class="tile"><b>'+SVET.length+'</b><span>držav</span></div>'
+      + '<div class="tile"><b>'+Object.keys(nerabim).length+'</b><span>ne rabim</span></div>'
       + '<div class="tile"><b>'+vsehLet+'</b><span>letališč</span></div>';
   }
 
-  function vse(){ izrisiTiles(); izrisiNujno(); izrisiSvet(); izrisiDone(); }
+  function izrisiNi(){
+    var kljuci = Object.keys(nerabim).sort(function(a,b){ return nerabim[b].localeCompare(nerabim[a]); });
+    $('niBox').hidden = !kljuci.length;
+    $('niSum').textContent = 'Za te ne rabim slik (' + kljuci.length + ')';
+    $('niRows').innerHTML = kljuci.map(function(k){
+      var koda = k.slice(3), i = imenaPoKodi[koda] || {mesto:koda, drzava:''};
+      return '<div class="row ni" data-k="'+k+'">'
+        + '<span></span><button class="x on" type="button" title="Vrni na seznam">✕</button>'
+        + '<span class="n">'+koda+'</span>'
+        + '<span class="kraj"><b>'+esc(i.mesto)+'</b><small>'+esc(i.drzava)+'</small></span>'
+        + '<button class="undo" type="button">Vrni</button>'
+      + '</div>';
+    }).join('');
+  }
+
+  function vse(){ izrisiTiles(); izrisiNujno(); izrisiSvet(); izrisiDone(); izrisiNi(); }
 
   // ---------- dogodki ----------
   document.addEventListener('change', function(e){
@@ -289,7 +335,7 @@ h2{scroll-margin-top:16px}
       var k = t.closest('[data-k]').getAttribute('data-k');
       if (t.checked) urejeno[k] = new Date().toISOString(); else delete urejeno[k];
     }
-    pisi(urejeno);
+    pisi(KEY, urejeno);
     var odprteD = [].slice.call(document.querySelectorAll('.drz[open]')).map(function(x){ return x.getAttribute('data-cc'); });
     var odprteC = [].slice.call(document.querySelectorAll('.cel[open]')).map(function(x){ return x.getAttribute('data-cel'); });
     vse();
@@ -300,11 +346,28 @@ h2{scroll-margin-top:16px}
   document.addEventListener('click', function(e){
     if (e.target.id === 'vseNazaj') {
       if (!Object.keys(urejeno).length) return;
-      urejeno = {}; pisi(urejeno); vse(); return;
+      urejeno = {}; pisi(KEY, urejeno); vse(); return;
+    }
+    if (e.target.id === 'niVse') {
+      if (!Object.keys(nerabim).length) return;
+      nerabim = {}; pisi(KEY_NI, nerabim); vse(); return;
+    }
+    if (e.target.classList && e.target.classList.contains('x')) {
+      var kx = e.target.closest('[data-k]').getAttribute('data-k');
+      if (nerabim[kx]) delete nerabim[kx];
+      else { nerabim[kx] = new Date().toISOString(); delete urejeno[kx]; pisi(KEY, urejeno); }
+      pisi(KEY_NI, nerabim);
+      var odpC = [].slice.call(document.querySelectorAll('.cel[open]')).map(function(x){ return x.getAttribute('data-cel'); });
+      var odpD = [].slice.call(document.querySelectorAll('.drz[open]')).map(function(x){ return x.getAttribute('data-cc'); });
+      vse();
+      odpC.forEach(function(c){ var el = document.querySelector('.cel[data-cel="'+c+'"]'); if (el) el.open = true; });
+      odpD.forEach(function(cc){ var el = document.querySelector('.drz[data-cc="'+cc+'"]'); if (el) el.open = true; });
+      return;
     }
     if (e.target.classList && e.target.classList.contains('undo')) {
       var k = e.target.closest('[data-k]').getAttribute('data-k');
-      delete urejeno[k]; pisi(urejeno); vse();
+      delete urejeno[k]; delete nerabim[k];
+      pisi(KEY, urejeno); pisi(KEY_NI, nerabim); vse();
     }
   });
 

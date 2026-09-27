@@ -31,11 +31,16 @@ DEALS = os.path.join(KOREN, 'deals.js')
 VSE   = os.path.join(KOREN, 'deals-vse.js')   # poln seznam, vir za razdelitev
 ARHIV = os.path.join(KOREN, 'arhiv.js')
 SLIKE = os.path.join(KOREN, 'img', 'deals')
+MINI  = os.path.join(SLIKE, 'mini')
 EXT   = ('.jpg', '.jpeg', '.png', '.webp')
-# Miša (24.9.2026): »ne jih stiskat«. Slike zato ohranimo v izvirni velikosti
-# (2000 px) in skoraj brez izgube (JPEG 95). Pretvorba iz PNG v JPEG je nujna —
-# izvirni PNG-ji so po 4–6 MB in bi stran ustavili.
+# Miša (24.9.2026): »ne jih stiskat« — velika slika ostane v izvirni velikosti
+# (2000 px, JPEG 95) in gre na stran akcije, kjer je prikazana čez vso širino.
 SIRINA, KAKOVOST = 2000, 95
+# Za SEZNAM akcij pa naredimo še majhno kopijo. Kartica prikaže sliko široko
+# ~400 px, zato 700 px povsem zadošča. Brez tega je seznam s 173 karticami težak
+# 160 MB in brskalnik pri drsanju odneha — 27. 9. 2026 so zato kartice ostale prazne.
+# Kakovost velike slike se pri tem ne spremeni.
+MINI_SIRINA, MINI_KAKOVOST = 700, 82
 
 # mape, ki niso destinacije
 NE_MAPE = {'Logotip', 'Stampi', 'spletna-stran', 'Dodatno', '_koda'}
@@ -108,6 +113,7 @@ def main():
     if os.path.isdir(SLIKE):
         shutil.rmtree(SLIKE)
     os.makedirs(SLIKE, exist_ok=True)
+    os.makedirs(MINI, exist_ok=True)
 
     # 2) razdeli slike: ena na kartico, nobena dvakrat
     na_voljo = {k: list(v) for k, v in mapa.items()}
@@ -135,7 +141,11 @@ def main():
         if w > SIRINA:
             im = im.resize((SIRINA, round(h * SIRINA / w)), Image.LANCZOS)
         im.save(os.path.join(SLIKE, ime), 'JPEG', quality=KAKOVOST, optimize=True, progressive=True)
+        mw, mh = im.size
+        mini = im.resize((MINI_SIRINA, round(mh * MINI_SIRINA / mw)), Image.LANCZOS) if mw > MINI_SIRINA else im
+        mini.save(os.path.join(MINI, ime), 'JPEG', quality=MINI_KAKOVOST, optimize=True, progressive=True)
         c['photo'] = 'img/deals/' + ime
+        c['photoMini'] = 'img/deals/mini/' + ime
         c['photoVir'] = os.path.relpath(pick[0], MAPA)
         kam.append(c)
 
