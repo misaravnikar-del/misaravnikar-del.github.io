@@ -58,121 +58,228 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
 .undo:hover{border-color:var(--accent)}
 .opomba{color:var(--muted);font-size:.82rem;margin:14px 0 0}
 @media(max-width:560px){.row{grid-template-columns:auto auto 1fr}.mapa{display:none}}
+.isci{width:100%;padding:13px 16px;border:1.5px solid var(--line);border-radius:12px;font:inherit;
+  font-size:15px;color:var(--ink);background:var(--surface);outline:none;margin:0 0 16px}
+.isci:focus{border-color:var(--accent)}
+.drz{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.drz[open]{box-shadow:var(--shadow)}
+.drz>summary{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  padding:12px 16px;cursor:pointer;list-style:none;font-weight:600}
+.drz>summary::-webkit-details-marker{display:none}
+.drz>summary:hover{background:#F4F7F6}
+.drz .st{font-family:var(--fm);font-size:.76rem;color:var(--muted);font-weight:500;white-space:nowrap}
+.drz.polna>summary{background:#F0F8F4}
+.drz.polna .drzIme{color:var(--ok)}
+.la{display:grid;grid-template-columns:auto auto 1fr auto;gap:12px;align-items:center;
+  padding:9px 16px 9px 46px;border-top:1px solid var(--line);font-size:.92rem}
+.la:hover{background:#FAFCFB}
+.la .k{font-family:var(--fm);font-size:.74rem;font-weight:600;color:var(--accent);
+  background:#eff8fa;padding:3px 7px;border-radius:6px}
+.la .kraj{font-size:.93rem}
+.la .kraj small{display:block;color:var(--muted);font-size:.78rem}
+.la.nujna{background:#fdf6f3}
+.la .nujno{font-family:var(--fm);font-size:.7rem;font-weight:600;color:var(--hot);
+  background:#fbe9e4;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.la.ok{opacity:.5}
+.prazno{padding:20px;text-align:center;color:var(--muted)}
+h2{scroll-margin-top:16px}
+@media(max-width:560px){.la{grid-template-columns:auto auto 1fr;padding-left:36px}.la .nujno{display:none}}
+
 </style>
 <div class="wrap">
   <a class="back" href="/">← Bookiraj.si</a>
   <p class="eyebrow">Slike destinacij</p>
-  <h1>Katere slike še manjkajo</h1>
-  <p class="lead">Te akcije so najdene in ustrezajo tvojim pravilom, a še niso objavljene, ker zanje v mapi <b>Bookiraj.si</b> ni fotografije. Vsaka akcija potrebuje svojo — če v isto mesto letimo iz treh letališč, so potrebne tri različne slike.</p>
+  <h1>Slike po svetu</h1>
+  <p class="lead">Vse države sveta in njihova komercialna letališča. Odkljukaj, ko za kraj dodaš slike v mapo <b>Bookiraj.si</b> — odkljukano se premakne na dno in seznam ostane pregleden.</p>
+
   <div class="tiles" id="tiles"></div>
-  <h2>Po destinacijah</h2>
-  <p class="hint">Številka pove, koliko <b>različnih</b> slik tega kraja potrebujem.</p>
-  <div class="rows" id="rows"></div>
+
+  <section id="nujnoBox" hidden>
+    <h2>Najprej to</h2>
+    <p class="hint">Za te kraje že imamo akcijo, ki čaka samo na sliko. Vsaka akcija potrebuje svojo — številka pove, koliko različnih slik rabim.</p>
+    <div class="rows" id="nujno"></div>
+  </section>
+
+  <h2>Vse države</h2>
+  <p class="hint">Klikni državo, da se odpre seznam letališč. Kljukica ob državi odkljuka vsa njena letališča naenkrat.</p>
+  <input class="isci" id="isci" type="search" placeholder="Poišči državo ali letališče …" autocomplete="off">
+  <div id="svet"></div>
+
   <details class="done" id="doneBox" hidden open>
     <summary id="doneSum">Kaj sem odkljukala</summary>
-    <p class="hint" style="margin:0 0 12px">Tu ostanejo vse, ki si jih odkljukala, z datumom. Če se je katera skrila po pomoti, jo z gumbom <b>Vrni</b> postaviš nazaj na seznam.</p>
+    <p class="hint" style="margin:0 0 12px">Tu ostane vse, kar si odkljukala, z datumom. Če se je kaj skrilo po pomoti, z gumbom <b>Vrni</b> postaviš nazaj.</p>
     <div class="rows" id="doneRows"></div>
     <div style="margin-top:14px"><button class="undo" type="button" id="vseNazaj">Vrni vse nazaj</button></div>
-    <p class="opomba">Odkljukano se skrije samo v tem brskalniku. Ko sliko dejansko dodaš v mapo, akcija izgine s seznama sama.</p>
+    <p class="opomba">Odkljukano se shrani v tem brskalniku. Ko sliko dejansko dodaš v mapo, se akcija objavi sama.</p>
   </details>
+
   <div class="kako">
     <h3>Kako dodaš sliko</h3>
     <ol>
       <li>Sliko odloži v <code>Bookiraj.si/_Uvoz</code> in jo poimenuj po kraju: <code>Rim 1.png</code>, <code>Rim 2.png</code> …</li>
-      <li>Nočno opravilo jo razvrsti v <code>Celina/Država/</code>.</li>
-      <li>Naslednji zagon akcijo objavi sam — ničesar ni treba sporočati.</li>
+      <li>Za manj znane kraje je dovolj ime države: <code>Romunija 1.png</code> velja za vsa romunska mesta.</li>
+      <li>Nočno opravilo sliko razvrsti, naslednji zagon pa akcijo objavi sam.</li>
     </ol>
-    <p class="hint" style="margin:10px 0 0">Slika mora prikazovati pravi kraj. Slike drugega mesta iste države ne uporabim — za Rim ne bo Neaplja.</p>
   </div>
 </div>
+
 <script src="../arhiv.js"></script>
+<script src="../svet.js"></script>
 <script>
 (function(){
-  var A = window.__BOOKIRAJ_ARHIV__ || {}, manjka = A.manjka || [], arhiv = A.arhiv || [];
   var $ = function(i){ return document.getElementById(i); };
-  if (!manjka.length) {
-    $('tiles').innerHTML = '';
-    $('rows').outerHTML = '<div class="ok"><b>Vse akcije imajo svojo sliko.</b><br>Trenutno ne manjka nobena. 🎉</div>';
-    return;
-  }
-  var slik = manjka.reduce(function(n,m){ return n + m.kartic; }, 0);
-  var drzav = Object.keys(manjka.reduce(function(a,m){ a[m.drzava]=1; return a; }, {})).length;
-  $('tiles').innerHTML =
-      '<div class="tile"><b>'+slik+'</b><span>slik manjka</span></div>'
-    + '<div class="tile"><b>'+manjka.length+'</b><span>destinacij</span></div>'
-    + '<div class="tile"><b>'+drzav+'</b><span>držav</span></div>'
-    + '<div class="tile"><b>'+arhiv.length+'</b><span>akcij čaka</span></div>';
-  // Kaj je Miša že uredila — shranjeno v njenem brskalniku.
+  var A = window.__BOOKIRAJ_ARHIV__ || {}, manjka = A.manjka || [], arhiv = A.arhiv || [];
+  var SVET = (window.__BOOKIRAJ_SVET__ || {}).drzave || [];
+
+  // --- shramba odkljukanega (v brskalniku) ---
   var KEY = 'bkrj_slike_urejeno';
   function beri(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e) { return {}; } }
   function pisi(o){ try { localStorage.setItem(KEY, JSON.stringify(o)); } catch(e) {} }
   var urejeno = beri();
-  // pospravimo zapise za destinacije, ki jih na seznamu ni več (slika je bila dodana)
-  var zivi = {}; manjka.forEach(function(m){ zivi[m.mesto + '|' + m.drzava] = 1; });
-  Object.keys(urejeno).forEach(function(k){ if (!zivi[k]) delete urejeno[k]; });
-  pisi(urejeno);
 
   function kdaj(iso){
     if (!iso) return '';
     var d = new Date(iso), danes = new Date();
-    var istiDan = d.toDateString() === danes.toDateString();
-    return (istiDan ? 'danes ' : d.toLocaleDateString('sl-SI', {day:'numeric', month:'numeric'}) + ' ')
+    return (d.toDateString() === danes.toDateString() ? 'danes '
+      : d.toLocaleDateString('sl-SI', {day:'numeric', month:'numeric'}) + ' ')
       + d.toLocaleTimeString('sl-SI', {hour:'2-digit', minute:'2-digit'});
   }
-  function vrstica(m, jeUrejena){
-    var odhodi = arhiv.filter(function(a){ return a.city === m.mesto; })
-                      .map(function(a){ return a.fromCity; });
-    odhodi = odhodi.filter(function(v,i){ return odhodi.indexOf(v) === i; });
-    var k = m.mesto + '|' + m.drzava;
-    return '<div class="row" data-k="'+k.replace(/"/g,'&quot;')+'">'
-      + '<input class="tick" type="checkbox" id="t'+k.replace(/[^A-Za-z0-9]/g,'')+'"'
-        + (jeUrejena ? ' checked' : '') + ' aria-label="Sliko za '+m.mesto+' sem uredila">'
-      + '<span class="n">'+m.kartic+' ×</span>'
-      + '<span class="kraj"><b>'+m.mesto+'</b><small>'+m.drzava
-        + (odhodi.length ? ' · odhodi: ' + odhodi.join(', ') : '') + '</small></span>'
-      + (jeUrejena
-          ? '<span class="mapa" style="margin-right:10px">'+kdaj(urejeno[k])+'</span>'
-            + '<button class="undo" type="button">Vrni</button>'
-          : '<span class="mapa">'+m.drzava+'/'+m.mesto+'</span>')
-    + '</div>';
-  }
+  function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
-  function izrisi(){
-    var cakajo = manjka.filter(function(m){ return !urejeno[m.mesto + '|' + m.drzava]; });
-    var koncane = manjka.filter(function(m){ return  urejeno[m.mesto + '|' + m.drzava]; });
-    var slik = cakajo.reduce(function(n,m){ return n + m.kartic; }, 0);
-    var drzav = Object.keys(cakajo.reduce(function(a,m){ a[m.drzava]=1; return a; }, {})).length;
-    $('tiles').innerHTML =
-        '<div class="tile"><b>'+slik+'</b><span>slik manjka</span></div>'
-      + '<div class="tile"><b>'+cakajo.length+'</b><span>destinacij</span></div>'
-      + '<div class="tile"><b>'+drzav+'</b><span>držav</span></div>'
-      + '<div class="tile"><b>'+koncane.length+'</b><span>odkljukanih</span></div>';
-    $('rows').innerHTML = cakajo.length
-      ? cakajo.map(function(m){ return vrstica(m, false); }).join('')
-      : '<div class="ok"><b>Vse si uredila.</b><br>Ko slike razvrstiš v mapo, se akcije objavijo same. 🎉</div>';
-    $('doneRows').innerHTML = koncane.map(function(m){ return vrstica(m, true); }).join('');
-    $('doneBox').hidden = !koncane.length;
-    $('doneSum').textContent = 'Kaj sem odkljukala (' + koncane.length + ')';
-  }
-
-  document.addEventListener('change', function(e){
-    var t = e.target; if (!t.classList || !t.classList.contains('tick')) return;
-    var row = t.closest('.row'), k = row.getAttribute('data-k');
-    if (t.checked) urejeno[k] = new Date().toISOString(); else delete urejeno[k];
-    pisi(urejeno);
-    row.classList.add('gre');
-    setTimeout(izrisi, 250);
+  // --- kaj je nujno: destinacije z akcijo, ki čaka na sliko ---
+  var nujnoPoKodi = {};
+  arhiv.forEach(function(a){
+    var o = nujnoPoKodi[a.code] || (nujnoPoKodi[a.code] = {mesto:a.city, drzava:a.country, n:0, odhodi:[]});
+    o.n++; if (o.odhodi.indexOf(a.fromCity) < 0) o.odhodi.push(a.fromCity);
   });
+
+  function jeOdkljukan(k){ return !!urejeno[k]; }
+
+  // ---------- NUJNO ----------
+  function izrisiNujno(){
+    var sez = Object.keys(nujnoPoKodi).map(function(k){
+      var o = nujnoPoKodi[k]; o.k = k; return o;
+    }).filter(function(o){ return !jeOdkljukan('la|' + o.k); })
+      .sort(function(a,b){ return b.n - a.n || a.mesto.localeCompare(b.mesto,'sl'); });
+    $('nujnoBox').hidden = !sez.length;
+    $('nujno').innerHTML = sez.map(function(o){
+      return '<div class="row" data-k="la|'+o.k+'">'
+        + '<input class="tick" type="checkbox" aria-label="Slike za '+esc(o.mesto)+' sem dodala">'
+        + '<span class="n">'+o.n+' ×</span>'
+        + '<span class="kraj"><b>'+esc(o.mesto)+'</b><small>'+esc(o.drzava)
+          + ' · odhodi: ' + esc(o.odhodi.join(', ')) + '</small></span>'
+        + '<span class="mapa">'+esc(o.k)+'</span>'
+      + '</div>';
+    }).join('');
+  }
+
+  // ---------- SVET ----------
+  var filter = '';
+  function ustreza(d){
+    if (!filter) return true;
+    if (d.sl.toLowerCase().indexOf(filter) >= 0) return true;
+    return d.letalisca.some(function(l){
+      return l.k.toLowerCase().indexOf(filter) >= 0
+          || (l.mesto||'').toLowerCase().indexOf(filter) >= 0
+          || (l.ime||'').toLowerCase().indexOf(filter) >= 0;
+    });
+  }
+  function izrisiSvet(){
+    var html = SVET.filter(ustreza).map(function(d){
+      var vsi = d.letalisca, kljukanih = vsi.filter(function(l){ return jeOdkljukan('la|'+l.k); }).length;
+      var polna = kljukanih === vsi.length && vsi.length > 0;
+      var vrstice = vsi.map(function(l){
+        var k = 'la|' + l.k, ok = jeOdkljukan(k), nuj = nujnoPoKodi[l.k];
+        return '<div class="la'+(nuj?' nujna':'')+(ok?' ok':'')+'" data-k="'+k+'">'
+          + '<input class="tick" type="checkbox"'+(ok?' checked':'')+' aria-label="'+esc(l.mesto)+'">'
+          + '<span class="k">'+l.k+'</span>'
+          + '<span class="kraj">'+esc(l.mesto)+(l.ime?'<small>'+esc(l.ime)+'</small>':'')+'</span>'
+          + (nuj ? '<span class="nujno">rabim '+nuj.n+'</span>' : '<span></span>')
+        + '</div>';
+      }).join('');
+      return '<details class="drz'+(polna?' polna':'')+'"'+(filter?' open':'')+' data-cc="'+d.cc+'">'
+        + '<summary>'
+          + '<input class="tick tickDrz" type="checkbox"'+(polna?' checked':'')+' aria-label="Vsa letališča: '+esc(d.sl)+'">'
+          + '<span class="drzIme">'+esc(d.sl)+'</span>'
+          + '<span class="st">'+kljukanih+'/'+vsi.length+'</span>'
+        + '</summary>' + vrstice
+      + '</details>';
+    }).join('');
+    $('svet').innerHTML = html || '<div class="prazno">Ni zadetkov.</div>';
+  }
+
+  // ---------- ODKLJUKANO ----------
+  var imenaPoKodi = {};
+  SVET.forEach(function(d){ d.letalisca.forEach(function(l){ imenaPoKodi[l.k] = {mesto:l.mesto, drzava:d.sl}; }); });
+  function izrisiDone(){
+    var kljuci = Object.keys(urejeno).sort(function(a,b){ return urejeno[b].localeCompare(urejeno[a]); });
+    $('doneBox').hidden = !kljuci.length;
+    $('doneSum').textContent = 'Kaj sem odkljukala (' + kljuci.length + ')';
+    $('doneRows').innerHTML = kljuci.map(function(k){
+      var koda = k.slice(3), i = imenaPoKodi[koda] || {mesto:koda, drzava:''};
+      return '<div class="row" data-k="'+k+'">'
+        + '<input class="tick" type="checkbox" checked aria-label="'+esc(i.mesto)+'">'
+        + '<span class="n">'+koda+'</span>'
+        + '<span class="kraj"><b>'+esc(i.mesto)+'</b><small>'+esc(i.drzava)+'</small></span>'
+        + '<span class="mapa" style="margin-right:10px">'+kdaj(urejeno[k])+'</span>'
+        + '<button class="undo" type="button">Vrni</button>'
+      + '</div>';
+    }).join('');
+  }
+
+  function izrisiTiles(){
+    var vsehLet = SVET.reduce(function(n,d){ return n + d.letalisca.length; }, 0);
+    var nujnihSlik = Object.keys(nujnoPoKodi)
+      .filter(function(k){ return !jeOdkljukan('la|'+k); })
+      .reduce(function(n,k){ return n + nujnoPoKodi[k].n; }, 0);
+    $('tiles').innerHTML =
+        '<div class="tile"><b>'+nujnihSlik+'</b><span>slik nujno rabim</span></div>'
+      + '<div class="tile"><b>'+Object.keys(urejeno).length+'</b><span>odkljukanih</span></div>'
+      + '<div class="tile"><b>'+SVET.length+'</b><span>držav</span></div>'
+      + '<div class="tile"><b>'+vsehLet+'</b><span>letališč</span></div>';
+  }
+
+  function vse(){ izrisiTiles(); izrisiNujno(); izrisiSvet(); izrisiDone(); }
+
+  // ---------- dogodki ----------
+  document.addEventListener('change', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('tick')) return;
+    if (t.classList.contains('tickDrz')) {
+      var cc = t.closest('.drz').getAttribute('data-cc');
+      var d = SVET.find(function(x){ return x.cc === cc; });
+      d.letalisca.forEach(function(l){
+        if (t.checked) urejeno['la|'+l.k] = new Date().toISOString();
+        else delete urejeno['la|'+l.k];
+      });
+    } else {
+      var k = t.closest('[data-k]').getAttribute('data-k');
+      if (t.checked) urejeno[k] = new Date().toISOString(); else delete urejeno[k];
+    }
+    pisi(urejeno);
+    var odprte = [].slice.call(document.querySelectorAll('.drz[open]')).map(function(x){ return x.getAttribute('data-cc'); });
+    vse();
+    odprte.forEach(function(cc){ var el = document.querySelector('.drz[data-cc="'+cc+'"]'); if (el) el.open = true; });
+  });
+
   document.addEventListener('click', function(e){
     if (e.target.id === 'vseNazaj') {
       if (!Object.keys(urejeno).length) return;
-      urejeno = {}; pisi(urejeno); izrisi(); return;
+      urejeno = {}; pisi(urejeno); vse(); return;
     }
-    if (!e.target.classList || !e.target.classList.contains('undo')) return;
-    var k = e.target.closest('.row').getAttribute('data-k');
-    delete urejeno[k]; pisi(urejeno); izrisi();
+    if (e.target.classList && e.target.classList.contains('undo')) {
+      var k = e.target.closest('[data-k]').getAttribute('data-k');
+      delete urejeno[k]; pisi(urejeno); vse();
+    }
   });
 
-  izrisi();
+  var t0;
+  $('isci').addEventListener('input', function(e){
+    clearTimeout(t0);
+    var v = e.target.value.trim().toLowerCase();
+    t0 = setTimeout(function(){ filter = v; izrisiSvet(); }, 160);
+  });
+
+  vse();
 })();
 </script>
