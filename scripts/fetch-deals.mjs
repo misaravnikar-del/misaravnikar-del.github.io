@@ -56,7 +56,24 @@ const MIN_DISCOUNT_FULL = Number(process.env.MIN_DISCOUNT_FULL || 0.15);
 // skoraj vse. Ljubljana ima malo prog in ozke cenovne razpone; Miša je odločila, da
 // ji je pokritost pomembnejša od strogosti. Za ostala letališča ostane −40 %.
 const MIN_DISCOUNT_BY_ORIGIN = { LJU: Number(process.env.MIN_DISCOUNT_LJU || 0.10) };
-const discFor = from => (from && MIN_DISCOUNT_BY_ORIGIN[from] != null) ? MIN_DISCOUNT_BY_ORIGIN[from] : MIN_DISCOUNT;
+
+// ---- PROGE, KI JIH JE MIŠA NAROČILA IZRECNO ----------------------------------------
+// 27. 9. 2026: »dodaj lete iz Trevisa v Valencio, Malago in Alicante«.
+// Iskalnik teh prog sam ne najde: v seznamu najcenejših letov iz Trevisa se ne pojavijo,
+// poleg tega bi jih izločilo sezonsko pravilo (Španija ima poletno sezono, leti pa so
+// jeseni). Zato jih tu vedno dodamo med kandidate in jim damo prednost pri kvotah.
+const IZRECNE = [
+  { from:'TSF', codes:['VLC','AGP','ALC'], what:'Treviso → Valencia, Malaga, Alicante' },
+];
+const IZRECNE_PAIRS = new Set(IZRECNE.flatMap(z => z.codes.map(c => z.from+'|'+c)));
+// Zanje velja enak nižji prag kot za Ljubljano (Miša, 23. 9. 2026: »ljubljano spusti na 10%«).
+// Brez tega bi proga, ki jo je izrecno naročila, ob prvem dražjem tednu izginila s strani.
+const MIN_DISCOUNT_IZRECNE = Number(process.env.MIN_DISCOUNT_IZRECNE || 0.10);
+
+const discFor = (from, code) =>
+    (code && IZRECNE_PAIRS.has(from+'|'+code)) ? MIN_DISCOUNT_IZRECNE
+  : (from && MIN_DISCOUNT_BY_ORIGIN[from] != null) ? MIN_DISCOUNT_BY_ORIGIN[from]
+  : MIN_DISCOUNT;
 const MAX_PAIRS    = Number(process.env.MAX_PAIRS    || 300);  // varovalka za število API klicev
 // »še išči datume, tudi nepočitniške, dokler ne rečem da je dovolj« — koliko mesecev naprej
 // pregledamo za vsako progo. Več mesecev = več terminov, a daljši zagon. Zvišaj, ko reče »še«.
@@ -468,7 +485,7 @@ function routeAvg(data, fromCode, code, meta){
 }
 const isLowcost = code => !!(AIR[code] && AIR[code].lowcost);
 function pickTerms(data, avg, km, opt){
-  const minDisc = discFor(opt && opt.from);        // prag velja glede na odhodno letališče
+  const minDisc = discFor(opt && opt.from, opt && opt.code);   // prag po odhodnem letališču (in po progi za izrecno naročene)
   const cutLow  = avg * (1 - minDisc);             // nizkocenovniki: strog prag
   const cutFull = avg * (1 - Math.min(MIN_DISCOUNT_FULL, minDisc));   // klasični prevozniki: nikoli strožji
   const win = (opt && opt.window) || null;                  // {start,end} za počitniško iskanje
@@ -521,7 +538,7 @@ function contOf(code){ const ci = CITY[code]; const cat = ci && CATALOG[ci.cc]; 
 function routeTerms(data, fromCode, code, meta){
   const avg = routeAvg(data, fromCode, code, meta);
   if (avg == null) return null;
-  const terms = pickTerms(data, avg, distKm(fromCode, code), {cont:contOf(code), from:fromCode, wish:wishFor(fromCode, code)}).slice(0,MAX_TERMS).sort((a,b)=>a.depart<b.depart?-1:1);
+  const terms = pickTerms(data, avg, distKm(fromCode, code), {cont:contOf(code), from:fromCode, code, wish:wishFor(fromCode, code)}).slice(0,MAX_TERMS).sort((a,b)=>a.depart<b.depart?-1:1);
   if (!terms.length) return null;
   const r = cardStats(terms, avg);
   r.rawAvg = avg;
@@ -614,6 +631,30 @@ for (const mth of holMonths) {
   }
 }
 
+// 2a-3) IZRECNO NAROČENE PROGE — vedno med kandidate, tudi če jih sito ni našlo.
+// Dobijo oznako želenega seznama, da imajo prednost pri kvotah (sicer jih izrinejo
+// cenene evropske proge), in hint 0, da gredo v preverjanje prve.
+let izrecnoDodanih = 0, izrecnoZe = 0;
+for (const z of IZRECNE) {
+  const o = ORIGINS.find(x => x.code === z.from);
+  if (!o) continue;                                   // usmerjen zagon brez tega letališča
+  for (const dest of z.codes) {
+    const key = z.from+'|'+dest;
+    if (CURATED_PAIR.has(key)) continue;              // že kurirana kartica
+    const ci = CITY[dest], cat = ci && CATALOG[ci.cc];
+    if (!ci || !cat) { console.log(`!  ${key}: destinacije ni v katalogu — preskočeno`); continue; }
+    const w = { from:z.from, what:z.what, codes:z.codes };
+    if (cand[key]) { cand[key].wish = cand[key].wish || w; cand[key].hint = 0; izrecnoZe++; continue; }
+    cand[key] = { fromCode:z.from, fromCity:o.city, code:dest, city:cityName(dest),
+      en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
+      season:SEASON[cat.season].note, hint:0, wish:w,
+      homeKm:distKm(HOME,dest), routeKm:distKm(z.from,dest) };
+    izrecnoDodanih++;
+  }
+}
+if (izrecnoDodanih || izrecnoZe)
+  console.log(`Izrecno naročene proge: ${izrecnoDodanih} dodanih, ${izrecnoZe} jih je iskalnik našel sam.`);
+
 let pairs = Object.values(cand).sort((a,b)=>a.hint-b.hint);
 console.log(`\nPregledano ${scanned} letov (celo leto) + ${holScanned} v počitniških mesecih · kandidatnih prog ${pairs.length} (${holAdded} samo iz počitnic)`);
 console.log(`Izpuščeno: ${dropClose} prebližu (<${MIN_HOME_KM} km od Ljubljane) · ${dropCat} država ni v katalogu · ${dropSeason} napačna sezona · ${dropNights} dolžina potovanja`);
@@ -670,7 +711,7 @@ if (SCREEN_ALL) {
     const avg = routeAvg(base, d.fromCode, d.code, {city:d.city, country:d.country});
     if (avg == null) { dead++; continue; }
     const hits = pickTerms(base, avg, distKm(d.fromCode, d.code),
-      {cont:d.continent, from:d.fromCode, wish:d.wish});
+      {cont:d.continent, from:d.fromCode, code:d.code, wish:d.wish});
     SCREEN.set(d.fromCode+'|'+d.code, {base, avg});
     d.screenHits = hits.length;
     d.km = distKm(d.fromCode, d.code) || 0;
@@ -722,11 +763,11 @@ for (const d of picked) {
   if (avg == null) { noDeal++; continue; }
   const km = distKm(d.fromCode, d.code);
 
-  let found = pickTerms(base, avg, km, {cont:d.continent, from:d.fromCode, wish:d.wish});   // najcenejši čez celo leto
+  let found = pickTerms(base, avg, km, {cont:d.continent, from:d.fromCode, code:d.code, wish:d.wish});   // najcenejši čez celo leto
   for (const mth of monthList) {
     const data = await forDates(d.fromCode, d.code, mth); calls++; await sleep(SLEEP_MS);
     if (!data.length) continue;
-    found = found.concat(pickTerms(data, avg, km, {cont:d.continent, from:d.fromCode, wish:d.wish}));   // pravilo 2 glede na letno povprečje
+    found = found.concat(pickTerms(data, avg, km, {cont:d.continent, from:d.fromCode, code:d.code, wish:d.wish}));   // pravilo 2 glede na letno povprečje
 
     // Počitniški termini se primerjajo tudi s povprečjem SVOJEGA obdobja
     // (božični let skoraj nikoli ni 40 % pod letnim povprečjem — takrat so cene višje za vse).
@@ -739,7 +780,7 @@ for (const d of picked) {
       const wp = inWin.map(x=>x.price);
       if (wp.length < 3) continue;
       const holAvg = wp.reduce((a,b)=>a+b,0)/wp.length;
-      const extra = pickTerms(inWin, holAvg, km, {window:w, cont:d.continent, from:d.fromCode, wish:d.wish}).map(t => {
+      const extra = pickTerms(inWin, holAvg, km, {window:w, cont:d.continent, from:d.fromCode, code:d.code, wish:d.wish}).map(t => {
         t.holAvg = Math.round(holAvg); t.holName = w.name; t.holDiscount = t.discount;
         t.discount = Math.max(0, Math.round((avg-t.price)/avg*100));
         return t;
@@ -829,7 +870,11 @@ await logPrices(priceLog);
 let outCurated = curated, outDiscover = discover;
 if (MERGE) {
   try {
-    const prev = readFileSync(new URL('../deals.js', import.meta.url), 'utf8');
+    // Beremo POLN seznam (deals-vse.js), ne deals.js: slednji je že prečiščen po slikah,
+    // zato bi ob zlitju izgubili kartice, ki čakajo na Mišino sliko v arhivu.
+    let prev;
+    try { prev = readFileSync(new URL('../deals-vse.js', import.meta.url), 'utf8'); }
+    catch { prev = readFileSync(new URL('../deals.js', import.meta.url), 'utf8'); }
     const old = JSON.parse(prev.slice(prev.indexOf('{'), prev.lastIndexOf('}')+1));
     const keep = d => !ORIGIN_SET.has(d.fromCode);
     const keptCur = (old.deals||[]).filter(keep), keptDis = (old.discover||[]).filter(keep);
@@ -841,7 +886,7 @@ if (MERGE) {
     process.exit(2);
   }
 }
-const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, minDiscountByOrigin:MIN_DISCOUNT_BY_ORIGIN, alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:outCurated, discover:outDiscover };
+const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, minDiscountByOrigin:MIN_DISCOUNT_BY_ORIGIN, minDiscountIzrecne:MIN_DISCOUNT_IZRECNE, izrecne:[...IZRECNE_PAIRS], alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:outCurated, discover:outDiscover };
 writeFileSync(new URL('../deals.js', import.meta.url), 'window.__BOOKIRAJ_DEALS__ = '+JSON.stringify(payload)+';\n');
 // Poln seznam (še brez filtra slik) hranimo posebej: scripts/slike-iz-mape.py ga
 // bere kot vir, da ve tudi za akcije, ki so trenutno v arhivu brez slike.

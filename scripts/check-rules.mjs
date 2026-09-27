@@ -13,7 +13,12 @@ const MIN_DISCOUNT = Math.round((o.rules?.minDiscount ?? 0.40) * 100);
 const MIN_DISCOUNT_FULL = Math.round((o.rules?.minDiscountFull ?? 0.15) * 100);
 // prag lahko velja po odhodnem letališču (Ljubljana: −30 %, glej fetch-deals.mjs)
 const BY_ORIGIN = o.rules?.minDiscountByOrigin || {};
-const needLow = from => BY_ORIGIN[from] != null ? Math.round(BY_ORIGIN[from]*100) : MIN_DISCOUNT;
+// Proge, ki jih je Miša naročila izrecno (npr. Treviso → Valencia, Malaga, Alicante),
+// imajo enak nižji prag kot Ljubljana — fetch-deals.mjs ga zapiše v deals.js.
+const IZRECNE = new Set(o.rules?.izrecne || []);
+const IZRECNE_PCT = Math.round((o.rules?.minDiscountIzrecne ?? 0.10) * 100);
+const needLow = (from, code) => (code && IZRECNE.has(from+'|'+code)) ? IZRECNE_PCT
+  : BY_ORIGIN[from] != null ? Math.round(BY_ORIGIN[from]*100) : MIN_DISCOUNT;
 const ALWAYS_UNDER = o.rules?.alwaysUnder ?? 50;
 const MARKER = '779438';
 // Pravilo 1: naša odhodna letališča niso destinacija
@@ -48,7 +53,7 @@ const badTerm = [];
 for (const d of all)
   for (const t of (d.terms || [])) {
     // klasični (nenizkocenovni) prevozniki imajo nižji prag — glej pravilo v fetch-deals.mjs
-    const low = needLow(d.fromCode);
+    const low = needLow(d.fromCode, d.code);
     const need = (t.lc === false) ? Math.min(MIN_DISCOUNT_FULL, low) : low;
     if (!((t.discount ?? 0) >= need || t.price < ALWAYS_UNDER || (t.holDiscount ?? 0) >= need))
       badTerm.push(`${d.fromCode}→${d.code} ${t.depart} ${t.price}€ (−${t.discount ?? 0} %)`);
