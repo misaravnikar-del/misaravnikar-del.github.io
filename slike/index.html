@@ -85,6 +85,20 @@ code{font-family:var(--fm);font-size:.86rem;background:#F4F7F6;padding:1px 6px;b
 h2{scroll-margin-top:16px}
 @media(max-width:560px){.la{grid-template-columns:auto auto 1fr;padding-left:36px}.la .nujno{display:none}}
 
+.cel{margin:0 0 10px}
+.cel>summary{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;cursor:pointer;
+  list-style:none;padding:14px 18px;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;box-shadow:var(--shadow)}
+.cel>summary::-webkit-details-marker{display:none}
+.cel>summary:hover{border-color:var(--accent)}
+.cel>summary h3{font-family:var(--fd);font-size:1.25rem;margin:0;display:flex;align-items:center;gap:10px}
+.cel>summary h3::before{content:"▸";color:var(--accent);font-size:.9rem;transition:transform .15s}
+.cel[open]>summary h3::before{transform:rotate(90deg)}
+.cel>summary .st{font-family:var(--fm);font-size:.78rem;color:var(--muted)}
+.cel .vsebina{padding:10px 0 4px 14px}
+.cel .nujnih{font-family:var(--fm);font-size:.7rem;font-weight:600;color:var(--hot);
+  background:#fbe9e4;padding:3px 9px;border-radius:999px;margin-left:8px}
+
 </style>
 <div class="wrap">
   <a class="back" href="/">← Bookiraj.si</a>
@@ -101,7 +115,7 @@ h2{scroll-margin-top:16px}
   </section>
 
   <h2>Vse države</h2>
-  <p class="hint">Klikni državo, da se odpre seznam letališč. Kljukica ob državi odkljuka vsa njena letališča naenkrat.</p>
+  <p class="hint">Razdeljeno po celinah. Klikni celino, nato državo, da se odpre seznam letališč. Kljukica ob državi odkljuka vsa njena letališča naenkrat.</p>
   <input class="isci" id="isci" type="search" placeholder="Poišči državo ali letališče …" autocomplete="off">
   <div id="svet"></div>
 
@@ -184,8 +198,7 @@ h2{scroll-margin-top:16px}
           || (l.ime||'').toLowerCase().indexOf(filter) >= 0;
     });
   }
-  function izrisiSvet(){
-    var html = SVET.filter(ustreza).map(function(d){
+  function drzavaHTML(d){
       var vsi = d.letalisca, kljukanih = vsi.filter(function(l){ return jeOdkljukan('la|'+l.k); }).length;
       var polna = kljukanih === vsi.length && vsi.length > 0;
       var vrstice = vsi.map(function(l){
@@ -203,6 +216,26 @@ h2{scroll-margin-top:16px}
           + '<span class="drzIme">'+esc(d.sl)+'</span>'
           + '<span class="st">'+kljukanih+'/'+vsi.length+'</span>'
         + '</summary>' + vrstice
+      + '</details>';
+  }
+
+  // Miša (27.9.2026): »pa daj še po kontinentih razdeli.«
+  var CELINE = (window.__BOOKIRAJ_SVET__ || {}).celine || {};
+  function izrisiSvet(){
+    var vidne = SVET.filter(ustreza);
+    var html = Object.keys(CELINE).map(function(ck){
+      var dz = vidne.filter(function(d){ return d.cel === ck; });
+      if (!dz.length) return '';
+      var let_ = dz.reduce(function(n,d){ return n + d.letalisca.length; }, 0);
+      var kljuk = dz.reduce(function(n,d){
+        return n + d.letalisca.filter(function(l){ return jeOdkljukan('la|'+l.k); }).length; }, 0);
+      var nuj = dz.reduce(function(n,d){
+        return n + d.letalisca.filter(function(l){ return nujnoPoKodi[l.k] && !jeOdkljukan('la|'+l.k); }).length; }, 0);
+      return '<details class="cel"'+(filter?' open':'')+' data-cel="'+ck+'">'
+        + '<summary><h3>'+CELINE[ck]
+          + (nuj ? '<span class="nujnih">'+nuj+' nujnih</span>' : '') + '</h3>'
+          + '<span class="st">'+kljuk+'/'+let_+' letališč · '+dz.length+' držav</span></summary>'
+        + '<div class="vsebina">' + dz.map(drzavaHTML).join('') + '</div>'
       + '</details>';
     }).join('');
     $('svet').innerHTML = html || '<div class="prazno">Ni zadetkov.</div>';
@@ -257,9 +290,11 @@ h2{scroll-margin-top:16px}
       if (t.checked) urejeno[k] = new Date().toISOString(); else delete urejeno[k];
     }
     pisi(urejeno);
-    var odprte = [].slice.call(document.querySelectorAll('.drz[open]')).map(function(x){ return x.getAttribute('data-cc'); });
+    var odprteD = [].slice.call(document.querySelectorAll('.drz[open]')).map(function(x){ return x.getAttribute('data-cc'); });
+    var odprteC = [].slice.call(document.querySelectorAll('.cel[open]')).map(function(x){ return x.getAttribute('data-cel'); });
     vse();
-    odprte.forEach(function(cc){ var el = document.querySelector('.drz[data-cc="'+cc+'"]'); if (el) el.open = true; });
+    odprteC.forEach(function(c){ var el = document.querySelector('.cel[data-cel="'+c+'"]'); if (el) el.open = true; });
+    odprteD.forEach(function(cc){ var el = document.querySelector('.drz[data-cc="'+cc+'"]'); if (el) el.open = true; });
   });
 
   document.addEventListener('click', function(e){

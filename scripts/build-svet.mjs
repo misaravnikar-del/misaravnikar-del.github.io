@@ -56,6 +56,22 @@ NY:'Severni Ciper',SH:'Sveta Helena',MF:'Saint Martin',SJ:'Svalbard in Jan Mayen
 WF:'Wallis in Futuna',EH:'Zahodna Sahara',
 };
 
+// celine — ista imena kot Mišine mape na namizju
+const CEL = {
+evropa:['AD','AL','AT','AX','BA','BE','BG','BY','CH','CY','CZ','DE','DK','EE','ES','FI','FO','FR','GB','GG','GI','GR','HR','HU','IE','IM','IS','IT','JE','KX','LI','LT','LU','LV','MC','MD','ME','MK','MT','NO','NL','PL','PT','RO','RS','RU','SE','SI','SJ','SK','SM','TR','UA','VA','XK','NY'],
+azija:['AE','AF','AM','AZ','BD','BH','BN','BT','CN','GE','HK','ID','IL','IN','IQ','IR','JO','JP','KG','KH','KP','KR','KW','KZ','LA','LB','LK','MM','MN','MO','MV','MY','NP','OM','PH','PK','PS','QA','SA','SG','SY','TH','TJ','TL','TM','TW','UZ','VN','YE','AB'],
+afrika:['AO','BF','BI','BJ','BW','CD','CF','CG','CI','CM','CV','DJ','DZ','EG','EH','ER','ET','GA','GH','GM','GN','GQ','GW','KE','KM','LR','LS','LY','MA','MG','ML','MR','MU','MW','MZ','NA','NE','NG','RE','RW','SC','SD','SH','SL','SN','SO','SS','ST','SZ','TD','TG','TN','TZ','UG','YT','ZA','ZM','ZW'],
+'severna-amerika':['BM','CA','GL','PM','US'],
+'srednja-amerika':['AG','AI','AW','BB','BQ','BS','BZ','CR','CU','CW','DM','DO','GD','GP','GT','HN','HT','JM','KN','KY','LC','MF','MQ','MS','MX','NI','PA','PR','SV','SX','TC','TT','VC','VG','VI'],
+'juzna-amerika':['AR','BO','BR','CL','CO','EC','FK','GF','GY','PE','PY','SR','UY','VE'],
+oceanija:['AS','AU','CC','CK','CX','FJ','FM','GU','KI','MH','MP','NC','NF','NR','NU','NZ','PF','PG','PW','SB','TO','TV','VU','WF','WS'],
+};
+const CEL_SL = { evropa:'Evropa', azija:'Azija', afrika:'Afrika',
+  'severna-amerika':'Severna Amerika', 'srednja-amerika':'Srednja Amerika',
+  'juzna-amerika':'Južna Amerika', oceanija:'Oceanija', drugo:'Drugo' };
+const CC2CEL = {};
+for (const k in CEL) for (const cc of CEL[k]) CC2CEL[cc] = k;
+
 const CITY = {};
 for (const c of cities) CITY[c.code] = c.name;
 const EN = {};
@@ -84,6 +100,7 @@ const drzave = Object.keys(po)
   .map(cc => ({
     cc,
     sl: SL[cc] || EN[cc] || cc,
+    cel: CC2CEL[cc] || 'drugo',
     letalisca: po[cc].sort((a, b) => a.mesto.localeCompare(b.mesto, 'sl')),
   }))
   .filter(d => d.letalisca.length)
@@ -93,7 +110,13 @@ const skupaj = drzave.reduce((n, d) => n + d.letalisca.length, 0);
 writeFileSync(new URL('../svet.js', import.meta.url),
   '// Vse države in njihova komercialna letališča (vir: Travelpayouts).\n'
   + '// Zgrajeno s scripts/build-svet.mjs — ne urejaj na roko.\n'
-  + 'window.__BOOKIRAJ_SVET__ = ' + JSON.stringify({ drzave }) + ';\n');
+  + 'window.__BOOKIRAJ_SVET__ = ' + JSON.stringify({ drzave, celine: CEL_SL }) + ';\n');
+const brezCel = drzave.filter(d => d.cel === 'drugo');
+if (brezCel.length) console.log(`Brez celine (${brezCel.length}): ${brezCel.map(d => d.cc + ' ' + d.sl).join(', ')}`);
+Object.keys(CEL_SL).forEach(k => {
+  const n = drzave.filter(d => d.cel === k);
+  if (n.length) console.log(`  ${CEL_SL[k]}: ${n.length} držav · ${n.reduce((s,d)=>s+d.letalisca.length,0)} letališč`);
+});
 
 const brezSL = drzave.filter(d => !SL[d.cc]);
 console.log(`Držav: ${drzave.length} · komercialnih letališč: ${skupaj}`);
