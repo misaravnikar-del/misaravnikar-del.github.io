@@ -27,6 +27,7 @@
 //     izven Evrope ≥7 dni, zelo oddaljene (≥VERYFAR_KM) ≥10 dni.
 // Zažene GitHub Action (skrivnost TRAVELPAYOUTS_TOKEN); lokalno: TRAVELPAYOUTS_TOKEN=... node scripts/fetch-deals.mjs
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
+import { ryanairProga, ryanairIzLetalisca, ryanairStats } from './ryanair.mjs';
 
 const TOKEN = process.env.TRAVELPAYOUTS_TOKEN;
 const MARKER = process.env.TP_MARKER || '779438';
@@ -64,6 +65,24 @@ const MIN_DISCOUNT_BY_ORIGIN = { LJU: Number(process.env.MIN_DISCOUNT_LJU || 0.1
 // jeseni). Zato jih tu vedno dodamo med kandidate in jim damo prednost pri kvotah.
 const IZRECNE = [
   { from:'TSF', codes:['VLC','AGP','ALC'], what:'Treviso → Valencia, Malaga, Alicante' },
+  // 27. 9. 2026, Miša: »poglej kaj ima Izlet na dlani in poišči iste lete«.
+  // Spodaj so proge, ki jih oglašujejo. Nekatere naša baza cen danes še ne pozna —
+  // ostanejo na seznamu, da se objavijo takoj, ko se cene pojavijo.
+  { from:'TRS', codes:['VLC','AGP','ALC'], what:'Trst → obala Španije' },
+  { from:'TRS', codes:['SVQ'],             what:'Trst → Sevilla' },
+  { from:'BUD', codes:['SVQ'],             what:'Budimpešta → Sevilla' },
+  { from:'VCE', codes:['BER'],             what:'Benetke → Berlin' },
+  { from:'TRS', codes:['BER'],             what:'Trst → Berlin' },
+  { from:'LJU', codes:['BER'],             what:'Ljubljana → Berlin' },
+  { from:'VCE', codes:['LAX'],             what:'Benetke → Los Angeles' },
+  { from:'TRS', codes:['LAX'],             what:'Trst → Los Angeles' },
+  { from:'MUC', codes:['LAX'],             what:'Minhen → Los Angeles' },
+  { from:'LJU', codes:['TFS','LPA'],       what:'Ljubljana → Kanarski otoki' },
+  { from:'VCE', codes:['HKG','CGK'],       what:'Benetke → Azija (Air China)' },
+  { from:'VCE', codes:['NBO','KUL'],       what:'Benetke → Kenija in Malezija (Turkish)' },
+  { from:'LJU', codes:['NBO','ZNZ'],       what:'Ljubljana → Kenija in Zanzibar (Turkish)' },
+  { from:'LJU', codes:['CGK','DPS'],       what:'Ljubljana → Jakarta in Bali (Turkish)' },
+  { from:'VCE', codes:['PUJ','SDQ'],       what:'Benetke → Dominikanska republika' },
 ];
 const IZRECNE_PAIRS = new Set(IZRECNE.flatMap(z => z.codes.map(c => z.from+'|'+c)));
 // Zanje velja enak nižji prag kot za Ljubljano (Miša, 23. 9. 2026: »ljubljano spusti na 10%«).
@@ -484,6 +503,42 @@ function routeAvg(data, fromCode, code, meta){
   return avg;
 }
 const isLowcost = code => !!(AIR[code] && AIR[code].lowcost);
+
+// ---- RYANAIR: cene naravnost od prevoznika --------------------------------------------
+// Travelpayouts je predpomnilnik iskanj in akcijskih Ryanairovih cen pogosto sploh nima
+// (27. 9. 2026: Treviso → Valencia 30 € pri Ryanairu, Travelpayouts za tisti dan nič).
+// Ryanaira zato vprašamo, KATERI dnevi so poceni; povezava gre še naprej na Aviasales
+// z Mišinim markerjem (pravilo 5), ki ob kliku naredi živo iskanje in te cene najde.
+const RYANAIR = process.env.RYANAIR !== '0';
+// Aviasales sprejme iskanje v obliki TSF0610VLC21101 (odhod, datum, cilj, datum, potniki).
+// ddmm() je definiran zgoraj.
+const aviasalesURL = (from, to, dep, ret) =>
+  'https://www.aviasales.com/search/' + from + ddmm(dep) + to + (ret ? ddmm(ret) : '') + '1'
+  + '?marker=' + MARKER;
+
+// Ryanairov termin spravimo v isto obliko, kot jo vrne pickTerms.
+function ryTermin(t, from, to, avg, km){
+  const nights = t.ret ? Math.round((new Date(t.ret)-new Date(t.depart))/86400000) : null;
+  const hol = holidaysFor(t.depart);
+  return { depart:t.depart, ret:t.ret, price:t.price, airline:'FR', airlineName:airName('FR'),
+    lc:true, bag:bagTier('FR', km), transfers:0,
+    nights, days: nights!=null ? nights+1 : null,
+    discount: Math.max(0, Math.round((avg-t.price)/avg*100)),
+    hol: hol.length ? hol : undefined,
+    vir:'ryanair',                       // da se v nadzoru vidi, od kod cena
+    url: aviasalesURL(from, to, t.depart, t.ret) };
+}
+// Iste meje kot pri Travelpayouts: nizkocenovnik mora biti vsaj minDisc pod povprečjem
+// proge ALI pod ALWAYS_UNDER €. Ryanair je vedno nizkocenovnik.
+function ryIzberi(termini, from, to, avg, km, cont){
+  const cut = avg * (1 - discFor(from, to));
+  return termini
+    .filter(t => t.price <= cut || t.price < ALWAYS_UNDER)
+    .filter(t => wishDateOK(wishFor(from, to), t.depart))
+    .filter(t => tripOK(t.ret ? Math.round((new Date(t.ret)-new Date(t.depart))/86400000) : null,
+                        cont, km, t.price, avg))
+    .map(t => ryTermin(t, from, to, avg, km));
+}
 function pickTerms(data, avg, km, opt){
   const minDisc = discFor(opt && opt.from, opt && opt.code);   // prag po odhodnem letališču (in po progi za izrecno naročene)
   const cutLow  = avg * (1 - minDisc);             // nizkocenovniki: strog prag
@@ -631,6 +686,37 @@ for (const mth of holMonths) {
   }
 }
 
+// 2a-3) RYANAIR — kaj je poceni naravnost pri prevozniku.
+// Travelpayouts je predpomnilnik iskanj: akcijskih Ryanairovih cen pogosto nima.
+// En klic na letališče in mesec vrne najcenejši let za vsak cilj — poceni in natančno.
+const RY = new Map();        // 'ODHOD|CILJ' → Ryanairovi termini
+let ryNovih = 0, ryZe = 0;
+if (RYANAIR) {
+  for (const o of ORIGINS) {
+    const najdeno = await ryanairIzLetalisca(o.code);
+    for (const [dest, termini] of najdeno) {
+      const key = o.code+'|'+dest;
+      RY.set(key, termini);
+      if (CURATED_PAIR.has(key)) continue;
+      const ci = CITY[dest], cat = ci && CATALOG[ci.cc];
+      if (!ci || !cat) continue;                       // samo dovoljene države
+      if (tooClose(o.code, dest)) continue;            // PRAVILO 1
+      const wish = wishFor(o.code, dest);
+      const najceneje = Math.min(...termini.map(t => t.price));
+      // sezona velja enako kot pri ostalem odkrivanju (razen za Mišin želeni seznam)
+      const vSezoni = termini.some(t => SEASON[cat.season].m.includes(+t.depart.slice(5,7)));
+      if (!wish && !vSezoni) continue;
+      if (cand[key]) { cand[key].hint = Math.min(cand[key].hint, najceneje); ryZe++; continue; }
+      cand[key] = { fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
+        en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
+        season:SEASON[cat.season].note, hint:najceneje, wish:wish||null,
+        homeKm:distKm(HOME,dest), routeKm:distKm(o.code,dest) };
+      ryNovih++;
+    }
+  }
+  console.log(`Ryanair: ${RY.size} prog s cenami naravnost od prevoznika · ${ryNovih} novih kandidatov, ${ryZe} že najdenih · ${ryanairStats().klicev} klicev`);
+}
+
 // 2a-3) IZRECNO NAROČENE PROGE — vedno med kandidate, tudi če jih sito ni našlo.
 // Dobijo oznako želenega seznama, da imajo prednost pri kvotah (sicer jih izrinejo
 // cenene evropske proge), in hint 0, da gredo v preverjanje prve.
@@ -719,7 +805,9 @@ if (SCREEN_ALL) {
   }
   console.log(`Sito končano: ${ok} prog ima vsaj en termin po pravilu · ${dead} brez uporabnih podatkov.`);
   // Naprej gredo samo proge, ki so sito prestale.
-  ordered = ordered.filter(d => d.screenHits > 0);
+  // Proge, kjer ima Ryanair svoje cene, gredo naprej tudi brez zadetka v Travelpayouts.
+  ordered = ordered.filter(d => d.screenHits > 0 || RY.has(d.fromCode+'|'+d.code)
+                            || IZRECNE_PAIRS.has(d.fromCode+'|'+d.code));
   // Miša želi več oddaljenih: najprej napolnimo FAR_SHARE mest z oddaljenimi (najdlje prve),
   // preostanek pa z bližnjimi po ceni. Brez tega evropski skoki spet zasedejo vse.
   const far   = ordered.filter(d => d.km >= FAR_KM).sort((a,b)=>b.km-a.km);
@@ -753,17 +841,45 @@ const winOf = mth => HOLIDAYS
 
 const kept = [];
 let noDeal = 0, noData = 0, calls = 0, holTerms = 0;
+let ryProg = 0, ryTerminov = 0, rySamo = 0;   // koliko prispeva Ryanairov vir
 for (const d of picked) {
   const meta = {city:d.city, country:d.country};
-  const cached = SCREEN.get(d.fromCode+'|'+d.code);        // klic iz sita, da ga ne ponavljamo
+  const kljuc = d.fromCode+'|'+d.code;
+  const cached = SCREEN.get(kljuc);                       // klic iz sita, da ga ne ponavljamo
   let base = cached ? cached.base : null;
   if (!base) { base = await forDates(d.fromCode, d.code); calls++; await sleep(SLEEP_MS); }
-  if (!base.length) { noData++; continue; }
-  const avg = cached ? cached.avg : routeAvg(base, d.fromCode, d.code, meta);
+
+  // Cene naravnost od Ryanaira — samo za proge, kjer res leti (ali jih je Miša naročila).
+  let ryTermini = [];
+  if (RYANAIR && (RY.has(kljuc) || IZRECNE_PAIRS.has(kljuc))) {
+    ryTermini = await ryanairProga(d.fromCode, d.code);
+    ryProg += ryTermini.length ? 1 : 0;
+  }
+
+  if (!base.length && !ryTermini.length) { noData++; continue; }
+  let avg = cached ? cached.avg : (base.length ? routeAvg(base, d.fromCode, d.code, meta) : null);
+  // Če Travelpayouts proge sploh ne pozna (ravno pri Ryanairovih akcijah se to dogaja),
+  // povprečje izračunamo iz Ryanairovih cen čez vse mesece. Popust tako pove isto:
+  // koliko je TA dan cenejši od običajne cene na tej progi.
+  if (avg == null && ryTermini.length >= 3) {
+    const p = ryTermini.map(t => t.price);
+    avg = p.reduce((a,b)=>a+b,0)/p.length;
+    AVG[kljuc] = avg;
+    priceLog.push({ from_code:d.fromCode, code:d.code, city:d.city, country:d.country,
+      avg:Math.round(avg), min:Math.round(Math.min(...p)), samples:p.length });
+    rySamo++;
+  }
   if (avg == null) { noDeal++; continue; }
   const km = distKm(d.fromCode, d.code);
 
-  let found = pickTerms(base, avg, km, {cont:d.continent, from:d.fromCode, code:d.code, wish:d.wish});   // najcenejši čez celo leto
+  let found = base.length
+    ? pickTerms(base, avg, km, {cont:d.continent, from:d.fromCode, code:d.code, wish:d.wish})   // najcenejši čez celo leto
+    : [];
+  if (ryTermini.length) {
+    const ry = ryIzberi(ryTermini, d.fromCode, d.code, avg, km, d.continent);
+    ryTerminov += ry.length;
+    found = found.concat(ry);
+  }
   for (const mth of monthList) {
     const data = await forDates(d.fromCode, d.code, mth); calls++; await sleep(SLEEP_MS);
     if (!data.length) continue;
@@ -789,11 +905,13 @@ for (const d of picked) {
       found = found.concat(extra);
     }
   }
-  const terms = mergeTerms(found);
+  // Če imata Travelpayouts in Ryanair isti dan, obvelja cenejši.
+  const terms = mergeTerms(found.slice().sort((a,b)=>a.price-b.price));
   if (!terms.length) { noDeal++; continue; }
   kept.push(Object.assign({}, d, cardStats(terms, avg)));
 }
 const keptTerms = kept.reduce((s,k)=>s+k.terms.length,0);
+if (RYANAIR) console.log(`Ryanair: ${ryTerminov} terminov s cenami od prevoznika na ${ryProg} progah · ${rySamo} prog, ki jih Travelpayouts sploh ne pozna · skupaj ${ryanairStats().klicev} klicev, ${ryanairStats().napak} neuspelih.`);
 console.log(`Ustreza pravilu (−${Math.round(MIN_DISCOUNT*100)} % ali <${ALWAYS_UNDER} €): ${kept.length} kartic · ${keptTerms} terminov (${holTerms} počitniških) · brez akcije ${noDeal} · brez podatkov ${noData} · API klicev ${calls}`);
 
 // SLIKE: prava fotografija mesta prek MediaWiki pageimages (~960px); prenesi lokalno
