@@ -38,7 +38,9 @@ EXT   = ('.jpg', '.jpeg', '.png', '.webp')
 SIRINA, KAKOVOST = 2000, 95
 
 # mape, ki niso destinacije
-NE_MAPE = {'Logotip', 'Stampi', 'spletna-stran', 'Dodatno'}
+NE_MAPE = {'Logotip', 'Stampi', 'spletna-stran', 'Dodatno', '_koda'}
+# ⚠️ V mapi Bookiraj.si/_koda živi koda spletne strani (od 27. 9. 2026).
+#    Tam so tudi slike strani — nikoli jih ne smemo brati kot Mišine fotografije.
 # ime države na strani → ime mape, kjer se razlikujeta
 DRZAVA_ALIAS = {'zimbabve': 'zimbabwe'}
 # mesto na strani → ime v datoteki, kjer se razlikujeta
