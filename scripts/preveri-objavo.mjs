@@ -54,4 +54,14 @@ if (napake.length) {
   console.error('\nDatoteke obnovi iz zgodovine, npr.:  git checkout HEAD -- CNAME');
   process.exit(1);
 }
+// Oznaka različice na podatkovnih datotekah: brez nje brskalnik servira star
+// deals.js, ki kaže na preimenovane slike — kartice takrat ostanejo prazne.
+import { writeFileSync } from 'node:fs';
+const v = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
+const htmlPot = new URL('../index.html', import.meta.url);
+let html = readFileSync(htmlPot, 'utf8');
+const prej = html;
+html = html.replace(/(<script src="(?:deals|sights)\.js)(\?v=\d+)?(">)/g, `$1?v=${v}$3`);
+if (html !== prej) { writeFileSync(htmlPot, html); console.log(`   oznaka različice podatkov: ?v=${v}`); }
+
 console.log('✅ Vse nujne datoteke so na mestu — objava je varna.');

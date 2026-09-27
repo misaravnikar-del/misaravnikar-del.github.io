@@ -1855,8 +1855,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js"></script>
-<script src="sights.js"></script>
+<script src="deals.js?v=202609270041"></script>
+<script src="sights.js?v=202609270041"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
@@ -1958,7 +1958,7 @@ const LIVE=(window.__BOOKIRAJ_DEALS__&&window.__BOOKIRAJ_DEALS__.deals)||[];
 const UPDATED=(window.__BOOKIRAJ_DEALS__&&window.__BOOKIRAJ_DEALS__.updated)||null;
 const GEO={barcelona:{continent:'evropa'},paris:{continent:'evropa'},prague:{continent:'evropa'},berlin:{continent:'evropa'},tenerife:{continent:'evropa',exotic:true},athens:{continent:'evropa'},podgorica:{continent:'evropa'},tirana:{continent:'evropa'},palermo:{continent:'evropa'},edinburgh:{continent:'evropa'},dubrovnik:{continent:'evropa'},krakow:{continent:'evropa'},naples:{continent:'evropa'},malta:{continent:'evropa'},warsaw:{continent:'evropa'},seville:{continent:'evropa'},marseille:{continent:'evropa'},rome:{continent:'evropa'},lisbon:{continent:'evropa'},santorini:{continent:'evropa'},istanbul:{continent:'evropa'},amsterdam:{continent:'evropa'},london:{continent:'evropa'},iceland:{continent:'evropa'},dubai:{continent:'azija'},bangkok:{continent:'azija'},maldives:{continent:'azija',exotic:true},bali:{continent:'azija',exotic:true},marrakesh:{continent:'afrika',exotic:true},newyork:{continent:'sev-amerika'}};
 const AP_NAME={LJU:'Ljubljana',TRS:'Trst',VCE:'Benetke',ZAG:'Zagreb',VIE:'Dunaj',MXP:'Milano',TSF:'Treviso',MUC:'Minhen',BUD:'Budimpešta'};
-const DEALS=LIVE.map(function(l){var c=byImg[l.img]||{};return Object.assign({},c,GEO[l.img]||{},{fromPrice:l.fromPrice,avg:l.avg,terms:l.terms,discount:Math.max(0,Math.round((l.avg-l.fromPrice)/l.avg*100))});}).filter(function(d){return d.city;});
+const DEALS=LIVE.map(function(l){var c=byImg[l.img]||{};return Object.assign({},c,GEO[l.img]||{},{fromPrice:l.fromPrice,avg:l.avg,terms:l.terms,photo:l.photo,photoMini:l.photoMini,discount:Math.max(0,Math.round((l.avg-l.fromPrice)/l.avg*100))});}).filter(function(d){return d.city;});
 // odkrite akcije (velik seznam iz API-ja: prave cene, sezona in dolžina že upoštevani)
 const EXTRA=(window.__BOOKIRAJ_DEALS__&&window.__BOOKIRAJ_DEALS__.discover)||[];
 const ALL=DEALS.concat(EXTRA);
@@ -2016,10 +2016,15 @@ var OTOKI = {
 function krajIme(d){ return (d && OTOKI[d.code]) || (d && d.country) || ''; }
 
 function cardHTML(d){
-  var disc=!!d.photo;
+  var disc=!d.img;   // odkrite akcije nimajo ročno pripravljene slike/besedila
   var nT=(d.terms&&d.terms.length)||0;
-  // seznam uporabi majhno kopijo (~80 KB); velika ostane za stran akcije
-  var src=disc?(d.photoMini||d.photo):'img/'+d.img+'.jpg';
+  // seznam uporabi majhno kopijo (~80 KB); velika ostane za stran akcije.
+  // Sliko imajo zdaj tudi kurirane akcije, zato je pot ista za vse.
+  var src=d.photoMini||d.photo||('img/'+d.img+'.jpg');
+  // Če se slika ne naloži (star predpomnilnik, preimenovana datoteka), poskusi
+  // veliko različico. 27. 9. 2026 so kartice zaradi tega ostale prazne.
+  var rezerva=(d.photo&&d.photo!==src)?d.photo:'';
+  var onerr=rezerva?' onerror="if(this.dataset.fb!==\'1\'){this.dataset.fb=\'1\';this.src=\''+rezerva+'\';}"':'';
   // Miša: VEDNO naj bo vmes še ena stran, tudi če je na voljo samo en let.
   // Zato kartica nikoli ne skoči naravnost na Aviasales — šele gumb na vmesni strani.
   var href=disc?('#ponudba/'+d.fromCode+'-'+d.code):('#deal/'+d.img);
@@ -2045,7 +2050,7 @@ function cardHTML(d){
   var svg='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
   return '<a class="card" href="'+href+'"'+ext+'>'
     +'<div class="card__media">'
-      +'<img loading="lazy" decoding="async" src="'+src+'" alt="'+d.city+', '+d.country+'">'
+      +'<img loading="lazy" decoding="async"'+onerr+' src="'+src+'" alt="'+d.city+', '+d.country+'">'
       +badge
       +'<div class="card__price"><small>že od</small>'+priceHTML(price)+'</div>'
     +'</div>'
