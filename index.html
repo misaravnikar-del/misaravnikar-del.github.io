@@ -1855,8 +1855,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202609270041"></script>
-<script src="sights.js?v=202609270041"></script>
+<script src="deals.js?v=202609271430"></script>
+<script src="sights.js?v=202609271430"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
@@ -2155,8 +2155,12 @@ function holChip(t){
 }
 function ymd(iso){var p=iso.split('-');return p[0].slice(2)+p[1]+p[2];}
 // (Mišino pravilo: vse povezave vodijo na Aviasales z njenim affiliate markerjem — nikoli na primerjalnike.)
-function featuredHTML(d){var t=(d.terms&&d.terms.length)?d.terms.reduce(function(m,x){return x.price<m.price?x:m;},d.terms[0]):null;return '<article class="pass">'
-  +'<div class="pass__media"><img src="img/'+d.img+'.jpg" alt="'+d.city+'"><span class="tag">− '+d.discount+' % pod povprečjem</span></div>'
+function featuredHTML(d){var t=(d.terms&&d.terms.length)?d.terms.reduce(function(m,x){return x.price<m.price?x:m;},d.terms[0]):null;
+  // Slika pride iz Mišine mape (kot pri karticah). Stara pot img/<ime>.jpg je ostala
+  // samo kot zasilna rešitev — te datoteke od 24. 9. 2026 na strani ni več.
+  var fslika=d.photo||d.photoMini||('img/'+d.img+'.jpg');
+  return '<article class="pass">'
+  +'<div class="pass__media"><img src="'+fslika+'" alt="'+d.city+'"><span class="tag">− '+d.discount+' % pod povprečjem</span></div>'
   +'<div class="pass__body"><span class="pass__notch t"></span><span class="pass__notch b"></span>'
   +'<div class="pass__route"><span class="code">'+d.fromCode+'</span><span class="line"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L11 19v-5.5z"/></svg></span><span class="code">'+d.code+'</span></div>'
   +'<h3>'+d.city+'</h3>'

@@ -49,7 +49,17 @@ NE_MAPE = {'Logotip', 'Stampi', 'spletna-stran', 'Dodatno', '_koda'}
 # ime države na strani → ime mape, kjer se razlikujeta
 DRZAVA_ALIAS = {'zimbabve': 'zimbabwe'}
 # mesto na strani → ime v datoteki, kjer se razlikujeta
-MESTO_ALIAS  = {'paris': 'pariz', 'funchal': 'madeira', 'seul': 'seoul'}
+MESTO_ALIAS  = {
+    # levo: kako se mesto imenuje na strani · desno: kako se datoteka imenuje v Mišini mapi
+    'paris': 'pariz', 'funchal': 'madeira', 'seul': 'seoul',
+    'hurghada': 'hurgada', 'hanoj': 'hanoi', 'hosiminh': 'hochiminh', 'krakov': 'krakow', 'genoa': 'genova', 'dubaj': 'dubai',
+    # angleški zapisi, ki jih lahko vrne iskalnik letov — Mišine datoteke so slovenske
+    'rome': 'rim', 'athens': 'atene', 'prague': 'praga', 'lisbon': 'lizbona',
+    'copenhagen': 'kopenhagen', 'warsaw': 'varsava', 'naples': 'neapelj',
+    'mykonos': 'mikonos', 'zakynthos': 'zakintos', 'torino': 'turin',
+    'cairo': 'kairo', 'beijing': 'peking', 'shanghai': 'sanghaj',
+    'thehague': 'haag', 'moscow': 'moskva', 'vienna': 'dunaj',
+}
 # Ime v mapi, ki pokriva VEČ mest — npr. »Sicilija 1.png« velja za Katanijo in Palermo.
 # Brez tega bi take slike obležale neuporabljene, mesta pa bi po nepotrebnem čakala.
 POKRIVA = {
