@@ -237,6 +237,11 @@ const C = (sl,cont,season,x)=>({sl,cont,season,x:!!x});
 // nesmiselno je leteti tja, sploh z letališča, ki je pogosto že v tisti državi.
 // Velja za VSA letališča teh držav (Split, Dubrovnik, Salzburg, Debrecen …),
 // ne le za ZAG, VIE in BUD.
+// Cilji, ki niso počitniške destinacije, a se prikradejo iz podatkov o cenah.
+// PAH = Barkley Regional, majhno letališče v Kentuckyju — 27. 9. 2026 se je pojavil
+// kot »Benetke → Paducah za 1142 €«. Take kartice samo zasedejo mesto in zahtevajo sliko.
+const NE_CILJI = new Set((process.env.NE_CILJI || 'PAH').split(',').map(x=>x.trim()).filter(Boolean));
+
 const NO_DEST_CC = new Set(['HR','AT','HU']);
 // ===================== MIŠIN ŽELENI SEZNAM (23.9.2026) =====================
 // »iz ljubljane dodaš London v vseh mesecih, španijo do konca novembra, ciper in malta
@@ -420,11 +425,19 @@ async function logPrices(rows){
 
 // imenski slovarji
 const cities = await pub('https://api.travelpayouts.com/data/en/cities.json');
+// Imenik LETALIŠČ potrebujemo, da vemo, katero letališče pripada kateremu mestu.
+// Brez tega sta Treviso → Paris (BVA) in Treviso → Paris (PAR) dve ločeni kartici
+// z dvema Mišinima slikama, čeprav gre za isti kraj.
+const airports = await pub('https://api.travelpayouts.com/data/en/airports.json');
 const countries = await pub('https://api.travelpayouts.com/data/en/countries.json');
 const CITY = {}, CC = {}, GEOC = {};
 if (cities) for (const c of cities) { CITY[c.code] = { name:c.name, cc:c.country_code }; if (c.coordinates) GEOC[c.code] = c.coordinates; }
 if (countries) for (const c of countries) CC[c.code] = c.name;
 const cityName = code => { const n = (CITY[code]&&CITY[code].name)||code; return CITY_SL[n]||n; };
+// letališče → koda mesta (BVA → PAR, JFK → NYC); za kode mest vrne kodo samo
+const MESTO_KODA = {};
+if (airports) for (const a of airports) if (a.city_code && a.city_code !== a.code) MESTO_KODA[a.code] = a.city_code;
+const mestoKode = code => MESTO_KODA[code] || code;
 
 // Nekaj letaliških kod v javnem imeniku nima koordinat (Rio GIG, Buenos Aires EZE …),
 // zato pravilo o dolžini potovanja zanje ne bi znalo uveljaviti meje za »zelo oddaljene«.
@@ -617,7 +630,9 @@ for (const rt of ROUTES) {
 curated.sort((a,b)=>a.fromPrice-b.fromPrice);
 
 // =================== 2) ODKRIVANJE (velik seznam) ===================
-const CURATED_PAIR = new Set(ROUTES.map(r=>r.fromCode+'|'+r.code));
+// Vsebuje tudi KODO MESTA, ne le letališča: New York je kuriran kot VCE→JFK, iskalnik
+// pa isto progo vrne kot VCE→NYC — brez tega bi bila New York na strani dvakrat.
+const CURATED_PAIR = new Set(ROUTES.flatMap(r=>[r.fromCode+'|'+r.code, r.fromCode+'|'+mestoKode(r.code)]));
 const nightsBetween = (dep,ret) => Math.round((new Date(ret)-new Date(dep))/86400000);
 const minNights = dist => dist>7000 ? 6 : dist>5000 ? 5 : dist>3500 ? 4 : dist>2000 ? 3 : 2;
 
@@ -630,7 +645,8 @@ for (const o of ORIGINS) {
     scanned++;
     if (!it.value || !it.depart_date || !it.return_date) continue;
     const dest = it.destination;
-    if (CURATED_PAIR.has(o.code+'|'+dest)) continue;         // ne podvajaj kurirane kartice
+    if (CURATED_PAIR.has(o.code+'|'+dest) || CURATED_PAIR.has(o.code+'|'+mestoKode(dest))) continue;   // ne podvajaj kurirane kartice
+    if (NE_CILJI.has(dest)) continue;                        // ni počitniška destinacija
     const ci = CITY[dest]; if (!ci) continue;
     const cat = CATALOG[ci.cc]; if (!cat) { dropCat++; continue; }      // samo dovoljene države
     if (tooClose(o.code, dest)) { dropClose++; continue; }              // PRAVILO 1
@@ -662,7 +678,8 @@ for (const mth of holMonths) {
       holScanned++;
       if (!it.value || !it.depart_date || !it.return_date) continue;
       const dest = it.destination;
-      if (CURATED_PAIR.has(o.code+'|'+dest)) continue;
+      if (CURATED_PAIR.has(o.code+'|'+dest) || CURATED_PAIR.has(o.code+'|'+mestoKode(dest))) continue;
+      if (NE_CILJI.has(dest)) continue;
       const ci = CITY[dest]; if (!ci) continue;
       const cat = CATALOG[ci.cc]; if (!cat) continue;
       if (tooClose(o.code, dest)) continue;
@@ -697,7 +714,8 @@ if (RYANAIR) {
     for (const [dest, termini] of najdeno) {
       const key = o.code+'|'+dest;
       RY.set(key, termini);
-      if (CURATED_PAIR.has(key)) continue;
+      if (CURATED_PAIR.has(key) || CURATED_PAIR.has(o.code+'|'+mestoKode(dest))) continue;
+      if (NE_CILJI.has(dest)) continue;
       const ci = CITY[dest], cat = ci && CATALOG[ci.cc];
       if (!ci || !cat) continue;                       // samo dovoljene države
       if (tooClose(o.code, dest)) continue;            // PRAVILO 1
@@ -726,7 +744,7 @@ for (const z of IZRECNE) {
   if (!o) continue;                                   // usmerjen zagon brez tega letališča
   for (const dest of z.codes) {
     const key = z.from+'|'+dest;
-    if (CURATED_PAIR.has(key)) continue;              // že kurirana kartica
+    if (CURATED_PAIR.has(key) || CURATED_PAIR.has(z.from+'|'+mestoKode(dest))) continue;   // že kurirana kartica
     const ci = CITY[dest], cat = ci && CATALOG[ci.cc];
     if (!ci || !cat) { console.log(`!  ${key}: destinacije ni v katalogu — preskočeno`); continue; }
     const w = { from:z.from, what:z.what, codes:z.codes };
@@ -910,6 +928,34 @@ for (const d of picked) {
   if (!terms.length) { noDeal++; continue; }
   kept.push(Object.assign({}, d, cardStats(terms, avg)));
 }
+// ---- ENO MESTO = ENA KARTICA ------------------------------------------------------
+// Travelpayouts vrača včasih kodo mesta (PAR), včasih kodo letališča istega mesta (BVA).
+// Brez tega je Treviso → Pariz dvakrat na strani, z dvema Mišinima slikama, obiskovalec
+// pa vidi dve enaki kartici z različno ceno. Termine zlijemo na eno kartico (pravilo 4).
+{
+  const skupine = new Map();
+  for (const k of kept) {
+    const kljuc = k.fromCode + '|' + mestoKode(k.code);
+    if (!skupine.has(kljuc)) skupine.set(kljuc, []);
+    skupine.get(kljuc).push(k);
+  }
+  let zlitih = 0;
+  const zlito = [];
+  for (const [, v] of skupine) {
+    if (v.length === 1) { zlito.push(v[0]); continue; }
+    // obdrži kartico s kodo mesta, sicer prvo; vsi termini gredo nanjo
+    const mk = mestoKode(v[0].code);
+    const glavna = v.find(x => x.code === mk) || v[0];
+    const vsi = mergeTerms([].concat(...v.map(x => x.terms)).sort((a,b)=>a.price-b.price));
+    const avg = Math.min(...v.map(x => x.avg));
+    // ime mesta vzamemo po KODI MESTA — BVA se v imeniku imenuje »Paris«, PAR pa »Pariz«
+    zlito.push(Object.assign({}, glavna, { code: mk, city: cityName(mk) }, cardStats(vsi, avg)));
+    zlitih += v.length - 1;
+    console.log(`~  zlito v eno kartico: ${glavna.fromCode} → ${mk} ${glavna.city} (${v.map(x=>x.code).join('+')})`);
+  }
+  if (zlitih) { kept.length = 0; kept.push(...zlito); console.log(`Zlitih kartic istega mesta: ${zlitih}`); }
+}
+
 const keptTerms = kept.reduce((s,k)=>s+k.terms.length,0);
 if (RYANAIR) console.log(`Ryanair: ${ryTerminov} terminov s cenami od prevoznika na ${ryProg} progah · ${rySamo} prog, ki jih Travelpayouts sploh ne pozna · skupaj ${ryanairStats().klicev} klicev, ${ryanairStats().napak} neuspelih.`);
 console.log(`Ustreza pravilu (−${Math.round(MIN_DISCOUNT*100)} % ali <${ALWAYS_UNDER} €): ${kept.length} kartic · ${keptTerms} terminov (${holTerms} počitniških) · brez akcije ${noDeal} · brez podatkov ${noData} · API klicev ${calls}`);
