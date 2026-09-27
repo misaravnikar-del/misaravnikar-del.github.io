@@ -96,6 +96,20 @@ def preberi_mapo():
                     out[norm(drzava)].append((os.path.join(dp, f), osnova(f)))
     return out
 
+def preberi_otoke():
+    """Preslikava koda letališča → ime otoka, prebrana iz index.html (var OTOKI).
+       Miša: »za vse otoke namesto države vedno napiši ime otoka«. Isto ime mora
+       veljati tudi pri iskanju slike — sicer za Arrecife ne najdemo njene Lanzarote."""
+    try:
+        h = io.open(os.path.join(KOREN, 'index.html'), encoding='utf-8').read()
+        blok = h[h.index('var OTOKI = {'):]
+        blok = blok[:blok.index('};') + 1]
+        return dict(re.findall(r"(\w{3})\s*:\s*'([^']+)'", blok))
+    except Exception:
+        return {}
+
+OTOKI = preberi_otoke()
+
 def izberi(pool, mesto):
     """Najprej slika, ki imenuje TO mesto; sicer slika širšega območja, ki mesto pokriva
        (npr. »Sicilija« za Katanijo). Slike DRUGIH mest iste države se NE uporabijo —
@@ -134,7 +148,12 @@ def main():
     def obdelaj(c, kam):
         drz = DRZAVA_ALIAS.get(norm(c.get('country', '')), norm(c.get('country', '')))
         pool = na_voljo.get(drz, [])
-        pick = izberi(pool, c['city']) or next((p for p in pool if p in drzavne.get(drz, [])), None)
+        # Za otoke iščemo sliko po imenu otoka (Lanzarote), ne po imenu letališkega
+        # mesta (Arrecife) — tako kot so poimenovane Mišine datoteke.
+        otok = OTOKI.get(c['code'])
+        pick = (izberi(pool, otok) if otok else None) \
+            or izberi(pool, c['city']) \
+            or next((p for p in pool if p in drzavne.get(drz, [])), None)
         if not pick:
             kljuc = c['city'] + '|' + c.get('country', '')
             manjka[kljuc]['drzava'] = c.get('country', '')
