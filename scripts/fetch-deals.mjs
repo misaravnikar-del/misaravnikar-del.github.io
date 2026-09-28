@@ -307,6 +307,13 @@ const WISH = [
   { from:'*', what:'Kanarski otoki',   codes:CANARY, since:ZIMA_OD, until:ZIMA_DO },
   { from:'*', what:'Filipini',         cc:['PH'],  since:ZIMA_OD, until:ZIMA_DO },
   { from:'*', what:'Južna Amerika',    cc:JUZNA_AMERIKA, since:ZIMA_OD, until:ZIMA_DO },
+
+  // 28. 9. 2026, Miša: »dodaj še kakšne za japonsko«. Brez datumskega okna — ni ga
+  // navedla. Pomembno je predvsem to, da želja preskoči sezonsko pravilo: Japonska je
+  // v katalogu »pomlad in jesen« (marec–junij, september–november), zato decembrski,
+  // januarski in februarski termini sploh niso prišli v iskanje — ravno takrat pa so
+  // leti najcenejši.
+  { from:'*', what:'Japonska',         cc:['JP'] },
 ];
 // vrne pravilo z želenega seznama za to progo (ali null)
 function wishFor(from, dest){
