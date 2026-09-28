@@ -83,6 +83,15 @@ const IZRECNE = [
   { from:'LJU', codes:['NBO','ZNZ'],       what:'Ljubljana → Kenija in Zanzibar (Turkish)' },
   { from:'LJU', codes:['CGK','DPS'],       what:'Ljubljana → Jakarta in Bali (Turkish)' },
   { from:'VCE', codes:['PUJ','SDQ'],       what:'Benetke → Dominikanska republika' },
+
+  // ---- 28. 9. 2026: »pa dodaj še kakšne akcije iz ljubljane« -------------------------
+  // Baza pozna 90 ciljev iz Ljubljane, na strani jih je bilo 18. Sito jih večino ne
+  // pokaže, ker se v seznamu najcenejših letov ne prebijejo naprej. Te proge zato
+  // preverjamo vsak zagon. (Ryanair iz Ljubljane ne leti — preverjeno, 0 ciljev.)
+  // Izpuščeni so sosedje, odhodna letališča in kraji, ki niso počitniški cilji.
+  { from:'LJU', what:'Ljubljana → Evropa',  codes:['PAR','ROM','BER','WAW','CPH','STO','EDI','BRU','BUH','OPO','LIS'] },
+  { from:'LJU', what:'Ljubljana → sonce',   codes:['PMI','HER','AGP','GZP'] },
+  { from:'LJU', what:'Ljubljana → dlje',    codes:['CAI','HRG','TBS','EVN','AUH'] },
 ];
 const IZRECNE_PAIRS = new Set(IZRECNE.flatMap(z => z.codes.map(c => z.from+'|'+c)));
 // Zanje velja enak nižji prag kot za Ljubljano (Miša, 23. 9. 2026: »ljubljano spusti na 10%«).
@@ -98,7 +107,9 @@ const MAX_PAIRS    = Number(process.env.MAX_PAIRS    || 300);  // varovalka za �
 // pregledamo za vsako progo. Več mesecev = več terminov, a daljši zagon. Zvišaj, ko reče »še«.
 // ⚠️ SEARCH_MONTHS × MAX_PAIRS = število API klicev. Pri ~3900 klicih nas Travelpayouts
 // začasno omeji (429) in zagon vrne prazno. 6 mesecev × 300 prog je preizkušeno varno.
-const SEARCH_MONTHS= Number(process.env.SEARCH_MONTHS|| 6);
+// 28. 9. 2026: Miša je naročila termine »od oktobrskih počitnic pa do konca marca«.
+// Pri 6 mesecih marec 2027 sploh ni prišel v iskanje, zato 7.
+const SEARCH_MONTHS= Number(process.env.SEARCH_MONTHS|| 7);
 const SLEEP_MS     = Number(process.env.SLEEP_MS     || 150);
 const MAX_TERMS    = Number(process.env.MAX_TERMS    || 40);   // največ terminov na kartico
 
@@ -258,6 +269,10 @@ const NO_DEST_CC = new Set(['HR','AT','HU']);
 // Ne izmisli si prog: če leta iz Ljubljane v Laos ni, ga tudi tukaj ne bo.
 const SOUTH_IT = ['NAP','BRI','BDS','SUF','PMO','CTA','REG','TPS','CAG','OLB','AHO','PSR','CRV','QSR'];
 const CANARY   = ['TFS','TFN','TCI','LPA','ACE','FUE','SPC','GMZ','VDE'];
+// Mišino zimsko okno (28. 9. 2026): od začetka jesenskih počitnic do konca marca.
+const ZIMA_OD = '2026-10-24';
+const ZIMA_DO = '2027-03-31';
+const JUZNA_AMERIKA = ['AR','BR','CL','PE','CO','EC','UY','BO','PY'];
 const MADEIRA  = ['FNC','PXO'];
 const ASIA_CC  = ['CN','JP','SG','MY','VN','LA','KH','ID','LK','PH','TH','IN','MV','NP','KR','TW','HK','MO','AE','QA','OM','SA','JO','IL','GE','AM'];
 const SAFARI_CC= ['ZA','UG','NA','KE','TZ','MG','MU','SC','RW','BW','ZM','ZW'];
@@ -278,12 +293,26 @@ const WISH = [
   { from:'LJU', what:'Afrika za safari',    cc:SAFARI_CC },
   { from:'VCE', what:'Kanarski otoki in Madeira', codes:CANARY.concat(MADEIRA),
                 since:'2026-10-01', until:'2027-03-31' },
+
+  // ---- 28. 9. 2026 ------------------------------------------------------------------
+  // »poišči mi še karte v egipt, sejšele, zanzibar, maldive, tajsko, maroko, tenerife in
+  //  kanarske otoke, filipine, in južno ameriko zdaj od oktobrskih počitnic pa do konca marca«
+  // Velja z VSEH odhodnih letališč ('*'), okno od začetka jesenskih počitnic do konca marca.
+  { from:'*', what:'Egipt',            cc:['EG'],  since:ZIMA_OD, until:ZIMA_DO },
+  { from:'*', what:'Sejšeli',          cc:['SC'],  since:ZIMA_OD, until:ZIMA_DO },
+  { from:'*', what:'Zanzibar',         codes:['ZNZ'], since:ZIMA_OD, until:ZIMA_DO },
+  { from:'*', what:'Maldivi',          cc:['MV'],  since:ZIMA_OD, until:ZIMA_DO },
+  { from:'*', what:'Tajska',           cc:['TH'],  since:ZIMA_OD, until:ZIMA_DO },
+  { from:'*', what:'Maroko',           cc:['MA'],  since:ZIMA_OD, until:ZIMA_DO },
+  { from:'*', what:'Kanarski otoki',   codes:CANARY, since:ZIMA_OD, until:ZIMA_DO },
+  { from:'*', what:'Filipini',         cc:['PH'],  since:ZIMA_OD, until:ZIMA_DO },
+  { from:'*', what:'Južna Amerika',    cc:JUZNA_AMERIKA, since:ZIMA_OD, until:ZIMA_DO },
 ];
 // vrne pravilo z želenega seznama za to progo (ali null)
 function wishFor(from, dest){
   const ci = CITY[dest];
   for (const w of WISH) {
-    if (w.from !== from) continue;
+    if (w.from !== '*' && w.from !== from) continue;   // '*' = z vseh odhodnih letališč
     if (w.codes && w.codes.includes(dest)) return w;
     if (w.cc && ci && w.cc.includes(ci.cc)) return w;
   }
@@ -339,6 +368,9 @@ const CATALOG = {
   BR:C('Brazilija','juz-amerika','southern',1), AR:C('Argentina','juz-amerika','southern',1),
   CL:C('Čile','juz-amerika','southern',1), PE:C('Peru','juz-amerika','andes',1), CO:C('Kolumbija','juz-amerika','equator',1),
   EC:C('Ekvador','juz-amerika','equator',1),
+  // dodano 28. 9. 2026, ko je Miša naročila »in južno ameriko«
+  UY:C('Urugvaj','juz-amerika','southern',1), BO:C('Bolivija','juz-amerika','andes',1),
+  PY:C('Paragvaj','juz-amerika','southern',1),
   // Oceanija
   AU:C('Avstralija','oceanija','southern',1), NZ:C('Nova Zelandija','oceanija','southern',1),
   PF:C('Francoska Polinezija','oceanija','pacific',1), FJ:C('Fidži','oceanija','pacific',1),   // Bora Bora, Tahiti, Fidži
