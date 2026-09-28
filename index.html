@@ -1116,12 +1116,34 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 .must__cta .btn{white-space:nowrap}
 .must__src{color:var(--muted);font-size:.78rem;margin-top:14px}
 
+/* ===================== STORITVE — OSNUTEK ===================== */
+/* Miša, 28. 9. 2026: »storitve odstrani in daj v draft, da za navadno stranko
+   še ne bodo vidne«. Razdelek, povezava v meniju in stran s cenikom so zato
+   skriti vsem razen njej. Predogled: bookiraj.si/?osnutek=1 (oznaka se
+   zapomni za ta zavihek). Koda ostane nedotaknjena — ko bo pripravljeno,
+   se odstrani samo razred .osnutek iz pogojev spodaj.
+   NE VKLAPLJAJ brez njenega naroka; cene 25/79/95 € so še začasne in
+   Stripe ni priklopljen. */
+html:not(.osnutek) #storitve,
+html:not(.osnutek) a[href="#storitve-nakup"]{display:none !important}
+.osnutek__pas{position:sticky;top:0;z-index:99;background:#8a5a00;color:#fff;
+  text-align:center;font-size:.86rem;padding:.45rem 1rem;letter-spacing:.02em}
+
 </style>
 
 <script>
   (function(){try{var t=localStorage.getItem('bkr-theme');
     if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
-    document.documentElement.classList.add('js');})();
+    document.documentElement.classList.add('js');
+    // Osnutek storitev: ?osnutek=1 ga prižge in ostane za ta zavihek,
+    // ?osnutek=0 ga ugasne. Navadna stranka ga ne vidi.
+    var q=location.search;
+    try{
+      if(q.indexOf('osnutek=1')>=0) sessionStorage.setItem('bkrj_osnutek','1');
+      if(q.indexOf('osnutek=0')>=0) sessionStorage.removeItem('bkrj_osnutek');
+      if(sessionStorage.getItem('bkrj_osnutek')==='1') document.documentElement.classList.add('osnutek');
+    }catch(e){ if(q.indexOf('osnutek=1')>=0) document.documentElement.classList.add('osnutek'); }
+  })();
 </script>
 
 <!-- ===================== NAV ===================== -->
@@ -1855,8 +1877,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202609281816"></script>
-<script src="sights.js?v=202609281816"></script>
+<script src="deals.js?v=202609281859"></script>
+<script src="sights.js?v=202609281859"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
@@ -3125,9 +3147,14 @@ function route(){
     document.title='Piškotki — Bookiraj.si'; window.scrollTo(0,0); window.__ckRefresh(); return;
   }
   if(pslug==='storitve-nakup'){
-    detailEl.innerHTML=storitveHTML();
+    // OSNUTEK (Miša, 28. 9. 2026): navadna stranka te strani še ne sme videti.
+    // Kdor pride na povezavo brez oznake osnutka, ga vrnemo na domačo stran.
+    if(!document.documentElement.classList.contains('osnutek')){
+      location.replace(location.pathname+location.search+'#/'); showView('home'); return;
+    }
+    detailEl.innerHTML='<div class="osnutek__pas">Osnutek — te strani navadni obiskovalci ne vidijo. Skrij jo z <b>?osnutek=0</b>.</div>'+storitveHTML();
     showView('detail');
-    document.title='Storitve — Bookiraj.si'; window.scrollTo(0,0); cartBadge(); return;
+    document.title='Storitve (osnutek) — Bookiraj.si'; window.scrollTo(0,0); cartBadge(); return;
   }
   if(pslug==='planerji'){
     detailEl.innerHTML=planerjiHTML();
