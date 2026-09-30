@@ -251,7 +251,17 @@ const C = (sl,cont,season,x)=>({sl,cont,season,x:!!x});
 // Cilji, ki niso počitniške destinacije, a se prikradejo iz podatkov o cenah.
 // PAH = Barkley Regional, majhno letališče v Kentuckyju — 27. 9. 2026 se je pojavil
 // kot »Benetke → Paducah za 1142 €«. Take kartice samo zasedejo mesto in zahtevajo sliko.
-const NE_CILJI = new Set((process.env.NE_CILJI || 'PAH').split(',').map(x=>x.trim()).filter(Boolean));
+// CRV = Crotone v Kalabriji — Miša, 1. 10. 2026: »cortone pa kar odstrani«.
+// Dežele Združenega kraljestva imajo v imeniku vse isto kodo (GB), zato so vse
+// pristale pod »Anglija« — tudi Edinburgh, ki je na Škotskem. To je narobe na
+// strani, poleg tega skript za slike ni našel Mišine mape »Škotska«.
+const DRZAVA_LETALISCE = {
+  EDI:'Škotska', GLA:'Škotska', ABZ:'Škotska', INV:'Škotska', PIK:'Škotska',
+  CWL:'Wales', BFS:'Severna Irska', BHD:'Severna Irska',
+};
+const drzavaZa = (code, cat) => DRZAVA_LETALISCE[code] || cat.sl;
+
+const NE_CILJI = new Set((process.env.NE_CILJI || 'PAH,CRV').split(',').map(x=>x.trim()).filter(Boolean));
 
 const NO_DEST_CC = new Set(['HR','AT','HU']);
 // ===================== MIŠIN ŽELENI SEZNAM (23.9.2026) =====================
@@ -697,7 +707,7 @@ for (const o of ORIGINS) {
     const key = o.code+'|'+dest;
     if (cand[key] && cand[key].hint <= it.value) continue;
     cand[key] = { fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
-      en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
+      en:ci.name, enCountry:CC[ci.cc]||'', country:drzavaZa(dest, cat), continent:cat.cont, exotic:cat.x,
       season:SEASON[cat.season].note, hint:Math.round(it.value), wish:wish||null,
       homeKm:distKm(HOME,dest), routeKm:distKm(o.code,dest) };
   }
@@ -734,7 +744,7 @@ for (const mth of holMonths) {
         continue;
       }
       cand[key] = { fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
-        en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
+        en:ci.name, enCountry:CC[ci.cc]||'', country:drzavaZa(dest, cat), continent:cat.cont, exotic:cat.x,
         season:SEASON[cat.season].note, hint:Math.round(it.value), winterSun, wish:wish||null,
         homeKm:distKm(HOME,dest), routeKm:distKm(o.code,dest) };
       holAdded++;
@@ -765,7 +775,7 @@ if (RYANAIR) {
       if (!wish && !vSezoni) continue;
       if (cand[key]) { cand[key].hint = Math.min(cand[key].hint, najceneje); ryZe++; continue; }
       cand[key] = { fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
-        en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
+        en:ci.name, enCountry:CC[ci.cc]||'', country:drzavaZa(dest, cat), continent:cat.cont, exotic:cat.x,
         season:SEASON[cat.season].note, hint:najceneje, wish:wish||null,
         homeKm:distKm(HOME,dest), routeKm:distKm(o.code,dest) };
       ryNovih++;
@@ -789,7 +799,7 @@ for (const z of IZRECNE) {
     const w = { from:z.from, what:z.what, codes:z.codes };
     if (cand[key]) { cand[key].wish = cand[key].wish || w; cand[key].hint = 0; izrecnoZe++; continue; }
     cand[key] = { fromCode:z.from, fromCity:o.city, code:dest, city:cityName(dest),
-      en:ci.name, enCountry:CC[ci.cc]||'', country:cat.sl, continent:cat.cont, exotic:cat.x,
+      en:ci.name, enCountry:CC[ci.cc]||'', country:drzavaZa(dest, cat), continent:cat.cont, exotic:cat.x,
       season:SEASON[cat.season].note, hint:0, wish:w,
       homeKm:distKm(HOME,dest), routeKm:distKm(z.from,dest) };
     izrecnoDodanih++;
