@@ -16,7 +16,7 @@ VALOVI = [            # (frekvenca x, frekvenca y, amplituda, faza)
 ]
 NIVOJI = [-0.78, -0.18, 0.42, 1.02]   # stran od sedel, da se krivulje ne cepijo
 DEBELINA = 66
-NAJKRAJSA = 420                       # krajše krivulje so le vijuge — jih izpustimo
+NAJKRAJSA = 420                       # kratke krivulje naredijo kljukice — ven z njimi
 
 xs = np.linspace(0, W, N + 1)
 ys = np.linspace(0, H, N + 1)
@@ -92,7 +92,7 @@ def zgladi(pot):
     if len(p) < 3:
         return None
     # Če se krivulja skoraj zapre, jo zapremo — sicer okrogli zaključek naredi topo konico.
-    zaprta = ((p[0][0] - pot[-1][0])**2 + (p[0][1] - pot[-1][1])**2) ** 0.5 < 90
+    zaprta = ((p[0][0] - pot[-1][0])**2 + (p[0][1] - pot[-1][1])**2) ** 0.5 < 120
     d = f"M{p[0][0]:.1f},{p[0][1]:.1f}"
     for i in range(1, len(p) - 1):
         mx, my = (p[i][0] + p[i+1][0]) / 2, (p[i][1] + p[i+1][1]) / 2
@@ -102,18 +102,46 @@ def zgladi(pot):
         d += " Z"
     return d
 
+def konec_sredi(pot):
+    """Ali se krivulja konča SREDI ploščice? Take dajo pri risanju topo konico
+       (»kremplje«), ker se nikjer ne nadaljuje. Krivulje, ki gredo čez rob, so v redu —
+       nadaljujejo se pri sosednji kopiji."""
+    rob = DEBELINA
+    def ob_robu(t):
+        return t[0] < rob or t[0] > W - rob or t[1] < rob or t[1] > H - rob
+    zaprta = ((pot[0][0] - pot[-1][0])**2 + (pot[0][1] - pot[-1][1])**2) ** 0.5 < 120
+    return not zaprta and not (ob_robu(pot[0]) and ob_robu(pot[-1]))
+
 poti = []
 for lv in NIVOJI:
     for pot in verige(marching(F, lv)):
+        if konec_sredi(pot):
+            continue
         d = zgladi(pot)
         if d:
             poti.append(d)
 
 # Poteze so BELE — maska mora delovati tako po svetlosti kot po prosojnosti.
-svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
-       f'<g fill="none" stroke="#fff" stroke-width="{DEBELINA}" stroke-linecap="round" stroke-linejoin="round">']
+# ZAKAJ DEVET KOPIJ: SVG odreže vse, kar gleda čez viewBox. Poteza, ki leži na robu
+# ploščice, je zato izgubila svojo polovico in vzorec je bil na stikih VIDNO PREKINJEN
+# (Miša, 30. 9. 2026: »ne lej kako grdo je — naredi tako da ne bo prekinjen«).
+# Iste poti zato narišemo še pri osmih sosedih; kar pri sosedu pade v naš okvir,
+# nadomesti odrezani del. Datoteka zato ne zraste — poti so zapisane enkrat, v <defs>.
+svg = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" '
+       f'viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
+       '<defs><g id="p" fill="none" stroke="#fff" '
+       f'stroke-width="{DEBELINA}" stroke-linecap="round" stroke-linejoin="round">']
 for d in poti:
     svg.append(f'<path d="{d}"/>')
-svg += ['</g>', '</svg>']
+svg.append('</g></defs>')
+# Prosojnost damo na SKUPINO, ne na posamezno potezo. Kjer se potezi prekrivata
+# (zaobljeni konci, stiki devetih kopij), bi se prosojnosti sicer seštevali in
+# nastale bi temnejše pike. Tako se najprej zlijejo, šele nato postanejo prosojne.
+svg.append('<g opacity="PROSOJNOST">')
+for dx in (-W, 0, W):
+    for dy in (-H, 0, H):
+        svg.append(f'<use xlink:href="#p" x="{dx}" y="{dy}"/>')
+svg.append('</g>')
+svg.append('</svg>')
 open('vzorec.svg', 'w').write('\n'.join(svg))
 print(f'poti: {len(poti)} · velikost: {len("".join(svg))/1024:.1f} kB')
