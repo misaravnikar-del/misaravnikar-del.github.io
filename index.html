@@ -1125,6 +1125,55 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 .must__cta .btn{white-space:nowrap}
 .must__src{color:var(--muted);font-size:.78rem;margin-top:14px}
 
+/* ============ PRIJAVA NA NOVICE V BLOGU (Miša, 30. 9. 2026) ============ */
+/* Vsaka objava ponuja darilo, ki se ujema z njeno vsebino. Isti sestavni del
+   se uporabi dvakrat: vpet v članek in v oknu, ki se pokaže enkrat. */
+.lead{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);
+  box-shadow:var(--shadow);padding:clamp(20px,3vw,30px);margin:2.2rem 0}
+.lead__eyebrow{font-family:var(--font-mono,monospace);font-size:.72rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 .5rem}
+.lead__h{font-family:var(--font-display);color:var(--ink);font-size:1.32rem;line-height:1.25;
+  margin:0 0 .5rem;text-wrap:balance}
+.lead__p{color:var(--ink-2);margin:0 0 1rem;font-size:.99rem;line-height:1.6}
+.lead__form{display:flex;flex-wrap:wrap;gap:10px}
+.lead__form input{flex:1 1 220px;min-width:0;padding:.82rem 1rem;border:1px solid var(--line);
+  border-radius:12px;background:var(--bg);color:var(--ink);font:inherit;font-size:1rem}
+.lead__form input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lead__form .btn{flex:0 0 auto}
+.lead__fine{color:var(--muted);font-size:.82rem;margin:.75rem 0 0;line-height:1.5}
+.lead__fine a{color:var(--muted);text-decoration:underline}
+.lead__ok{display:none}
+.lead.is-done>.lead__form,.lead.is-done>.lead__p,.lead.is-done>.lead__fine{display:none}
+.lead.is-done .lead__ok{display:block}
+.lead__ok .btn{margin-top:.5rem}
+
+/* okno */
+.leadpop{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:18px}
+.leadpop.is-open{display:flex}
+.leadpop__scrim{position:absolute;inset:0;background:rgba(8,16,21,.55);backdrop-filter:blur(3px)}
+.leadpop__box{position:relative;width:min(520px,100%);max-height:88vh;overflow:auto}
+.leadpop__box .lead{margin:0}
+.leadpop__x{position:absolute;top:10px;right:10px;z-index:2;width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;
+  font-size:1.2rem;line-height:1;display:grid;place-items:center}
+.leadpop__x:hover{color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){
+  .leadpop.is-open .leadpop__box{animation:leadIn .28s cubic-bezier(.2,.8,.3,1)}
+  @keyframes leadIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+}
+
+/* strani z darili */
+.darilo__grid{display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:1.4rem}
+.darilo__poc{margin-top:1.8rem}
+.ck{list-style:none;padding:0;margin:.6rem 0 0}
+.ck li{position:relative;padding:.42rem 0 .42rem 30px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+.ck li:before{content:"";position:absolute;left:0;top:.62rem;width:16px;height:16px;border-radius:4px;
+  border:1.5px solid var(--accent);opacity:.65}
+@media print{
+  .nav,.footer,.leadpop,.darilo__tisk,.ck-banner,.cart-fab{display:none !important}
+  .ck li{break-inside:avoid}
+}
+
 /* ============ VZOREC V OZADJU (nasveti + zakaj Bookiraj) ============ */
 /* Miša, 30. 9. 2026: »tale del na spletni strani mi ni všeč. a daš lahko tak vzorec
    za ozadje tega dela«, nato »ja to je zdaj super, še za ta del zdaj isto naredi«
@@ -1906,8 +1955,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202609300949"></script>
-<script src="sights.js?v=202609300949"></script>
+<script src="deals.js?v=202609301110"></script>
+<script src="sights.js?v=202609301110"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
@@ -2382,6 +2431,56 @@ function blogHTML(){
    +'<div class="blog" style="margin-top:2rem">'+BLOG.map(function(b){return '<a class="bpost" href="#blog/'+b.slug+'"><div class="bpost__media"><img src="'+b.img+'" alt="'+esc(b.title)+'" loading="lazy" decoding="async"></div><div class="bpost__body"><span class="bpost__cat">'+b.cat+'</span><h3>'+esc(b.title)+'</h3><p class="bpost__ex">'+esc(b.excerpt)+'</p><span class="bpost__meta">'+b.date+'</span></div></a>';}).join('')+'</div>'
    +'</div></div>';
 }
+// ---- DARILA ZA NAROČNIKE (Miša, 30. 9. 2026) -------------------------------
+// Vsaka objava ponuja tisto, kar se ujema z njeno vsebino. Darilo se odpre
+// TAKOJ po prijavi — obljuba je s tem izpolnjena, tudi dokler pozdravno pismo
+// v Mailchimpu ni nastavljeno.
+var DARILA = {
+  pakiranje: { naslov:'Seznam za pakiranje, ki ga natisneš',
+    opis:'Vse, kar potrebuješ za teden dni, kaj sodi v ročno prtljago in kaj urediti dan pred odhodom. Na eni strani.',
+    gumb:'Pošlji mi seznam', stran:'#darilo/pakiranje', odpri:'Odpri seznam' },
+  koledar:  { naslov:'Koledar šolskih počitnic 2026/27 z akcijami',
+    opis:'Vsi počitniški termini na enem mestu — in najcenejše karte, ki smo jih takrat našli za vsakega.',
+    gumb:'Pošlji mi koledar', stran:'#darilo/koledar', odpri:'Odpri koledar' }
+};
+// katera objava ponuja kaj
+var MAGNET = {
+  'kako-pakirati-optimalno':'pakiranje',
+  'karta-za-30-evrov':'pakiranje',
+  'holafly-ali-airalo':'pakiranje',
+  'krompirjeve-pocitnice-2026':'koledar',
+  'kateri-kanarski-otok':'koledar'
+};
+function magnetZa(slug){ return DARILA[MAGNET[slug]] ? MAGNET[slug] : 'koledar'; }
+
+function leadHTML(id, vir){
+  var d = DARILA[id]; if(!d) return '';
+  return '<div class="lead" data-darilo="'+id+'" data-vir="'+esc(vir||'')+'">'
+    +'<p class="lead__eyebrow">Brezplačno za naročnike</p>'
+    +'<h3 class="lead__h">'+esc(d.naslov)+'</h3>'
+    +'<p class="lead__p">'+esc(d.opis)+'</p>'
+    +'<form class="lead__form" novalidate>'
+      +'<input type="email" name="email" required placeholder="tvoj@email.si" aria-label="Tvoj e-naslov" autocomplete="email">'
+      +'<button class="btn" type="submit">'+esc(d.gumb)+'</button>'
+    +'</form>'
+    +'<p class="lead__fine">Prijavljaš se na novice Bookiraj.si — nekaj sporočil na mesec z najboljšimi akcijami. '
+      +'Odjava z enim klikom, naslova ne damo nikomur. <a href="#zasebnost">Zasebnost</a></p>'
+    +'<div class="lead__ok"><p class="lead__p"><strong>Prijava je uspela.</strong> Darilo ti pošljemo na e-pošto, '
+      +'odpreš pa ga lahko kar takoj:</p><a class="btn" href="'+d.stran+'">'+esc(d.odpri)+'</a></div>'
+    +'</div>';
+}
+
+// Okvirček vpnemo SREDI članka — za drugim podnaslovom. Tam je bralec že
+// pokazal zanimanje, na koncu članka pa ga polovica sploh ne doseže.
+var DARILO_STRAN = {"pakiranje": "<div class=\"page\"><div class=\"container darilo\"><p class=\"eyebrow\">Darilo za naročnike</p><h1 class=\"page__h1\">Seznam za pakiranje</h1><p class=\"page__p\">Natisni ga ali si ga odpri na telefonu. Levi stolpec je za vse, desni pa tisto, kar dodaš glede na to, kam greš.</p><p class=\"darilo__tisk\"><button class=\"btn\" type=\"button\" onclick=\"window.print()\">Natisni</button></p><div class=\"darilo__grid\"><section><h2 class=\"page__h2\">Teden dni, ne glede na cilj</h2><ul class=\"ck\"><li>3 majice</li><li>2 hlače ali krilo</li><li>1 topel sloj (pulover, jopa)</li><li>1 jakna — <em>obleci jo na let</em></li><li>Spodnje perilo za 4 dni</li><li>Nogavice za 4 dni</li><li>Pižama</li><li>Kopalke</li><li>Udobni čevlji — <em>obuj jih na let</em></li><li>1 lažji par čevljev</li></ul></section><section><h2 class=\"page__h2\">Kozmetika (do 100 ml na posodico)</h2><ul class=\"ck\"><li>Zobna ščetka in pasta</li><li>Dezodorant</li><li>Šampon</li><li>Krema za obraz</li><li>Krema za sonce</li><li>Zdravila, ki jih jemlješ redno</li><li>Obliži in protibolečinske tablete</li><li>Prozorna vrečka za vse skupaj</li></ul></section><section><h2 class=\"page__h2\">Vedno pri sebi, nikoli v oddani prtljagi</h2><ul class=\"ck\"><li>Potni list ali osebna izkaznica</li><li>Polnilec in kabel</li><li>Zdravila</li><li>Denarnica in ena rezervna kartica</li><li>Ključi</li><li>Očala ali leče</li></ul></section><section><h2 class=\"page__h2\">Dan pred odhodom</h2><ul class=\"ck\"><li>Spletna prijava na let (check-in)</li><li>Vstopni kupon shranjen tudi kot slika</li><li>Stehtan kovček — doma, ne na letališču</li><li>Fotografirana vsebina kovčka</li><li>Ime in telefon na kovčku, tudi znotraj</li><li>eSIM kupljen in QR koda skenirana</li><li>Podatkovni roaming domače kartice izklopljen</li><li>Zavarovanje za tujino urejeno</li><li>Preverjeno, kako prideš z letališča do nastanitve</li></ul></section></div><p class=\"page__p\" style=\"color:var(--muted);font-size:.9rem;margin-top:2rem\">Seznam je del bookiraj.si. Pravila o velikosti prtljage in tekočinah se spreminjajo — pred potjo jih preveri pri svojem prevozniku in na letališču.</p></div></div>", "koledar": "<div class=\"page\"><div class=\"container darilo\"><p class=\"eyebrow\">Darilo za naročnike</p><h1 class=\"page__h1\">Koledar šolskih počitnic 2026/27</h1><p class=\"page__p\">Vsi termini na enem mestu — in koliko so v tistem tednu stale karte, ko smo koledar sestavili. Cene so povratne in se spreminjajo; povezava vodi na trenutno stanje.</p><p class=\"darilo__tisk\"><button class=\"btn\" type=\"button\" onclick=\"window.print()\">Natisni</button></p><section class=\"darilo__poc\"><h2 class=\"page__h2\">Jesenske počitnice</h2><p class=\"page__p\"><strong>24. oktober – 1. november 2026</strong> · 9 dni</p><table class=\"cktable\"><thead><tr><th>Kam</th><th>Od kod</th><th>Termin</th><th>Cena</th></tr></thead><tbody><tr><td><a href=\"#ponudba/VCE-TIA\">Tirana</a></td><td>Benetke</td><td>30. 10. – 24. 11.</td><td>24 €</td></tr><tr><td><a href=\"#ponudba/MXP-SUF\">Lamezia Terme</a></td><td>Milano</td><td>30. 10. – 02. 11.</td><td>29 €</td></tr><tr><td><a href=\"#ponudba/MXP-AGP\">Malaga</a></td><td>Milano</td><td>01. 11. – 20. 11.</td><td>30 €</td></tr><tr><td><a href=\"#ponudba/VCE-CAG\">Cagliari</a></td><td>Benetke</td><td>27. 10. – 18. 11.</td><td>32 €</td></tr><tr><td><a href=\"#ponudba/MXP-GDN\">Gdansk</a></td><td>Milano</td><td>25. 10. – 09. 11.</td><td>33 €</td></tr><tr><td><a href=\"#ponudba/MXP-WAW\">Varšava</a></td><td>Milano</td><td>30. 10. – 01. 11.</td><td>33 €</td></tr><tr><td><a href=\"#ponudba/TSF-ALC\">Alicante</a></td><td>Treviso</td><td>29. 10. – 06. 11.</td><td>35 €</td></tr><tr><td><a href=\"#ponudba/VCE-OLB\">Olbia</a></td><td>Benetke</td><td>24. 10. – 29. 10.</td><td>36 €</td></tr></tbody></table></section><section class=\"darilo__poc\"><h2 class=\"page__h2\">Novoletne počitnice</h2><p class=\"page__p\"><strong>25. december 2026 – 3. januar 2027</strong> · 10 dni</p><table class=\"cktable\"><thead><tr><th>Kam</th><th>Od kod</th><th>Termin</th><th>Cena</th></tr></thead><tbody><tr><td><a href=\"#ponudba/MXP-CTA\">Catania</a></td><td>Milano</td><td>01. 1. – 19. 1.</td><td>39 €</td></tr><tr><td><a href=\"#ponudba/VCE-CAG\">Cagliari</a></td><td>Benetke</td><td>02. 1. – 06. 1.</td><td>42 €</td></tr><tr><td><a href=\"#ponudba/MXP-BER\">Berlin</a></td><td>Milano</td><td>25. 12. – 31. 12.</td><td>60 €</td></tr><tr><td><a href=\"#ponudba/BUD-HRG\">Hurghada</a></td><td>Budimpešta</td><td>03. 1. – 31. 1.</td><td>153 €</td></tr><tr><td><a href=\"#ponudba/LJU-BUH\">Bukarešta</a></td><td>Ljubljana</td><td>27. 12. – 03. 1.</td><td>256 €</td></tr><tr><td><a href=\"#ponudba/BUD-SGN\">Ho Ši Minh</a></td><td>Budimpešta</td><td>30. 12. – 16. 1.</td><td>492 €</td></tr><tr><td><a href=\"#ponudba/MXP-HAV\">Havana</a></td><td>Milano</td><td>03. 1. – 23. 1.</td><td>800 €</td></tr></tbody></table></section><section class=\"darilo__poc\"><h2 class=\"page__h2\">Zimske — vzhodna Slovenija</h2><p class=\"page__p\"><strong>13. – 21. februar 2027</strong> · 9 dni</p><table class=\"cktable\"><thead><tr><th>Kam</th><th>Od kod</th><th>Termin</th><th>Cena</th></tr></thead><tbody><tr><td><a href=\"#ponudba/MXP-WAW\">Varšava</a></td><td>Milano</td><td>19. 2. – 26. 2.</td><td>36 €</td></tr><tr><td><a href=\"#ponudba/BUD-SOF\">Sofia</a></td><td>Budimpešta</td><td>21. 2. – 07. 3.</td><td>39 €</td></tr><tr><td><a href=\"#ponudba/MXP-AGP\">Malaga</a></td><td>Milano</td><td>13. 2. – 27. 2.</td><td>40 €</td></tr><tr><td><a href=\"#ponudba/TSF-BER\">Berlin</a></td><td>Treviso</td><td>14. 2. – 21. 2.</td><td>74 €</td></tr><tr><td><a href=\"#ponudba/MXP-ACE\">Arrecife</a></td><td>Milano</td><td>14. 2. – 10. 3.</td><td>78 €</td></tr><tr><td><a href=\"#ponudba/MUC-DEL\">New Delhi</a></td><td>Minhen</td><td>21. 2. – 03. 3.</td><td>441 €</td></tr><tr><td><a href=\"#ponudba/MXP-MNL\">Manila</a></td><td>Milano</td><td>16. 2. – 27. 2.</td><td>527 €</td></tr><tr><td><a href=\"#ponudba/BUD-MIA\">Miami</a></td><td>Budimpešta</td><td>15. 2. – 15. 3.</td><td>605 €</td></tr></tbody></table></section><section class=\"darilo__poc\"><h2 class=\"page__h2\">Zimske — zahodna in osrednja Slovenija</h2><p class=\"page__p\"><strong>20. – 28. februar 2027</strong> · 9 dni</p><table class=\"cktable\"><thead><tr><th>Kam</th><th>Od kod</th><th>Termin</th><th>Cena</th></tr></thead><tbody><tr><td><a href=\"#ponudba/BUD-SOF\">Sofia</a></td><td>Budimpešta</td><td>21. 2. – 07. 3.</td><td>39 €</td></tr><tr><td><a href=\"#ponudba/MXP-ALC\">Alicante</a></td><td>Milano</td><td>22. 2. – 02. 3.</td><td>47 €</td></tr><tr><td><a href=\"#ponudba/MXP-BCN\">Barcelona</a></td><td>Milano</td><td>23. 2. – 26. 2.</td><td>48 €</td></tr><tr><td><a href=\"#ponudba/TRS-CTA\">Catania</a></td><td>Trst</td><td>26. 2. – 05. 3.</td><td>56 €</td></tr><tr><td><a href=\"#ponudba/VIE-AGA\">Agadir</a></td><td>Dunaj</td><td>22. 2. – 04. 3.</td><td>107 €</td></tr><tr><td><a href=\"#ponudba/MUC-HRG\">Hurghada</a></td><td>Minhen</td><td>26. 2. – 21. 3.</td><td>180 €</td></tr><tr><td><a href=\"#ponudba/MUC-DEL\">New Delhi</a></td><td>Minhen</td><td>21. 2. – 03. 3.</td><td>441 €</td></tr><tr><td><a href=\"#ponudba/MXP-SEL\">Seul</a></td><td>Milano</td><td>26. 2. – 05. 3.</td><td>450 €</td></tr></tbody></table></section><section class=\"darilo__poc\"><h2 class=\"page__h2\">Prvomajske počitnice</h2><p class=\"page__p\"><strong>24. april – 2. maj 2027</strong> · 9 dni</p><p class=\"page__p\">Za ta termin akcij zaenkrat še ni — javimo jih po e-pošti, ko se pojavijo.</p></section><p class=\"page__p\" style=\"color:var(--muted);font-size:.9rem;margin-top:2rem\">Datumi počitnic so po šolskem koledarju Ministrstva za vzgojo in izobrazevanje. Cene so veljale ob sestavi koledarja.</p></div></div>"};
+
+function vstaviLead(body, slug){
+  var box = leadHTML(magnetZa(slug), 'blog:'+slug);
+  var deli = body.split('<h2>');
+  if (deli.length < 4) return body + box;          // kratek članek: na konec
+  return deli.slice(0,3).join('<h2>') + box + '<h2>' + deli.slice(3).join('<h2>');
+}
+
 function blogPostHTML(slug){
   var b=bpost(slug); if(!b) return blogHTML();
   var rel=BLOG.filter(function(x){return x.slug!==slug;}).slice(0,3).map(function(x){return '<a class="rp" href="#blog/'+x.slug+'"><img src="'+x.img+'" alt="'+esc(x.title)+'" loading="lazy" decoding="async"><span>'+esc(x.title)+'</span></a>';}).join('');
@@ -2390,7 +2489,7 @@ function blogPostHTML(slug){
    +'<article class="article"><span class="article__cat">'+b.cat+'</span><h1>'+esc(b.title)+'</h1>'
    +'<p class="article__meta">'+b.date+' · Bookiraj.si</p>'
    +'<div class="article__media"><img src="'+b.img+'" alt="'+esc(b.title)+'"></div>'
-   +'<div class="article__body">'+b.body+'</div>'
+   +'<div class="article__body">'+vstaviLead(b.body, slug)+'</div>'
    +'<div class="article__cta"><a class="btn btn--lg" href="#letalske-karte">Poišči akcije <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="detail__back" href="#blog" style="margin:0">Vsi članki</a></div>'
    +'</article>'
    +'<div class="article__related"><h2>Preberi še</h2><div class="article__related-grid">'+rel+'</div></div>'
@@ -3205,6 +3304,14 @@ function route(){
     showView('detail');
     document.title='Parking — Bookiraj.si'; window.scrollTo(0,0); return;
   }
+  if(pslug.indexOf('darilo/')===0){
+    var _d=DARILO_STRAN[pslug.slice(7)];
+    if(_d){
+      detailEl.innerHTML=_d;
+      showView('detail');
+      document.title='Darilo — Bookiraj.si'; window.scrollTo(0,0); return;
+    }
+  }
   if(pslug.indexOf('blog/')===0){
     var _bp=bpost(pslug.slice(5));
     detailEl.innerHTML=blogPostHTML(pslug.slice(5));
@@ -3468,6 +3575,75 @@ document.addEventListener('submit',e=>{
     else done(null);
   }, function(){ done(null); });
 });
+
+// ---- PRIJAVA NA NOVICE IZ BLOGA -------------------------------------------
+// Ista pot kot pri obrazcu na domači strani: Mailchimp + Mišina baza + e-pošta.
+// Razlika je, da povemo, IZ KATERE objave je prijava prišla in katero darilo
+// je človek izbral — tako Miša v nadzorni plošči vidi, kaj pretvarja.
+(function(){
+  var VIDENO='bkrj_lead_videno', PRIJAVLJEN='bkr-sub';
+  function ze(k){ try{ return !!localStorage.getItem(k); }catch(e){ return false; } }
+  function shrani(k,v){ try{ localStorage.setItem(k,v||'1'); }catch(e){} }
+
+  // oddaja obrazca — velja za vpeti okvirček in za okno
+  document.addEventListener('submit', function(e){
+    var f=e.target; if(!f.classList || !f.classList.contains('lead__form')) return;
+    e.preventDefault();
+    var box=f.closest('.lead'); if(!box) return;
+    var inp=f.querySelector('input[name=email]'), v=(inp.value||'').trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){ inp.focus(); return; }
+    var darilo=box.getAttribute('data-darilo')||'', vir=box.getAttribute('data-vir')||'';
+    var gumb=f.querySelector('button'); if(gumb){ gumb.disabled=true; gumb.textContent='Pošiljam …'; }
+
+    window.bkrjSend('novice',{ email:v,
+      subject:'Nova prijava na novice (blog)',
+      message:'Prijava iz '+vir+' · izbrano darilo: '+darilo,
+      data:{ vir:vir, darilo:darilo } }).catch(function(){});
+    if (typeof mcSubscribe==='function') mcSubscribe(v).catch(function(){});
+    if (window.bkrjTrack) window.bkrjTrack('novice_blog', vir+'|'+darilo);
+
+    shrani(PRIJAVLJEN, v); shrani(VIDENO);
+    box.classList.add('is-done');
+    var ok=box.querySelector('.lead__ok a'); if(ok) ok.focus();
+  });
+
+  // okno: enkrat na obiskovalca, šele ko je nekaj res prebral
+  var pop=null;
+  function zapri(){ if(pop){ pop.classList.remove('is-open'); } shrani(VIDENO); }
+  function odpri(slug){
+    if(pop) { pop.classList.add('is-open'); return; }
+    pop=document.createElement('div');
+    pop.className='leadpop'; pop.setAttribute('role','dialog'); pop.setAttribute('aria-modal','true');
+    pop.innerHTML='<div class="leadpop__scrim" data-zapri></div>'
+      +'<div class="leadpop__box"><button class="leadpop__x" type="button" data-zapri aria-label="Zapri">×</button>'
+      +leadHTML(magnetZa(slug), 'okno:'+slug)+'</div>';
+    document.body.appendChild(pop);
+    pop.addEventListener('click', function(e){ if(e.target.hasAttribute('data-zapri')) zapri(); });
+    requestAnimationFrame(function(){ pop.classList.add('is-open'); });
+  }
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') zapri(); });
+
+  // sprožilec: 55 % prebranega članka ali 40 sekund na njem
+  var cas=null, odklop=null;
+  function pospravi(){ if(cas){clearTimeout(cas);cas=null;} if(odklop){removeEventListener('scroll',odklop);odklop=null;} }
+  function nastavi(){
+    pospravi();
+    if(pop){ pop.classList.remove('is-open'); }
+    var h=location.hash||'';
+    if(h.indexOf('#blog/')!==0) return;            // samo na straneh objav
+    if(ze(VIDENO) || ze(PRIJAVLJEN)) return;       // že videl ali že prijavljen
+    var slug=h.slice(6).split('?')[0];
+    function preveri(){
+      var d=document.documentElement;
+      var del=(scrollY+innerHeight)/Math.max(1,d.scrollHeight);
+      if(del>=0.55){ pospravi(); odpri(slug); }
+    }
+    odklop=preveri; addEventListener('scroll', odklop, {passive:true});
+    cas=setTimeout(function(){ pospravi(); odpri(slug); }, 40000);
+  }
+  addEventListener('hashchange', nastavi);
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded', nastavi); else nastavi();
+})();
 
 // router
 addEventListener('hashchange',route);
