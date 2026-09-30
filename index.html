@@ -48,14 +48,14 @@ window.bkrjStartDrive = function () {
 
 <style>
 :root{
-  --bg:#E4E9E6; --bg-2:#DAE1DD; --surface:#FFFFFF; --surface-2:#F4F7F6;
-  --ink:#10201F; --ink-2:#414F4D; --muted:#69766F; --line:#D3DBD8;
+  --bg:#E1E8EC; --bg-2:#D5DFE6; --surface:#FFFFFF; --surface-2:#F2F6F9;
+  --ink:#101920; --ink-2:#41494F; --muted:#697176; --line:#CDD9E1;
   --accent:#0C7F93; --accent-2:#2FB7CB; --accent-ink:#052A31; --on-accent:#F4FCFD;
   --sky:#2F66A6; --hot:#B8452C;
   /* Vzorec v ozadju razdelka s popotniškimi nasveti (Miša, 30. 9. 2026). */
-  /* Vzorec je v salvijasti družini strani; pri 45 % pokritosti pade povprečni
-     ton razdelka na #DAE1DD, torej se ujema z ostalimi razdelki. */
-  --vzorec:url("img/vzorec-valovi.svg"); --vzorec-bg:#DDE4E0;
+  /* Vzorec je v bledo modri družini strani; pri 45 % pokritosti pade povprečni
+     ton razdelka na #D5DFE6, torej se ujema z ostalimi razdelki. */
+  --vzorec:url("img/vzorec-valovi.svg"); --vzorec-bg:#D8E2E9;
   --hero-ink:#F6F2E9; --hero-dim:#D8D3C6;
   --shadow:0 1px 2px rgba(16,32,31,.04),0 18px 40px -24px rgba(16,32,31,.30);
   --shadow-lg:0 30px 70px -40px rgba(16,32,31,.55);
@@ -67,21 +67,21 @@ window.bkrjStartDrive = function () {
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#0B1619; --bg-2:#091214; --surface:#122329; --surface-2:#0E1D21;
-    --ink:#EAF1EE; --ink-2:#BAC7C3; --muted:#8A9995; --line:#213137;
+    --bg:#0A131A; --bg-2:#081015; --surface:#10202B; --surface-2:#0D1922;
+    --ink:#EAEEF1; --ink-2:#BAC2C7; --muted:#8A9399; --line:#1F2E39;
     --accent:#37C1D5; --accent-2:#5AD3E4; --accent-ink:#04262C; --on-accent:#04262C;
-    --vzorec:url("img/vzorec-valovi-temni.svg"); --vzorec-bg:#0A1518;
+    --vzorec:url("img/vzorec-valovi-temni.svg"); --vzorec-bg:#0A131A;
     --sky:#4C89C6; --hot:#E07A56;
     --shadow:0 1px 2px rgba(0,0,0,.30),0 22px 46px -26px rgba(0,0,0,.70);
     --shadow-lg:0 34px 80px -42px rgba(0,0,0,.85);
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0B1619; --bg-2:#091214; --surface:#122329; --surface-2:#0E1D21;
-  --ink:#EAF1EE; --ink-2:#BAC7C3; --muted:#8A9995; --line:#213137;
+  --bg:#0A131A; --bg-2:#081015; --surface:#10202B; --surface-2:#0D1922;
+  --ink:#EAEEF1; --ink-2:#BAC2C7; --muted:#8A9399; --line:#1F2E39;
   --accent:#37C1D5; --accent-2:#5AD3E4; --accent-ink:#04262C; --on-accent:#04262C;
   --sky:#4C89C6; --hot:#E07A56;
-  --vzorec:url("img/vzorec-valovi-temni.svg"); --vzorec-bg:#0A1518;
+  --vzorec:url("img/vzorec-valovi-temni.svg"); --vzorec-bg:#0A131A;
   --shadow:0 1px 2px rgba(0,0,0,.30),0 22px 46px -26px rgba(0,0,0,.70);
   --shadow-lg:0 34px 80px -42px rgba(0,0,0,.85);
 }
@@ -1906,8 +1906,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202609300933"></script>
-<script src="sights.js?v=202609300933"></script>
+<script src="deals.js?v=202609300940"></script>
+<script src="sights.js?v=202609300940"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
