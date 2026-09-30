@@ -1203,7 +1203,13 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
    NE VKLAPLJAJ brez njenega naroka; cene 25/79/95 € so še začasne in
    Stripe ni priklopljen. */
 html:not(.osnutek) #storitve,
-html:not(.osnutek) a[href="#storitve-nakup"]{display:none !important}
+html:not(.osnutek) a[href="#storitve-nakup"],
+/* Miša, 30. 9. 2026: »zaenkrat zakleni še blog poste, da ne bodo vidni strankam,
+   ampak samo meni«. Isto stikalo kot za storitve, da ima eno samo geslo. */
+html:not(.osnutek) a[href="#blog"],
+/* Miša, 30. 9. 2026: »iz landing paga umakni to sekcijo kjer piše več na blog
+   postih — potuj pametneje«. Razdelek vodi na blog, zato gre z njim vred. */
+html:not(.osnutek) #nasveti{display:none !important}
 .osnutek__pas{position:sticky;top:0;z-index:99;background:#8a5a00;color:#fff;
   text-align:center;font-size:.86rem;padding:.45rem 1rem;letter-spacing:.02em}
 
@@ -1955,8 +1961,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202609301110"></script>
-<script src="sights.js?v=202609301110"></script>
+<script src="deals.js?v=202609301338"></script>
+<script src="sights.js?v=202609301338"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
@@ -2481,6 +2487,11 @@ function vstaviLead(body, slug){
   return deli.slice(0,3).join('<h2>') + box + '<h2>' + deli.slice(3).join('<h2>');
 }
 
+// Opozorilo na vrhu, da Miša ve, da gleda nekaj, česar stranke ne vidijo.
+function osnutekPas(){
+  return '<div class="osnutek__pas">Osnutek — bloga navadni obiskovalci ne vidijo. '
+    +'Skrij ga z <b>?osnutek=0</b>.</div>';
+}
 function blogPostHTML(slug){
   var b=bpost(slug); if(!b) return blogHTML();
   var rel=BLOG.filter(function(x){return x.slug!==slug;}).slice(0,3).map(function(x){return '<a class="rp" href="#blog/'+x.slug+'"><img src="'+x.img+'" alt="'+esc(x.title)+'" loading="lazy" decoding="async"><span>'+esc(x.title)+'</span></a>';}).join('');
@@ -3312,14 +3323,20 @@ function route(){
       document.title='Darilo — Bookiraj.si'; window.scrollTo(0,0); return;
     }
   }
+  // OSNUTEK: blog je zaklenjen (Miša, 30. 9. 2026). Kdor pride na povezavo brez
+  // oznake osnutka, ga vrnemo na domačo stran — tudi če ima neposreden naslov objave.
+  if((pslug==='blog' || pslug.indexOf('blog/')===0)
+     && !document.documentElement.classList.contains('osnutek')){
+    location.replace(location.pathname+location.search+'#/'); showView('home'); return;
+  }
   if(pslug.indexOf('blog/')===0){
     var _bp=bpost(pslug.slice(5));
-    detailEl.innerHTML=blogPostHTML(pslug.slice(5));
+    detailEl.innerHTML=osnutekPas()+blogPostHTML(pslug.slice(5));
     showView('detail');
     document.title=(_bp?_bp.title:'Blog')+' — Bookiraj.si'; window.scrollTo(0,0); return;
   }
   if(pslug==='blog'){
-    detailEl.innerHTML=blogHTML();
+    detailEl.innerHTML=osnutekPas()+blogHTML();
     showView('detail');
     document.title='Blog — Bookiraj.si'; window.scrollTo(0,0); return;
   }
