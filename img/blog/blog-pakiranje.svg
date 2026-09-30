@@ -1,0 +1,43 @@
+<!-- Bookiraj.si — naslovnica za objavo »Kako pakirati optimalno«.
+     Narisana, ne fotografija: odprt kovček z zvitimi oblačili, čevlji ob robu in
+     kozmetiko v sredini — točno razporeditev, ki jo objava priporoča.
+     Barve so iz palete strani. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
+  <defs>
+    <linearGradient id="oz2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E6EDF2"/>
+      <stop offset="1" stop-color="#D5DFE6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#oz2)"/>
+
+  <text x="80" y="108" font-family="Georgia,serif" font-size="58" fill="#101920">Kako pakirati optimalno</text>
+  <text x="80" y="154" font-family="Georgia,serif" font-size="30" fill="#697176">Zvito, ne zloženo — in težko čim bližje kolescem.</text>
+
+  <!-- odprt kovček -->
+  <g transform="translate(600 430)">
+    <rect x="-330" y="-190" width="660" height="380" rx="30" fill="#FFFFFF" stroke="#0C7F93" stroke-width="6"/>
+    <line x1="0" y1="-190" x2="0" y2="190" stroke="#0C7F93" stroke-width="5" opacity=".5"/>
+
+    <!-- leva polovica: zvita oblačila -->
+    <g fill="#0C7F93">
+      <g opacity=".30"><rect x="-300" y="-155" width="132" height="42" rx="21"/><rect x="-300" y="-103" width="132" height="42" rx="21"/><rect x="-300" y="-51" width="132" height="42" rx="21"/><rect x="-300" y="1" width="132" height="42" rx="21"/><rect x="-300" y="53" width="132" height="42" rx="21"/><rect x="-300" y="105" width="132" height="42" rx="21"/></g>
+      <g opacity=".20"><rect x="-156" y="-155" width="132" height="42" rx="21"/><rect x="-156" y="-103" width="132" height="42" rx="21"/><rect x="-156" y="-51" width="132" height="42" rx="21"/><rect x="-156" y="1" width="132" height="42" rx="21"/><rect x="-156" y="53" width="132" height="42" rx="21"/><rect x="-156" y="105" width="132" height="42" rx="21"/></g>
+    </g>
+
+    <!-- desna polovica: čevlji ob robu, kozmetika v sredini -->
+    <g transform="translate(24 0)">
+      <path d="M0 -150 h96 a34 34 0 0 1 34 34 v20 a20 20 0 0 1-20 20 H0 z" fill="#101920" opacity=".22"/>
+      <path d="M0 -60 h96 a34 34 0 0 1 34 34 v20 a20 20 0 0 1-20 20 H0 z" fill="#101920" opacity=".22"/>
+      <rect x="150" y="-150" width="136" height="136" rx="18" fill="#2FB7CB" opacity=".30"/>
+      <circle cx="218" cy="-82" r="34" fill="#FFFFFF" opacity=".75"/>
+      <rect x="0" y="30" width="286" height="62" rx="18" fill="#0C7F93" opacity=".18"/>
+      <rect x="0" y="108" width="286" height="62" rx="18" fill="#0C7F93" opacity=".13"/>
+    </g>
+
+    <!-- kolesca in ročaj -->
+    <path d="M-60 -190 v-40 h120 v40" fill="none" stroke="#0C7F93" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="-228" cy="208" r="20" fill="#101920" opacity=".3"/>
+    <circle cx="228" cy="208" r="20" fill="#101920" opacity=".3"/>
+  </g>
+</svg>
