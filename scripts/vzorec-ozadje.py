@@ -14,9 +14,11 @@ VALOVI = [            # (frekvenca x, frekvenca y, amplituda, faza)
     (1, 0, 1.00, 0.35), (0, 1, 0.92, 1.90), (1, 1, 0.62, 2.70),
     (1, -1, 0.55, 0.80), (2, 1, 0.22, 4.10), (1, 2, 0.20, 1.20),
 ]
-NIVOJI = [-0.78, -0.18, 0.42, 1.02]   # stran od sedel, da se krivulje ne cepijo
-DEBELINA = 66
-NAJKRAJSA = 420                       # kratke krivulje naredijo kljukice — ven z njimi
+# Štiri plastnice in debelina 90 sta izmerjeni po Mišini predlogi: pasovi tam pokrivajo
+# 44 % površine, široki so približno 1/12 slike, vrzel med njimi pa je enako široka.
+NIVOJI = [-2.17, -0.83, 0.52, 1.86]
+DEBELINA = 90
+NAJKRAJSA = 300                       # kratke krivulje naredijo kljukice — ven z njimi
 
 xs = np.linspace(0, W, N + 1)
 ys = np.linspace(0, H, N + 1)

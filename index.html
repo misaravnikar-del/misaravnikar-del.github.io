@@ -53,7 +53,7 @@ window.bkrjStartDrive = function () {
   --accent:#0C7F93; --accent-2:#2FB7CB; --accent-ink:#052A31; --on-accent:#F4FCFD;
   --sky:#2F66A6; --hot:#B8452C;
   /* Vzorec v ozadju razdelka s popotniškimi nasveti (Miša, 30. 9. 2026). */
-  --vzorec:url("img/vzorec-valovi.svg"); --vzorec-bg:#EAF3F1;
+  --vzorec:url("img/vzorec-valovi.svg"); --vzorec-bg:#F7FEFE;
   --hero-ink:#F6F2E9; --hero-dim:#D8D3C6;
   --shadow:0 1px 2px rgba(16,32,31,.04),0 18px 40px -24px rgba(16,32,31,.30);
   --shadow-lg:0 30px 70px -40px rgba(16,32,31,.55);
@@ -1127,10 +1127,13 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 /* Barva je vrisana v datoteko, ker maska (mask-image) v nekaterih brskalnikih
    skrije ves vzorec — preizkušeno 30. 9. 2026. Zato dve datoteki, ena na temo. */
 #nasveti{position:relative;background:var(--vzorec-bg);overflow:hidden}
+/* Velikost je izbrana tako, da je pas širok približno dvanajstino razdelka — enako
+   razmerje kot v Mišini predlogi. Zato se ploščica na namizju komaj ponovi. */
 #nasveti::before{content:"";position:absolute;inset:0;pointer-events:none;
-  background-image:var(--vzorec);background-repeat:repeat;background-size:660px 660px}
+  background-image:var(--vzorec);background-repeat:repeat;background-size:1400px 1400px}
 #nasveti>.container{position:relative;z-index:1}
-@media (max-width:640px){#nasveti::before{background-size:420px 420px}}
+@media (max-width:1100px){#nasveti::before{background-size:900px 900px}}
+@media (max-width:640px){#nasveti::before{background-size:480px 480px}}
 
 /* ===================== STORITVE — OSNUTEK ===================== */
 /* Miša, 28. 9. 2026: »storitve odstrani in daj v draft, da za navadno stranko
@@ -1893,8 +1896,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202609300842"></script>
-<script src="sights.js?v=202609300842"></script>
+<script src="deals.js?v=202609300848"></script>
+<script src="sights.js?v=202609300848"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
