@@ -52,6 +52,8 @@ window.bkrjStartDrive = function () {
   --ink:#10201F; --ink-2:#414F4D; --muted:#69766F; --line:#D3DBD8;
   --accent:#0C7F93; --accent-2:#2FB7CB; --accent-ink:#052A31; --on-accent:#F4FCFD;
   --sky:#2F66A6; --hot:#B8452C;
+  /* Vzorec v ozadju razdelka s popotniškimi nasveti (Miša, 30. 9. 2026). */
+  --vzorec:url("img/vzorec-valovi.svg"); --vzorec-bg:#EAF3F1;
   --hero-ink:#F6F2E9; --hero-dim:#D8D3C6;
   --shadow:0 1px 2px rgba(16,32,31,.04),0 18px 40px -24px rgba(16,32,31,.30);
   --shadow-lg:0 30px 70px -40px rgba(16,32,31,.55);
@@ -66,6 +68,7 @@ window.bkrjStartDrive = function () {
     --bg:#0B1619; --bg-2:#091214; --surface:#122329; --surface-2:#0E1D21;
     --ink:#EAF1EE; --ink-2:#BAC7C3; --muted:#8A9995; --line:#213137;
     --accent:#37C1D5; --accent-2:#5AD3E4; --accent-ink:#04262C; --on-accent:#04262C;
+    --vzorec:url("img/vzorec-valovi-temni.svg"); --vzorec-bg:#0A1518;
     --sky:#4C89C6; --hot:#E07A56;
     --shadow:0 1px 2px rgba(0,0,0,.30),0 22px 46px -26px rgba(0,0,0,.70);
     --shadow-lg:0 34px 80px -42px rgba(0,0,0,.85);
@@ -76,6 +79,7 @@ window.bkrjStartDrive = function () {
   --ink:#EAF1EE; --ink-2:#BAC7C3; --muted:#8A9995; --line:#213137;
   --accent:#37C1D5; --accent-2:#5AD3E4; --accent-ink:#04262C; --on-accent:#04262C;
   --sky:#4C89C6; --hot:#E07A56;
+  --vzorec:url("img/vzorec-valovi-temni.svg"); --vzorec-bg:#0A1518;
   --shadow:0 1px 2px rgba(0,0,0,.30),0 22px 46px -26px rgba(0,0,0,.70);
   --shadow-lg:0 34px 80px -42px rgba(0,0,0,.85);
 }
@@ -1116,6 +1120,18 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 .must__cta .btn{white-space:nowrap}
 .must__src{color:var(--muted);font-size:.78rem;margin-top:14px}
 
+/* ===================== VZOREC V OZADJU (nasveti) ===================== */
+/* Miša, 30. 9. 2026: »tale del na spletni strani mi ni všeč. a daš lahko tak vzorec
+   za ozadje tega dela«. Ploščica img/vzorec-valovi.svg se ponavlja brez šiva
+   (narisana je iz plastnic periodičnega polja, zgradi jo scripts/vzorec-ozadje.py). */
+/* Barva je vrisana v datoteko, ker maska (mask-image) v nekaterih brskalnikih
+   skrije ves vzorec — preizkušeno 30. 9. 2026. Zato dve datoteki, ena na temo. */
+#nasveti{position:relative;background:var(--vzorec-bg);overflow:hidden}
+#nasveti::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:var(--vzorec);background-repeat:repeat;background-size:660px 660px}
+#nasveti>.container{position:relative;z-index:1}
+@media (max-width:640px){#nasveti::before{background-size:420px 420px}}
+
 /* ===================== STORITVE — OSNUTEK ===================== */
 /* Miša, 28. 9. 2026: »storitve odstrani in daj v draft, da za navadno stranko
    še ne bodo vidne«. Razdelek, povezava v meniju in stran s cenikom so zato
@@ -1877,8 +1893,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202609281859"></script>
-<script src="sights.js?v=202609281859"></script>
+<script src="deals.js?v=202609300812"></script>
+<script src="sights.js?v=202609300812"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
