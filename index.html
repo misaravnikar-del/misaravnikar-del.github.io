@@ -1120,20 +1120,25 @@ body.about-page .about__stat{background:color-mix(in srgb,var(--surface) 78%,tra
 .must__cta .btn{white-space:nowrap}
 .must__src{color:var(--muted);font-size:.78rem;margin-top:14px}
 
-/* ===================== VZOREC V OZADJU (nasveti) ===================== */
+/* ============ VZOREC V OZADJU (nasveti + zakaj Bookiraj) ============ */
 /* Miša, 30. 9. 2026: »tale del na spletni strani mi ni všeč. a daš lahko tak vzorec
-   za ozadje tega dela«. Ploščica img/vzorec-valovi.svg se ponavlja brez šiva
-   (narisana je iz plastnic periodičnega polja, zgradi jo scripts/vzorec-ozadje.py). */
+   za ozadje tega dela«, nato »ja to je zdaj super, še za ta del zdaj isto naredi«
+   (razdelek »Manj brskanja. Več potovanj.«). Ploščica img/vzorec-valovi.svg se
+   ponavlja brez šiva; zgradi jo scripts/vzorec-ozadje.py. */
 /* Barva je vrisana v datoteko, ker maska (mask-image) v nekaterih brskalnikih
    skrije ves vzorec — preizkušeno 30. 9. 2026. Zato dve datoteki, ena na temo. */
-#nasveti{position:relative;background:var(--vzorec-bg);overflow:hidden}
+#nasveti,#zakaj{position:relative;background:var(--vzorec-bg);overflow:hidden}
 /* Velikost je izbrana tako, da je pas širok približno dvanajstino razdelka — enako
    razmerje kot v Mišini predlogi. Zato se ploščica na namizju komaj ponovi. */
-#nasveti::before{content:"";position:absolute;inset:0;pointer-events:none;
+#nasveti::before,#zakaj::before{content:"";position:absolute;inset:0;pointer-events:none;
   background-image:var(--vzorec);background-repeat:repeat;background-size:1400px 1400px}
-#nasveti>.container{position:relative;z-index:1}
-@media (max-width:1100px){#nasveti::before{background-size:900px 900px}}
-@media (max-width:640px){#nasveti::before{background-size:480px 480px}}
+/* Razdelka sta zamaknjena drug proti drugemu, da nista videti kot ista slika dvakrat. */
+#zakaj::before{background-position:-620px -340px}
+#nasveti>.container,#zakaj>.container{position:relative;z-index:1}
+@media (max-width:1100px){#nasveti::before,#zakaj::before{background-size:900px 900px}
+  #zakaj::before{background-position:-400px -220px}}
+@media (max-width:640px){#nasveti::before,#zakaj::before{background-size:480px 480px}
+  #zakaj::before{background-position:-210px -120px}}
 
 /* ===================== STORITVE — OSNUTEK ===================== */
 /* Miša, 28. 9. 2026: »storitve odstrani in daj v draft, da za navadno stranko
@@ -1896,8 +1901,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202609300848"></script>
-<script src="sights.js?v=202609300848"></script>
+<script src="deals.js?v=202609300859"></script>
+<script src="sights.js?v=202609300859"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
