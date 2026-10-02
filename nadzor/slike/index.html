@@ -188,10 +188,22 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;font-weight:700}
   // ---------- login ----------
   function login(pw){
     $('loginErr').textContent='';
+    // Prej je bilo vse v enem catch: če je odpovedalo nalaganje podatkov, je stran
+    // javila »Napačno geslo«, čeprav je bilo geslo pravo. 2. 10. 2026 je Miša zaradi
+    // tega mislila, da je pozabila geslo — v resnici manjka kandidati.json.
     return rpc('admin_stats',{pass:pw}).then(function(){
       PW=pw; try{localStorage.setItem('bkrj_admin_pw',pw);}catch(e){}
-      return start();
-    }).catch(function(){ $('loginErr').textContent='Napačno geslo.'; try{localStorage.removeItem('bkrj_admin_pw');}catch(e){} });
+    }).catch(function(){
+      $('loginErr').textContent='Napačno geslo.';
+      try{localStorage.removeItem('bkrj_admin_pw');}catch(e){}
+      throw new Error('geslo');
+    }).then(function(){
+      return start().catch(function(e){
+        $('loginErr').innerHTML='Geslo je pravo, a se podatki niso naložili.<br>'
+          +'Manjka <code>kandidati.json</code> — to stran je nadomestil '
+          +'<a href="https://bookiraj.si/slike">bookiraj.si/slike</a>.';
+      });
+    }).catch(function(){});
   }
 
   function start(){
