@@ -85,10 +85,68 @@ const skrajsaj = (ime, mesto) => {
   return s.replace(/^[-–,]\s*/, '');
 };
 
-const po = {};
+// ---- SAMO TJA, KAMOR SE RES LETI --------------------------------------------------
+// Miša, 2. 10. 2026: »preveč letališč je tukaj pod državami, daj samo ta večja, kamor
+// naša letala dejansko letijo«. Prej je bil seznam vseh 3682 komercialnih letališč na
+// svetu, kar je za izbiranje slik neuporabno. Zdaj ostanejo samo cilji, do katerih je
+// let z njenih devetih letališč — seznam prebere iz cilji.json, ki ga naredi ta skript
+// sam (en klic na odhodno letališče), sicer pa iz obstoječih akcij.
+const ODHOD = ['LJU','TRS','VCE','TSF','ZAG','VIE','BUD','MUC','MXP'];
+// Odhodna letališča in njihove dvojnice niso nikoli cilj (Mišino pravilo 1),
+// prav tako ne sosednje države (pravilo 1b) in cilji s seznama NE_CILJI.
+const NIKOLI_CILJ = new Set([...ODHOD, 'MIL','LIN','BGY','VRN','VBS','MXP','PAH','CRV']);
+// Izključimo tudi po IMENU MESTA: Brescia-Montichiari je v imeniku pod mestom
+// »Verona«, zato se je po kodi prikradlo nazaj.
+const NIKOLI_MESTO = new Set(['ljubljana','trieste','trst','venice','benetke','treviso',
+  'zagreb','vienna','dunaj','budapest','budimpešta','munich','minhen','milan','milano','verona']);
+const NIKOLI_DRZAVA = new Set(['HR','AT','HU','SI']);
+
+async function doseglijiviCilji() {
+  const TOKEN = process.env.TRAVELPAYOUTS_TOKEN;
+  const out = new Set();
+  if (TOKEN) {
+    for (const o of ODHOD) {
+      for (const ow of ['false','true']) {
+        try {
+          const r = await fetch(`https://api.travelpayouts.com/aviasales/v3/get_latest_prices`
+            + `?origin=${o}&currency=eur&period_type=year&one_way=${ow}&limit=1000&page=1`
+            + `&market=si&token=${TOKEN}`);
+          const j = await r.json();
+          for (const x of (j.data || [])) if (x.destination) out.add(x.destination);
+        } catch { /* ta klic preskočimo */ }
+      }
+    }
+  }
+  // kar je kdaj bilo v akcijah, velja v vsakem primeru
+  for (const f of ['../deals-vse.js', '../deals.js', '../arhiv.js']) {
+    try {
+      const t = readFileSync(new URL(f, import.meta.url), 'utf8');
+      const o = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));
+      for (const k of ['deals','discover','arhiv'])
+        for (const x of (o[k] || [])) if (x.code) out.add(x.code);
+    } catch { /* datoteke ni — nič hudega */ }
+  }
+  return out;
+}
+
+const cilji = await doseglijiviCilji();
+// cilj je lahko koda MESTA (PAR) — potem veljajo vsa letališča tega mesta (CDG, ORY, BVA)
+const dovoljeno = new Set(cilji);
+for (const a of airports) if (a.city_code && cilji.has(a.city_code)) dovoljeno.add(a.code);
+console.log(`Ciljev, kamor se res leti: ${cilji.size} · po razširitvi na letališča: ${dovoljeno.size}`);
+
+const po = {}, videnoMesto = new Set();
 for (const a of airports) {
   if (!a.flightable || a.iata_type !== 'airport' || !a.code || !a.country_code) continue;
+  if (!dovoljeno.has(a.code)) continue;
+  if (NIKOLI_CILJ.has(a.code) || NIKOLI_DRZAVA.has(a.country_code)) continue;
+  if (NIKOLI_MESTO.has((CITY[a.city_code] || a.name || '').toLowerCase())) continue;
   const mesto = CITY[a.city_code] || '';
+  // Eno MESTO = ena vrstica. Za izbiranje slik je Milano Malpensa isto kot Linate —
+  // slika je slika mesta, ne letališča.
+  const kljuc = a.country_code + '|' + (mesto || a.name).toLowerCase();
+  if (videnoMesto.has(kljuc)) continue;
+  videnoMesto.add(kljuc);
   (po[a.country_code] = po[a.country_code] || []).push({
     k: a.code,
     mesto: mesto || a.name,
