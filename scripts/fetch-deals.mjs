@@ -102,7 +102,7 @@ const discFor = (from, code) =>
     (code && IZRECNE_PAIRS.has(from+'|'+code)) ? MIN_DISCOUNT_IZRECNE
   : (from && MIN_DISCOUNT_BY_ORIGIN[from] != null) ? MIN_DISCOUNT_BY_ORIGIN[from]
   : MIN_DISCOUNT;
-const MAX_PAIRS    = Number(process.env.MAX_PAIRS    || 300);  // varovalka za število API klicev
+const MAX_PAIRS    = Number(process.env.MAX_PAIRS    || 420);  // varovalka za število API klicev
 // »še išči datume, tudi nepočitniške, dokler ne rečem da je dovolj« — koliko mesecev naprej
 // pregledamo za vsako progo. Več mesecev = več terminov, a daljši zagon. Zvišaj, ko reče »še«.
 // ⚠️ SEARCH_MONTHS × MAX_PAIRS = število API klicev. Pri ~3900 klicih nas Travelpayouts
@@ -828,7 +828,13 @@ const wishKeys = new Set(wishPairs.map(d=>d.fromCode+'|'+d.code));
 console.log(`Zimsko sonce (tropske/oddaljene za božič in zimske počitnice): ${pairs.filter(d=>d.winterSun).length} najdenih, jemljem ${sunPairs.length}`);
 
 // uravnotežen izbor po celinah, da pridejo zraven tudi eksotične
-const CAPS = {evropa:90, azija:140, afrika:110, 'sev-amerika':60, 'sred-amerika':80, 'juz-amerika':60, oceanija:30};
+// Miša, 2. 10. 2026: »dodaj mi še akcije«. Kvote so bile tisto, kar je omejevalo —
+// kandidatov je bilo več, kot jih je šlo skozi sito. Zvišane za približno polovico.
+// Prag −40 % ostaja nedotaknjen; več je prog, ne nižja lestvica.
+const SIRINA = Number(process.env.SIRINA || 1.6);   // z 2 bi bilo še več, a tudi klicev
+const CAPS = Object.fromEntries(Object.entries(
+  {evropa:90, azija:140, afrika:110, 'sev-amerika':60, 'sred-amerika':80, 'juz-amerika':60, oceanija:30}
+).map(([k,v]) => [k, Math.round(v * SIRINA)]));
 const groups = {};
 pairs.forEach(d=>{ const k=d.fromCode+'|'+d.code; if(!sunKeys.has(k) && !wishKeys.has(k)) (groups[d.continent]=groups[d.continent]||[]).push(d); });
 let rest = [];
@@ -839,7 +845,7 @@ rest.sort((a,b)=>a.hint-b.hint);
 // cene najnižje, Ljubljana pa izpade — med 149 karticami so bile iz LJU samo štiri.
 // Zdaj vsako letališče najprej dobi svojih PER_ORIGIN najcenejših prog, šele nato
 // preostala mesta zapolnimo po ceni.
-const PER_ORIGIN = Number(process.env.PER_ORIGIN || 30);
+const PER_ORIGIN = Number(process.env.PER_ORIGIN || 45);
 {
   const seenPer = {}, firstPass = [], laterPass = [];
   for (const d of rest) {
