@@ -122,8 +122,18 @@ const HOLIDAYS = [
   { name:'Prvomajske',                       start:'2027-04-24', end:'2027-05-02' },
   { name:'Poletne',                          start:'2027-06-26', end:'2027-08-31' },
 ];
-const holidaysFor = dep => HOLIDAYS.filter(h => dep >= h.start && dep <= h.end).map(h => h.name);
 const plusDays = (iso,n) => { const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); };
+// Miša, 9. 10. 2026: »za počitniške termine mora biti točno v tem času, ko dejansko so
+// počitnice. lahko so +/- 3 dni preden se začne ali pa po tem ko se konča, kar je pa več
+// pa naj ne bo med počitniškimi termini.«
+// Prej se je gledal SAMO datum odhoda, povratek pa nič — zato je let z odhodom 30. 10.
+// in povratkom 24. 11. veljal za jesenske počitnice, čeprav je bil doma šele konec
+// novembra. Zdaj mora CELO potovanje pasti v okno počitnic, raztegnjeno za tri dni
+// na vsako stran.
+const HOL_TOLERANCA = Number(process.env.HOL_TOLERANCA || 3);
+const holidaysFor = (dep, ret) => HOLIDAYS.filter(h =>
+  dep >= plusDays(h.start, -HOL_TOLERANCA) && (ret || dep) <= plusDays(h.end, HOL_TOLERANCA)
+).map(h => h.name);
 // Miša: »za počitniške termine bolj oddaljene destinacije. Sploh za božične in zimske daj
 // tropske — Maldivi, Tajska, Kostarika, Karibi, Bahami, Egipt, Afrika, Indonezija, Azija …«
 const SUNNY = new Set(['tropic','desert','southern','equator','safari']);   // sezonski arhetipi toplih krajev
@@ -168,8 +178,9 @@ function tripOK(nights, cont, km, price, avg){
     return days >= MIN_DAYS_FAR && cheap;                         // krajše samo, če je res poceni
   }
   if (cont && cont !== 'evropa') return days >= MIN_DAYS_FAR;    // Maroko, Egipt, Gruzija …
-  if (days >= MIN_DAYS_EU) return true;
-  return days >= SHORT_EU_DAYS && price < SHORT_EU_MAX;          // 3 dni le pri res nizki ceni
+  // Miša, 9. 10. 2026: »ne sme biti manj kot 4 dni!!!« — izjema za tridnevne skoke
+  // pri zelo nizki ceni je s tem odpravljena. Štiri dni je spodnja meja, brez izjem.
+  return days >= MIN_DAYS_EU;
 }
 
 const ALL_ORIGINS = [
@@ -581,7 +592,7 @@ const aviasalesURL = (from, to, dep, ret) =>
 // Ryanairov termin spravimo v isto obliko, kot jo vrne pickTerms.
 function ryTermin(t, from, to, avg, km){
   const nights = t.ret ? Math.round((new Date(t.ret)-new Date(t.depart))/86400000) : null;
-  const hol = holidaysFor(t.depart);
+  const hol = holidaysFor(t.depart, t.ret);
   return { depart:t.depart, ret:t.ret, price:t.price, airline:'FR', airlineName:airName('FR'),
     lc:true, bag:bagTier('FR', km), transfers:0,
     nights, days: nights!=null ? nights+1 : null,
@@ -622,7 +633,7 @@ function pickTerms(data, avg, km, opt){
     .map(d => {
       const depart = d.departure_at.slice(0,10);
       const ret = d.return_at ? d.return_at.slice(0,10) : null;
-      const hol = holidaysFor(depart);
+      const hol = holidaysFor(depart, ret);
       const code = d.airline || '';
       const nights = ret ? Math.round((new Date(ret)-new Date(depart))/86400000) : null;
       return { depart, ret, price:Math.round(d.price), airline:code, airlineName:airName(code),
@@ -737,7 +748,7 @@ for (const mth of holMonths) {
       const key = o.code+'|'+dest;
       // zimsko sonce: tropska/topla destinacija, dovolj daleč, v božičnih ali zimskih počitnicah
       const winterSun = SUNNY.has(cat.season) && (distKm(HOME,dest)||0) >= SUN_MIN_KM
-        && holidaysFor(it.depart_date.slice(0,10)).some(n => WINTER_HOL.has(n));
+        && holidaysFor(it.depart_date.slice(0,10), (it.return_date||'').slice(0,10)).some(n => WINTER_HOL.has(n));
       if (cand[key]) {
         cand[key].hint = Math.min(cand[key].hint, Math.round(it.value));
         if (winterSun) cand[key].winterSun = true;
@@ -908,9 +919,11 @@ const monthList = (() => {
   for (let i = 0; i < SEARCH_MONTHS; i++) { out.push(d.toISOString().slice(0,7)); d.setUTCMonth(d.getUTCMonth()+1); }
   return out;
 })();
+// Isto okno kot pri oznakah: tri dni pred začetkom in tri po koncu.
 const winOf = mth => HOLIDAYS
-  .map(h => ({ name:h.name, start:h.start, end:h.end, endPlus:plusDays(h.end,3) }))
-  .filter(w => w.start.slice(0,7) <= mth && mth <= w.end.slice(0,7));
+  .map(h => ({ name:h.name, start:plusDays(h.start,-HOL_TOLERANCA), end:h.end,
+               endPlus:plusDays(h.end,HOL_TOLERANCA) }))
+  .filter(w => w.start.slice(0,7) <= mth && mth <= w.endPlus.slice(0,7));
 
 const kept = [];
 let noDeal = 0, noData = 0, calls = 0, holTerms = 0;

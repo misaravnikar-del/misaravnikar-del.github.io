@@ -94,11 +94,18 @@ const HOL = {
   'Prvomajske':['2027-04-24','2027-05-02'],
   'Poletne':['2027-06-26','2027-08-31'],
 };
+const TOL = 3;
+const dni = (iso,n) => { const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); };
 const holMiss = [];
 const holCount = {};
 for (const d of all)
   for (const t of (d.terms || [])) {
-    const should = Object.keys(HOL).filter(n => t.depart >= HOL[n][0] && t.depart <= HOL[n][1]);
+    // Miša, 9. 10. 2026: počitniški termin mora CELOTEN pasti v počitnice, z dovoljenim
+    // odstopanjem treh dni na vsako stran. Prej se je gledal samo datum odhoda, zato je
+    // let z odhodom 30. 10. in povratkom 24. 11. veljal za jesenske počitnice.
+    const ret = t.ret || t.depart;
+    const should = Object.keys(HOL).filter(n =>
+      t.depart >= dni(HOL[n][0], -TOL) && ret <= dni(HOL[n][1], TOL));
     const has = t.hol || [];
     should.forEach(n => { holCount[n] = (holCount[n] || 0) + 1; });
     if (should.length !== has.length) holMiss.push(`${d.fromCode}→${d.code} ${t.depart}`);
@@ -118,7 +125,8 @@ else if (noAir.length) warn.push(`8. Ime prevoznika ni znano pri ${noAir.length}
 if (noBag.length) fail.push(`8. Manjka oznaka prtljage: ${cap(noBag)}`);
 
 // --- 9. dolžina potovanja (evropske ≥4 dni, izven Evrope ≥7, zelo oddaljene ≥10) ---
-const D = { eu:4, shortEu:3, shortEuMax:40, far:7, veryFar:10, veryFarKm:7000, max:31 };
+// Miša, 9. 10. 2026: »ne sme biti manj kot 4 dni!!!« — izjeme za tridnevne skoke ni več.
+const D = { eu:4, far:7, veryFar:10, veryFarKm:7000, max:31 };
 // Zelo oddaljene smejo biti krajše od 10 dni, če so poceni — zato tu preverjamo le spodnjo mejo 7.
 const badLen = [];
 for (const d of all)
@@ -128,9 +136,7 @@ for (const d of all)
     const far = d.continent && d.continent !== 'evropa';
     // (mejo za »zelo oddaljene« ≥10 dni uveljavi fetch-deals.mjs, kjer pozna razdaljo;
     //  tu preverimo evropsko ≥4 dni in izven-evropsko ≥7 dni)
-    const ok = days <= D.max && (
-      far ? days >= D.far
-          : (days >= D.eu || (days >= D.shortEu && t.price < D.shortEuMax)));
+    const ok = days <= D.max && (far ? days >= D.far : days >= D.eu);
     if (!ok) badLen.push(`${d.fromCode}→${d.code} ${t.depart} ${days} dni ${t.price}€${far?' (izven Evrope)':''}`);
   }
 if (badLen.length) fail.push(`9. Prekratko (ali predolgo) potovanje: ${cap(badLen)}`);
