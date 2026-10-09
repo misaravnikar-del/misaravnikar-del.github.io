@@ -20,6 +20,7 @@ const IZRECNE_PCT = Math.round((o.rules?.minDiscountIzrecne ?? 0.10) * 100);
 const needLow = (from, code) => (code && IZRECNE.has(from+'|'+code)) ? IZRECNE_PCT
   : BY_ORIGIN[from] != null ? Math.round(BY_ORIGIN[from]*100) : MIN_DISCOUNT;
 const ALWAYS_UNDER = o.rules?.alwaysUnder ?? 50;
+const HOL_PCT = Math.round((o.rules?.minDiscountHoliday ?? 0.10) * 100);
 const MARKER = '779438';
 // Pravilo 1: naša odhodna letališča niso destinacija
 const HOME_HUBS = new Set(['LJU','TRS','VCE','ZAG','VIE','MXP','TSF','MUC','BUD','MIL','LIN','BGY','VRN']);
@@ -54,7 +55,9 @@ for (const d of all)
   for (const t of (d.terms || [])) {
     // klasični (nenizkocenovni) prevozniki imajo nižji prag — glej pravilo v fetch-deals.mjs
     const low = needLow(d.fromCode, d.code);
-    const need = (t.lc === false) ? Math.min(MIN_DISCOUNT_FULL, low) : low;
+    let need = (t.lc === false) ? Math.min(MIN_DISCOUNT_FULL, low) : low;
+    // Miša, 9. 10. 2026: počitniški termini imajo prag −10 %
+    if (t.hol && t.hol.length) need = Math.min(need, HOL_PCT);
     if (!((t.discount ?? 0) >= need || t.price < ALWAYS_UNDER || (t.holDiscount ?? 0) >= need))
       badTerm.push(`${d.fromCode}→${d.code} ${t.depart} ${t.price}€ (−${t.discount ?? 0} %)`);
   }

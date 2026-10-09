@@ -13,6 +13,7 @@
 //     destinacija mora biti vsaj MIN_HOME_KM od Ljubljane. Od Ljubljane: Minhen 320,
 //     Budimpešta 381, Milano 418, Split 322 (zavrni) · Rim 490, Praga 447, Dubrovnik 490 (sprejmi).
 //  2. Na stran gredo SAMO akcije vsaj 40 % pod povprečjem proge ALI pod 50 €.
+//     IZJEMA (Miša, 9. 10. 2026): počitniški termini imajo prag −10 % (MIN_DISCOUNT_HOL).
 //  3. Vsako odhodno letališče ima SVOJO kartico (nikoli ne združuj LJU + VCE).
 //  4. Isti par odhod→prihod = ENA kartica z VSEMI datumi (terms[]).
 //  5. Vse povezave vodijo na Aviasales z Mišinim affiliate markerjem.
@@ -97,6 +98,10 @@ const IZRECNE_PAIRS = new Set(IZRECNE.flatMap(z => z.codes.map(c => z.from+'|'+c
 // Zanje velja enak nižji prag kot za Ljubljano (Miša, 23. 9. 2026: »ljubljano spusti na 10%«).
 // Brez tega bi proga, ki jo je izrecno naročila, ob prvem dražjem tednu izginila s strani.
 const MIN_DISCOUNT_IZRECNE = Number(process.env.MIN_DISCOUNT_IZRECNE || 0.10);
+// Miša, 9. 10. 2026: »za počitniške termine lahko dava prag na 10% ceneje«.
+// Velja SAMO za termine, ki so po njenem pravilu počitniški (celo potovanje v počitnicah,
+// ±HOL_TOLERANCA dni). Vsi drugi termini ostanejo pri −40 % / pod 50 €.
+const MIN_DISCOUNT_HOL = Number(process.env.MIN_DISCOUNT_HOL || 0.10);
 
 const discFor = (from, code) =>
     (code && IZRECNE_PAIRS.has(from+'|'+code)) ? MIN_DISCOUNT_IZRECNE
@@ -112,6 +117,7 @@ const MAX_PAIRS    = Number(process.env.MAX_PAIRS    || 420);  // varovalka za �
 const SEARCH_MONTHS= Number(process.env.SEARCH_MONTHS|| 7);
 const SLEEP_MS     = Number(process.env.SLEEP_MS     || 150);
 const MAX_TERMS    = Number(process.env.MAX_TERMS    || 40);   // največ terminov na kartico
+const HOL_EXTRA    = Number(process.env.HOL_EXTRA    || 120);  // največ dodatnih prog samo za počitniške mesece
 
 // ---- šolske počitnice 2026/27 (Miša, 22.9.2026) ----
 const HOLIDAYS = [
@@ -452,7 +458,11 @@ async function latest(o){
 }
 async function forDates(origin, dest, month){
   const j = await api(`https://api.travelpayouts.com/aviasales/v3/prices_for_dates?origin=${origin}&destination=${dest}`
-    + `&currency=eur&sorting=price&direct=false&limit=30&page=1&one_way=false&market=si`
+    // Miša, 9. 10. 2026: »osredotočaj se sploh na počitniške termine - teh res veliko želim«.
+    // Letni klic ostane pri 30 najcenejših (iz njega se računa povprečje — strog vzorec, pravilo 2).
+    // MESEČNI klic pa vzame vse ponudbe meseca: med 30 najcenejšimi počitniški datumi skoraj
+    // nikoli niso prišli na vrsto. Število klicev ostane enako.
+    + `&currency=eur&sorting=price&direct=false&limit=${month ? 1000 : 30}&page=1&one_way=false&market=si`
     + (month ? `&departure_at=${month}` : ''));
   return (j && Array.isArray(j.data)) ? j.data : [];
 }
@@ -616,10 +626,18 @@ function pickTerms(data, avg, km, opt){
   const minDisc = discFor(opt && opt.from, opt && opt.code);   // prag po odhodnem letališču (in po progi za izrecno naročene)
   const cutLow  = avg * (1 - minDisc);             // nizkocenovniki: strog prag
   const cutFull = avg * (1 - Math.min(MIN_DISCOUNT_FULL, minDisc));   // klasični prevozniki: nikoli strožji
+  const cutHol  = avg * (1 - Math.min(MIN_DISCOUNT_HOL, minDisc));    // počitniški termini
   const win = (opt && opt.window) || null;                  // {start,end} za počitniško iskanje
   const seen = new Set();
   return data
-    .filter(d => d.price > 0 && (d.price <= (isLowcost(d.airline) ? cutLow : cutFull) || d.price < ALWAYS_UNDER))
+    .filter(d => {
+      if (!(d.price > 0)) return false;
+      if (d.price < ALWAYS_UNDER) return true;
+      // počitniški termin (celo potovanje v šolskih počitnicah): prag −10 %
+      const dep = (d.departure_at||'').slice(0,10), ret = d.return_at ? d.return_at.slice(0,10) : null;
+      if (d.price <= cutHol && holidaysFor(dep, ret).length) return true;
+      return d.price <= (isLowcost(d.airline) ? cutLow : cutFull);
+    })
     .filter(d => {
       if (!win) return true;
       const dep = (d.departure_at||'').slice(0,10);
@@ -749,14 +767,16 @@ for (const mth of holMonths) {
       // zimsko sonce: tropska/topla destinacija, dovolj daleč, v božičnih ali zimskih počitnicah
       const winterSun = SUNNY.has(cat.season) && (distKm(HOME,dest)||0) >= SUN_MIN_KM
         && holidaysFor(it.depart_date.slice(0,10), (it.return_date||'').slice(0,10)).some(n => WINTER_HOL.has(n));
+      const holSeen = holidaysFor(it.depart_date.slice(0,10), (it.return_date||'').slice(0,10)).length > 0;   // potovanje res pade v počitnice
       if (cand[key]) {
         cand[key].hint = Math.min(cand[key].hint, Math.round(it.value));
         if (winterSun) cand[key].winterSun = true;
+        if (holSeen) cand[key].holSeen = true;
         continue;
       }
       cand[key] = { fromCode:o.code, fromCity:o.city, code:dest, city:cityName(dest),
         en:ci.name, enCountry:CC[ci.cc]||'', country:drzavaZa(dest, cat), continent:cat.cont, exotic:cat.x,
-        season:SEASON[cat.season].note, hint:Math.round(it.value), winterSun, wish:wish||null,
+        season:SEASON[cat.season].note, hint:Math.round(it.value), winterSun, holSeen, wish:wish||null,
         homeKm:distKm(HOME,dest), routeKm:distKm(o.code,dest) };
       holAdded++;
     }
@@ -872,6 +892,7 @@ let ordered = wishPairs.concat(sunPairs, rest);
 // globinsko iskanje naredilo tako in tako (letni pregled), zato ni zavržen — rezultat
 // shranimo in ga spodaj ponovno uporabimo.
 const SCREEN = new Map();   // 'ODHOD|CILJ' → {base, avg}
+let holExtra = [];           // proge samo za počitniške mesece
 if (SCREEN_ALL) {
   let ok = 0, dead = 0;
   console.log(`\nSito: preverjam vseh ${ordered.length} najdenih prog (po en klic) …`);
@@ -890,8 +911,15 @@ if (SCREEN_ALL) {
   console.log(`Sito končano: ${ok} prog ima vsaj en termin po pravilu · ${dead} brez uporabnih podatkov.`);
   // Naprej gredo samo proge, ki so sito prestale.
   // Proge, kjer ima Ryanair svoje cene, gredo naprej tudi brez zadetka v Travelpayouts.
-  ordered = ordered.filter(d => d.screenHits > 0 || RY.has(d.fromCode+'|'+d.code)
-                            || IZRECNE_PAIRS.has(d.fromCode+'|'+d.code));
+  // POČITNIŠKE PROGE (Miša, 9. 10. 2026): sito gleda letni pregled, zato izpadejo proge, ki
+  // so ugodne ravno v počitnicah. Te gredo naprej posebej — a samo v počitniške mesece,
+  // da število klicev ostane pod mejo.
+  const jeSlo = d => d.screenHits > 0 || RY.has(d.fromCode+'|'+d.code)
+                  || IZRECNE_PAIRS.has(d.fromCode+'|'+d.code);
+  holExtra = ordered.filter(d => !jeSlo(d) && SCREEN.has(d.fromCode+'|'+d.code) && (d.winterSun || d.holSeen))
+    .sort((a,b) => (b.winterSun?1:0)-(a.winterSun?1:0) || a.hint-b.hint);
+  holExtra.forEach(d => { d.holOnly = true; });
+  ordered = ordered.filter(jeSlo);
   // Miša želi več oddaljenih: najprej napolnimo FAR_SHARE mest z oddaljenimi (najdlje prve),
   // preostanek pa z bližnjimi po ceni. Brez tega evropski skoki spet zasedejo vse.
   const far   = ordered.filter(d => d.km >= FAR_KM).sort((a,b)=>b.km-a.km);
@@ -903,6 +931,11 @@ if (SCREEN_ALL) {
 
 let picked = ordered;
 if (picked.length > MAX_PAIRS) picked = picked.slice(0, MAX_PAIRS);
+{
+  const prostor = Math.max(0, Math.min(HOL_EXTRA, MAX_PAIRS - picked.length));
+  picked = picked.concat(holExtra.slice(0, prostor));
+  console.log(`Počitniške proge mimo sita: ${holExtra.length} najdenih, jemljem ${Math.min(prostor, holExtra.length)} (samo počitniški meseci).`);
+}
 const perOut = {}; picked.forEach(d=>{ perOut[d.fromCode]=(perOut[d.fromCode]||0)+1; });
 const farOut = picked.filter(d=>(d.km||distKm(d.fromCode,d.code)||0) >= FAR_KM).length;
 console.log(`\nGlobinsko iskanje datumov za ${picked.length} prog (${farOut} oddaljenih, ${picked.filter(d=>d.winterSun).length} zimsko sonce) …`);
@@ -967,6 +1000,7 @@ for (const d of picked) {
     found = found.concat(ry);
   }
   for (const mth of monthList) {
+    if (d.holOnly && !winOf(mth).length) continue;        // počitniška proga: samo meseci s počitnicami
     const data = await forDates(d.fromCode, d.code, mth); calls++; await sleep(SLEEP_MS);
     if (!data.length) continue;
     found = found.concat(pickTerms(data, avg, km, {cont:d.continent, from:d.fromCode, code:d.code, wish:d.wish}));   // pravilo 2 glede na letno povprečje
@@ -1118,7 +1152,7 @@ if (MERGE) {
     process.exit(2);
   }
 }
-const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountFull:MIN_DISCOUNT_FULL, minDiscountByOrigin:MIN_DISCOUNT_BY_ORIGIN, minDiscountIzrecne:MIN_DISCOUNT_IZRECNE, izrecne:[...IZRECNE_PAIRS], alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:outCurated, discover:outDiscover };
+const payload = { updated:new Date().toISOString(), rules:{minDiscount:MIN_DISCOUNT, minDiscountHoliday:MIN_DISCOUNT_HOL, minDiscountFull:MIN_DISCOUNT_FULL, minDiscountByOrigin:MIN_DISCOUNT_BY_ORIGIN, minDiscountIzrecne:MIN_DISCOUNT_IZRECNE, izrecne:[...IZRECNE_PAIRS], alwaysUnder:ALWAYS_UNDER, minHomeKm:MIN_HOME_KM}, deals:outCurated, discover:outDiscover };
 writeFileSync(new URL('../deals.js', import.meta.url), 'window.__BOOKIRAJ_DEALS__ = '+JSON.stringify(payload)+';\n');
 // Poln seznam (še brez filtra slik) hranimo posebej: scripts/slike-iz-mape.py ga
 // bere kot vir, da ve tudi za akcije, ki so trenutno v arhivu brez slike.
