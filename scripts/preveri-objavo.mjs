@@ -24,6 +24,13 @@ const NUJNE = [
   ['img/favicon-32.png','ikona v zavihku'],
   ['slike/index.html', 'seznam manjkajočih slik'],
   ['nadzor/index.html','nadzorna plošča'],
+  // Te štiri so 27. 9. 2026 izginile skupaj s CNAME in nihče tega ni opazil do
+  // 10. 10., ko je Miša vprašala za zemljevid na strani »O nas« — bil je ves ta
+  // čas skrit, ker se brez njih ne izriše.
+  ['map/world.svg',   'zemljevid obiskanih držav na strani O nas'],
+  ['map/centers.json','središča držav za zemljevid'],
+  ['map/photos.json', 'fotografije ob zemljevidu'],
+  ['map/meta.json',   'imena in celine za zemljevid'],
 ];
 
 const napake = [];
