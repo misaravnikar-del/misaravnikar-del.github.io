@@ -116,6 +116,36 @@ input:focus{border-color:var(--accent2)}
 .srow .meta b{color:var(--ink);font-weight:600}
 .srow .kdaj{color:var(--muted);font-size:12px;white-space:nowrap;text-align:right}
 
+
+/* ===== POT OBISKOVALCA (Miša, 13. 10. 2026) ===== */
+.srow.is-klik{cursor:pointer}
+.srow.is-klik:hover{background:rgba(12,127,147,.06)}
+.srow.is-klik:focus-visible{outline:2px solid var(--accent,#0C7F93);outline-offset:-2px}
+.sejDialog{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:18px}
+.sejDialog[hidden]{display:none}
+.sejScrim{position:absolute;inset:0;background:rgba(8,16,21,.55)}
+.sejBox{position:relative;width:min(760px,100%);max-height:86vh;overflow:auto;background:#fff;
+  border-radius:16px;padding:26px 24px;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
+.sejX{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid #dfe6ea;
+  background:#fff;font-size:1.2rem;cursor:pointer;line-height:1}
+.sejTop{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:14px 0 6px}
+.sejTop div{background:#f3f7f9;border-radius:12px;padding:12px;text-align:center}
+.sejTop b{display:block;font-size:1.5rem;line-height:1.1}
+.sejTop span{display:block;margin-top:4px;font-size:.72rem;color:#6b7a80;letter-spacing:.04em}
+.pot{list-style:none;margin:16px 0 0;padding:0;border-left:2px solid #e3eaee}
+.pk{display:grid;grid-template-columns:72px 150px 1fr;gap:10px;padding:9px 0 9px 14px;
+  border-bottom:1px solid #f0f4f6;font-size:.9rem;align-items:baseline}
+.pk:last-child{border-bottom:0}
+.pkU{color:#8b989e;font-variant-numeric:tabular-nums;font-size:.82rem}
+.pkK{color:#0C7F93;font-weight:600}
+.pkO{color:#2b3a40;word-break:break-word}
+.sejTxt{display:block;color:#7a888e;font-size:.82rem;margin-top:2px}
+.pk--odhod{background:rgba(12,127,147,.05)}
+.pk--vir{background:rgba(184,69,44,.06)}
+.pkDan{margin:16px 0 4px;padding:6px 0 6px 14px;font-weight:700;color:#0e2027;
+  font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #e3eaee}
+.pkDan:first-child{margin-top:0}
+@media (max-width:620px){ .pk{grid-template-columns:62px 1fr;} .pkO{grid-column:1/-1} }
 </style>
 </head>
 <body>
@@ -161,9 +191,18 @@ input:focus{border-color:var(--accent2)}
       <div class="sess" id="arhList"></div>
     </div>
 
+    <div class="sejDialog" id="sejDialog" hidden>
+      <div class="sejScrim" data-zapriSejo></div>
+      <div class="sejBox">
+        <button class="sejX" type="button" data-zapriSejo aria-label="Zapri">×</button>
+        <h2>Pot obiskovalca</h2>
+        <div id="sejTelo"></div>
+      </div>
+    </div>
+
     <div class="panel">
       <h2>Kdo je bil na strani</h2>
-      <p class="hint">Vsaka vrstica je en brskalnik. Imena, e-naslova ali naslova IP ne zbiramo — vidiš samo vzorec vedenja, iz katerega se pozna, ali je bil obisk resničen ali strojni.</p>
+      <p class="hint">Vsaka vrstica je en brskalnik — <b>klikni jo za celotno pot</b>. Imena, e-naslova ali naslova IP ne zbiramo; vidiš samo vzorec vedenja na strani.</p>
       <div class="segs" id="segs"></div>
       <div class="sess" id="sess"></div>
     </div>
@@ -260,15 +299,110 @@ input:focus{border-color:var(--accent2)}
       + '<span class="seg bot"><b>'+(c.bot+c.sumljivo)+'</b> robotov in pajkov</span>';
     el.innerHTML = arr.map(function(x){
       var kje = x.vstop && x.vstop!=='/' ? String(x.vstop).replace(/^#/,'') : 'domača stran';
-      return '<div class="srow">'
+      return '<div class="srow is-klik" data-sej="'+esc(x.session)+'" tabindex="0" role="button">'
         +'<span class="tag '+x.vrsta+'">'+(VRSTE[x.vrsta]||x.vrsta)+'</span>'
         +'<span class="meta"><b>'+x.ogledov+'</b> ogledov · <b>'+x.minut+'</b> min'
-          +(x.akcij?' · <b>'+x.akcij+'</b> odprtih akcij':'')
+          +(x.sekund?' · <b>'+cas(x.sekund)+'</b> branja':'')
+          +(x.akcij?' · <b>'+x.akcij+'</b> akcij':'')
+          +(x.klikov?' · <b>'+x.klikov+'</b> odhodov':'')
+          +' · od: '+virIme(x.vir)
           +' · vstop: '+kje+'</span>'
         +'<span class="kdaj">'+fmtTs(x.prvi)+'</span>'
       +'</div>';
     }).join('');
   }
+
+  // ---- PODROBNOSTI ENE SEJE (Miša, 13. 10. 2026) --------------------------------
+  // »za vsak posamezen profil točno vidim iz kje je prišel in točno kaj si je na
+  //  strani ogledoval in koliko časa, kaj je gledal ko je kliknil na link«
+  function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function cas(sek){
+    sek=Math.round(sek||0);
+    if(sek<60) return sek+' s';
+    var m=Math.floor(sek/60), r=sek%60;
+    return m+' min'+(r?' '+r+' s':'');
+  }
+  function virIme(v){
+    if(!v) return 'neznano';
+    if(v==='neposredno') return 'neposredno (zaznamek ali vpisan naslov)';
+    if(v.indexOf('utm:')===0) return 'akcija »'+esc(v.slice(4))+'«';
+    return esc(v);
+  }
+  var IMENA={pageview:'ogled strani', deal_open:'odprl akcijo', section_view:'videl razdelek',
+             dwell:'se zadržal', odhod:'kliknil na ponudnika', vir:'prišel',
+             novice_blog:'prijava na novice', dodaj_v_kosarico:'dodal v košarico', narocilo:'naročilo'};
+  function stranIme(h){
+    if(!h||h==='/'||h==='#/') return 'domača stran';
+    h=String(h).replace(/^#/,'');
+    if(h.indexOf('ponudba/')===0) return 'akcija '+h.slice(8);
+    if(h.indexOf('deal/')===0)    return 'akcija '+h.slice(5);
+    if(h.indexOf('blog/')===0)    return 'objava '+h.slice(5);
+    return h;
+  }
+  function odpriSejo(sej){
+    var d=$('sejDialog'), telo=$('sejTelo');
+    d.hidden=false; telo.innerHTML='<div class="empty"><span class="spin"></span></div>';
+    fetch(U+'/rest/v1/rpc/admin_session_detail',{method:'POST',
+      headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},
+      body:JSON.stringify({pass:PW, s:sej})})
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(j){ telo.innerHTML=sejaHTML(j); })
+      .catch(function(){ telo.innerHTML='<div class="empty">Podrobnosti ni bilo mogoče naložiti.</div>'; });
+  }
+  function sejaHTML(j){
+    var p=j.povzetek||{}, pot=j.pot||[];
+    // Oznaka v brskalniku ne poteče, zato en »profil« pogosto zajame več obiskov
+    // čez več dni. Zato namesto skupnih minut raje povemo, koliko dni je bil tu.
+    var dni = {};
+    pot.forEach(function(e){ dni[new Date(e.ts).toLocaleDateString('sl-SI')] = 1; });
+    var stDni = Object.keys(dni).length;
+    var h='<div class="sejTop">'
+      +'<div><b>'+cas(p.sekund||0)+'</b><span>zadržanega časa</span></div>'
+      +'<div><b>'+(p.ogledov||0)+'</b><span>ogledov strani</span></div>'
+      +'<div><b>'+(p.klikov||0)+'</b><span>odhodov k ponudniku</span></div>'
+      +'<div><b>'+stDni+'</b><span>'+(stDni===1?'dan na strani':'različnih dni')+'</span></div>'
+      +'</div>'
+      +'<p class="hint">Prišel: <b>'+virIme(p.vir)+'</b> · prvič '+fmtTs(p.prvi)+' · nazadnje '+fmtTs(p.zadnji)+'</p>';
+    if(!pot.length) return h+'<div class="empty">Ni zabeleženih korakov.</div>';
+    if(!p.sekund) h+='<p class="hint">Zadrževanja in odhodov k ponudniku za ta obisk ni — meriti '
+      +'smo jih začeli 13. 10. 2026, starejši obiski teh podatkov nimajo.</p>';
+    h+='<ol class="pot">';
+    var zadnjiDan='';
+    pot.forEach(function(e){
+      var dan=new Date(e.ts).toLocaleDateString('sl-SI',{weekday:'long',day:'numeric',month:'long'});
+      if(dan!==zadnjiDan){ zadnjiDan=dan; h+='<li class="pkDan">'+dan+'</li>'; }
+      var ura=new Date(e.ts).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      var kaj=IMENA[e.type]||e.type, opis='', dod='';
+      if(e.type==='dwell'){ opis=stranIme(e.name); dod='<b>'+cas((e.ms||0)/1000)+'</b>'; }
+      else if(e.type==='odhod'){
+        opis=esc(e.name);
+        var m=e.meta||{};
+        var k=[];
+        if(m.cena)   k.push('<b>'+m.cena+' €</b>');
+        if(m.datumi) k.push(esc(m.datumi));
+        if(m.stran)  k.push('s strani '+stranIme(m.stran));
+        if(m.besedilo) k.push('<span class="sejTxt">'+esc(m.besedilo)+'</span>');
+        dod=k.join(' · ');
+      }
+      else if(e.type==='vir'){ opis=virIme(e.ref); }
+      else if(e.type==='section_view'){ opis='razdelek »'+esc(e.name)+'«'; }
+      else { opis=stranIme(e.name); }
+      h+='<li class="pk pk--'+esc(e.type)+'"><span class="pkU">'+ura+'</span>'
+        +'<span class="pkK">'+kaj+'</span>'
+        +'<span class="pkO">'+opis+(dod?' — '+dod:'')+'</span></li>';
+    });
+    return h+'</ol>';
+  }
+  document.addEventListener('click',function(e){
+    var r=e.target.closest&&e.target.closest('.srow[data-sej]');
+    if(r){ odpriSejo(r.getAttribute('data-sej')); return; }
+    if(e.target.closest&&e.target.closest('[data-zapriSejo]')) $('sejDialog').hidden=true;
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape') { var d=$('sejDialog'); if(d) d.hidden=true; }
+    if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('srow'))
+      { e.preventDefault(); odpriSejo(e.target.getAttribute('data-sej')); }
+  });
 
   function callStats(pw){
     return fetch(U+'/rest/v1/rpc/admin_stats',{
