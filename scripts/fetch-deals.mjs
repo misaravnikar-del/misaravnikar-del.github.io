@@ -93,6 +93,25 @@ const IZRECNE = [
   { from:'LJU', what:'Ljubljana → Evropa',  codes:['PAR','ROM','BER','WAW','CPH','STO','EDI','BRU','BUH','OPO','LIS'] },
   { from:'LJU', what:'Ljubljana → sonce',   codes:['PMI','HER','AGP','GZP'] },
   { from:'LJU', what:'Ljubljana → dlje',    codes:['CAI','HRG','TBS','EVN','AUH'] },
+
+  // ---- 13. 10. 2026, Miša: »preglej kaj ima izlet na dlani in dodaj še tiste akcije« ----
+  // Proge iz njihovih objav od 29. 9. do 13. 10. 2026, ki jih na naši strani ta dan ni bilo
+  // (45 njihovih prog je iskalnik že našel sam). Izpuščeno: cilji v Hrvaški, Avstriji in
+  // na Madžarskem, naša odhodna letališča kot cilj, odhodi iz Bergama (ni naše odhodno
+  // letališče) ter Basel, Baden-Baden in Banja Luka (niso počitniški cilji).
+  { from:'VIE', what:'Izlet na dlani: Dunaj → Evropa',     codes:['DUB','MLA','MRS','WAW','CFU','MAN','PFO','PMI','SOF','CPH','FNC','RVN','FAO'] },
+  { from:'VIE', what:'Izlet na dlani: Dunaj → dlje',       codes:['BKK','SEA','WDH','MLE'] },
+  { from:'MXP', what:'Izlet na dlani: Milano',             codes:['BKK','RVN','SYD'] },
+  { from:'MUC', what:'Izlet na dlani: Minhen',             codes:['BKK','WDH','RVN'] },
+  { from:'ZAG', what:'Izlet na dlani: Zagreb → Evropa',    codes:['IST','CRL','MAN','PFO','ALC','GOT','SKG','ZRH','MMX','OSL'] },
+  { from:'ZAG', what:'Izlet na dlani: Zagreb → dlje',      codes:['BKK','WDH','MLE','KUL'] },
+  { from:'VCE', what:'Izlet na dlani: Benetke → Evropa',   codes:['KRK','BRS','TPS','ZRH','SVQ','TLL','OLB','NCE'] },
+  { from:'VCE', what:'Izlet na dlani: Benetke → dlje',     codes:['SGN','HAN','OSA','MLE','MEL','SYD'] },
+  { from:'TSF', what:'Izlet na dlani: Treviso',            codes:['CRL','MRS','WRO','HAN','MEL'] },
+  { from:'TRS', what:'Izlet na dlani: Trst (Ryanair)',     codes:['BCN','BDS','BRI','PAR','CRL','DUB','KRK','MLA','PRG','TIA','CAG','OLB'] },
+  { from:'LJU', what:'Izlet na dlani: Ljubljana → Evropa', codes:['ZRH','FNC'] },
+  { from:'LJU', what:'Izlet na dlani: Ljubljana → dlje (Turkish)', codes:['NYC','MLE','CPT','HKG','JNB','KUL','MNL','MRU','TNR','BOG','CUN','BUE','SAO','MEX','PTY'] },
+  { from:'BUD', what:'Izlet na dlani: Budimpešta',         codes:['FNC','MEL'] },
 ];
 const IZRECNE_PAIRS = new Set(IZRECNE.flatMap(z => z.codes.map(c => z.from+'|'+c)));
 // Zanje velja enak nižji prag kot za Ljubljano (Miša, 23. 9. 2026: »ljubljano spusti na 10%«).
