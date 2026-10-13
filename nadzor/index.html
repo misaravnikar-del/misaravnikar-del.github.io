@@ -145,6 +145,9 @@ input:focus{border-color:var(--accent2)}
 .pkDan{margin:16px 0 4px;padding:6px 0 6px 14px;font-weight:700;color:#0e2027;
   font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #e3eaee}
 .pkDan:first-child{margin-top:0}
+.potGumb{display:inline-block;background:#0C7F93;color:#fff;text-decoration:none;
+  padding:.6rem 1rem;border-radius:999px;font-weight:600;font-size:.92rem}
+.potGumb:hover{background:#0a6c7d}
 @media (max-width:620px){ .pk{grid-template-columns:62px 1fr;} .pkO{grid-column:1/-1} }
 </style>
 </head>
@@ -362,7 +365,9 @@ input:focus{border-color:var(--accent2)}
       +'<div><b>'+(p.klikov||0)+'</b><span>odhodov k ponudniku</span></div>'
       +'<div><b>'+stDni+'</b><span>'+(stDni===1?'dan na strani':'različnih dni')+'</span></div>'
       +'</div>'
-      +'<p class="hint">Prišel: <b>'+virIme(p.vir)+'</b> · prvič '+fmtTs(p.prvi)+' · nazadnje '+fmtTs(p.zadnji)+'</p>';
+      +'<p class="hint">Prišel: <b>'+virIme(p.vir)+'</b> · prvič '+fmtTs(p.prvi)+' · nazadnje '+fmtTs(p.zadnji)+'</p>'
+      +'<p><a class="potGumb" href="pot/?s='+encodeURIComponent(j.session)+'" target="_blank" rel="noopener">'
+      +'Odpri stran z označeno potjo →</a></p>';
     if(!pot.length) return h+'<div class="empty">Ni zabeleženih korakov.</div>';
     if(!p.sekund) h+='<p class="hint">Zadrževanja in odhodov k ponudniku za ta obisk ni — meriti '
       +'smo jih začeli 13. 10. 2026, starejši obiski teh podatkov nimajo.</p>';

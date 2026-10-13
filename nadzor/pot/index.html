@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Pot obiskovalca — Bookiraj.si</title>
+<!--
+  Miša, 13. 10. 2026: »želim tako, da klikneš na osebo in se odpre stran in je potem
+  vse kar si je ogledala hilightano in točno piše koliko časa je kje preživela in na
+  kaj kliknila«.
+
+  Stran naloži PRAVO spletno stran v okvir in čeznjo nariše pot obiskovalca:
+    • razdelki in posamezne akcije, ki jih je res videl, so obrobljeni
+    • ob vsaki strani piše, koliko časa se je na njej zadržal
+    • kliki na ponudnike so označeni z rdečo, s ceno in terminom
+
+  Kar ni zabeleženo, tudi ni prikazano — predvsem globina drsenja in premiki miške.
+  Zato tu ni toplotne karte; ta bi bila ugibanje.
+-->
+<style>
+:root{--bg:#E1E8EC;--ink:#101920;--muted:#697176;--line:#CDD9E1;--accent:#0C7F93;--hot:#B8452C;--surface:#fff}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+.vrh{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 18px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.vrh h1{font-size:1rem;margin:0;font-weight:700}
+.vrh .nazaj{color:var(--accent);text-decoration:none;font-size:.9rem}
+.vrh .vir{color:var(--muted);font-size:.86rem}
+.oder{display:grid;grid-template-columns:320px 1fr;gap:0;height:calc(100vh - 53px)}
+.levo{overflow:auto;border-right:1px solid var(--line);background:var(--surface);padding:16px}
+.desno{position:relative;background:#f6f9fa}
+iframe{width:100%;height:100%;border:0;display:block}
+.povz{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.povz div{background:#f3f7f9;border-radius:10px;padding:10px;text-align:center}
+.povz b{display:block;font-size:1.25rem}
+.povz span{display:block;font-size:.68rem;color:var(--muted);margin-top:2px}
+.korak{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);
+  border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;font:inherit}
+.korak:hover{border-color:var(--accent)}
+.korak.aktiven{border-color:var(--accent);background:rgba(12,127,147,.07)}
+.korak b{display:block;font-size:.95rem}
+.korak span{display:block;color:var(--muted);font-size:.8rem;margin-top:2px}
+.korak em{color:var(--accent);font-style:normal;font-weight:600}
+.klik{border-left:3px solid var(--hot)}
+.prazno{color:var(--muted);padding:20px;text-align:center}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--line)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+@media(max-width:860px){.oder{grid-template-columns:1fr;height:auto}.desno{height:70vh}}
+</style>
+</head>
+<body>
+<div class="vrh">
+  <a class="nazaj" href="../">← Nadzorna plošča</a>
+  <h1 id="naslov">Pot obiskovalca</h1>
+  <span class="vir" id="vir"></span>
+</div>
+<div class="legend">
+  <span><i style="background:rgba(12,127,147,.35);outline:2px solid #0C7F93"></i> videl</span>
+  <span><i style="background:rgba(184,69,44,.35);outline:2px solid #B8452C"></i> kliknil na ponudnika</span>
+  <span>Kar ni označeno, ni bilo zabeleženo — globine drsenja in premikov miške ne merimo.</span>
+</div>
+
+<div class="oder">
+  <div class="levo" id="levo"><div class="prazno">Nalagam …</div></div>
+  <div class="desno"><iframe id="okvir" title="Stran z označeno potjo"></iframe></div>
+</div>
+
+<script>
+var U='https://fliwoulbwqcnufdfgvcj.supabase.co';
+var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsaXdvdWxid3FjbnVmZGZndmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDQwNDIsImV4cCI6MjEwNTU4MDA0Mn0.sTk_F4WrLukbyozCipYkaFuFjkcdru2M9BiYw-wD1Zo';
+var $=function(i){return document.getElementById(i);};
+var sej=new URLSearchParams(location.search).get('s')||'';
+var PW=''; try{PW=localStorage.getItem('bkrj_admin_pw')||'';}catch(e){}
+
+function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function cas(sek){sek=Math.round(sek||0);if(sek<60)return sek+' s';var m=Math.floor(sek/60),r=sek%60;return m+' min'+(r?' '+r+' s':'');}
+function stranIme(h){
+  if(!h||h==='/'||h==='#/')return 'domača stran';
+  h=String(h).replace(/^#/,'');
+  if(h.indexOf('ponudba/')===0)return 'akcija '+h.slice(8);
+  if(h.indexOf('deal/')===0)return 'akcija '+h.slice(5);
+  if(h.indexOf('blog/')===0)return 'objava '+h.slice(5);
+  return h;
+}
+function virIme(v){
+  if(!v)return 'neznano';
+  if(v==='neposredno')return 'neposredno';
+  if(v.indexOf('utm:')===0)return 'akcija »'+esc(v.slice(4))+'«';
+  return esc(v);
+}
+
+if(!sej||!PW){
+  $('levo').innerHTML='<div class="prazno">Odpri to stran s klikom na obiskovalca v nadzorni plošči.</div>';
+} else {
+  fetch(U+'/rest/v1/rpc/admin_session_detail',{method:'POST',
+    headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},
+    body:JSON.stringify({pass:PW,s:sej})})
+    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+    .then(narisi)
+    .catch(function(){ $('levo').innerHTML='<div class="prazno">Podatkov ni bilo mogoče naložiti. Prijavi se v nadzorno ploščo.</div>'; });
+}
+
+var POT=[], STRANI=[];
+function narisi(j){
+  var p=j.povzetek||{}; POT=j.pot||[];
+  $('vir').textContent='prišel: '+virIme(p.vir).replace(/<[^>]+>/g,'');
+
+  // Pot razrežemo po straneh: vsaka stran dobi svoj čas, videne razdelke,
+  // videne kartice in klike, ki so se zgodili, dokler je bil na njej.
+  var trenutna=null;
+  POT.forEach(function(e){
+    if(e.type==='pageview'){
+      trenutna={hash:e.name||'/', ts:e.ts, sek:0, razdelki:[], kartice:[], kliki:[]};
+      STRANI.push(trenutna);
+      return;
+    }
+    if(!trenutna){ trenutna={hash:'/', ts:e.ts, sek:0, razdelki:[], kartice:[], kliki:[]}; STRANI.push(trenutna); }
+    if(e.type==='dwell')        trenutna.sek += Math.round((e.ms||0)/1000);
+    if(e.type==='section_view') trenutna.razdelki.push(e.name);
+    if(e.type==='kartica')      trenutna.kartice.push(e.name);
+    if(e.type==='odhod')        trenutna.kliki.push(e);
+  });
+
+  var h='<div class="povz">'
+    +'<div><b>'+cas(p.sekund||0)+'</b><span>skupaj na strani</span></div>'
+    +'<div><b>'+(p.ogledov||0)+'</b><span>ogledov</span></div>'
+    +'<div><b>'+(p.klikov||0)+'</b><span>odhodov</span></div>'
+    +'<div><b>'+STRANI.length+'</b><span>korakov</span></div>'
+    +'</div>';
+  if(!STRANI.length){ $('levo').innerHTML=h+'<div class="prazno">Ta obiskovalec nima zabeleženih strani.</div>'; return; }
+
+  h += STRANI.map(function(s,i){
+    var ura=new Date(s.ts).toLocaleString('sl-SI',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'});
+    var d=[];
+    if(s.sek) d.push('<em>'+cas(s.sek)+'</em>');
+    if(s.kartice.length) d.push(s.kartice.length+' akcij videl');
+    if(s.razdelki.length) d.push(s.razdelki.length+' razdelkov');
+    return '<button class="korak'+(s.kliki.length?' klik':'')+'" data-i="'+i+'">'
+      +'<b>'+esc(stranIme(s.hash))+'</b>'
+      +'<span>'+ura+(d.length?' · '+d.join(' · '):'')+'</span>'
+      + s.kliki.map(function(k){
+          var m=k.meta||{}, del=[];
+          if(m.cena) del.push(m.cena+' €');
+          if(m.datumi) del.push(esc(m.datumi));
+          return '<span style="color:#B8452C">→ kliknil na '+esc(k.name)+(del.length?' ('+del.join(', ')+')':'')+'</span>';
+        }).join('')
+      +'</button>';
+  }).join('');
+  $('levo').innerHTML=h;
+  pokazi(0);
+}
+
+$('levo').addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('.korak');
+  if(b) pokazi(+b.getAttribute('data-i'));
+});
+
+function pokazi(i){
+  var s=STRANI[i]; if(!s) return;
+  [].forEach.call(document.querySelectorAll('.korak'),function(el,n){ el.classList.toggle('aktiven', n===i); });
+  var okvir=$('okvir');
+  okvir.src='../../index.html'+(s.hash&&s.hash!=='/'?s.hash:'');
+  okvir.onload=function(){ oznaci(okvir, s); };
+}
+
+// Označevanje v okvirju. Isti izvor, zato smemo v dokument.
+function oznaci(okvir, s){
+  try{
+    var d=okvir.contentDocument; if(!d) return;
+    if(!d.getElementById('potSlog')){
+      var st=d.createElement('style'); st.id='potSlog';
+      st.textContent=
+        '.pot-videl{outline:3px solid #0C7F93 !important;outline-offset:3px;'
+        +'background:rgba(12,127,147,.10) !important;border-radius:10px;position:relative}'
+        +'.pot-klik{outline:3px solid #B8452C !important;outline-offset:3px;'
+        +'background:rgba(184,69,44,.12) !important}'
+        +'.pot-znak{position:absolute;z-index:40;top:-13px;left:8px;background:#0C7F93;color:#fff;'
+        +'font:600 11px/1.6 sans-serif;padding:1px 8px;border-radius:999px;white-space:nowrap}'
+        +'.pot-znak.hot{background:#B8452C}';
+      d.head.appendChild(st);
+    }
+    [].forEach.call(d.querySelectorAll('.pot-videl,.pot-klik'),function(el){ el.classList.remove('pot-videl','pot-klik'); });
+    [].forEach.call(d.querySelectorAll('.pot-znak'),function(el){ el.remove(); });
+
+    function oznaka(el, txt, hot){
+      el.classList.add(hot?'pot-klik':'pot-videl');
+      var z=d.createElement('span'); z.className='pot-znak'+(hot?' hot':'');
+      z.textContent=txt; el.appendChild(z);
+    }
+    // razdelki, ki jih je videl — s časom cele strani
+    s.razdelki.forEach(function(id){
+      var el=d.getElementById(id); if(el) oznaka(el, 'videl', false);
+    });
+    // posamezne akcije, ki jih je videl
+    s.kartice.forEach(function(k){
+      var el=d.querySelector('a[href="#ponudba/'+k+'"], a[href="#deal/'+k+'"]');
+      if(el) oznaka(el, 'videl', false);
+    });
+    // kliki na ponudnike
+    s.kliki.forEach(function(klik){
+      var m=klik.meta||{};
+      var cilj=null;
+      if(m.cena){
+        [].forEach.call(d.querySelectorAll('a[href*="aviasales"],a[href*="holafly"],a[href*="airalo"]'),function(a){
+          if(cilj) return;
+          var t=(a.closest('.term,.card,article,tr')||a).innerText||'';
+          if(t.indexOf(m.cena+' €')>=0) cilj=a.closest('.term,.card,article,tr')||a;
+        });
+      }
+      if(!cilj) cilj=d.querySelector('a[href*="aviasales"]');
+      if(cilj) oznaka(cilj, 'kliknil'+(m.cena?' · '+m.cena+' €':''), true);
+    });
+    // na prvo označeno se zapeljemo
+    var prva=d.querySelector('.pot-klik')||d.querySelector('.pot-videl');
+    if(prva&&prva.scrollIntoView) prva.scrollIntoView({block:'center'});
+  }catch(e){ /* okvir še ni pripravljen */ }
+}
+</script>
+</body>
+</html>

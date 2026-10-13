@@ -1961,8 +1961,8 @@ window.bkrjSend = function(kind, o){
   </div>
 </footer>
 
-<script src="deals.js?v=202610131414"></script>
-<script src="sights.js?v=202610131414"></script>
+<script src="deals.js?v=202610131427"></script>
+<script src="sights.js?v=202610131427"></script>
 <script>
 const COPY=[
  {city:"Barcelona",code:"BCN",country:"Španija",fromCity:"Ljubljana",fromCode:"LJU",airline:"Vueling",price:39,period:"apr.–maj.",months:[4,5],region:"europa",img:"barcelona",teaser:"Gaudí, tapas in mestna plaža na dosegu vikenda.",badge:"−52 %",badgeType:"acc",
@@ -3802,6 +3802,37 @@ route();
     var seen={},ids=['tedna','akcije','esim','zakaj','storitve','mnenja','nasveti','news'];
     try{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!seen[e.target.id]){seen[e.target.id]=1;track('section_view',e.target.id);}});},{threshold:0.4});
     ids.forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el);});}catch(e){}
+
+    // ---- KATERE KARTICE JE DEJANSKO VIDEL (Miša, 13. 10. 2026) ------------------
+    // »želim tako, da klikneš na osebo in se odpre stran in je potem vse kar si je
+    //  ogledala hilightano« — za to ni dovolj vedeti, da je videl razdelek »akcije«,
+    //  ampak KATERO akcijo. Beležimo kartico, ko je vsaj pol vidna in obstane
+    //  vsaj sekundo, da hitro drsenje mimo ne šteje za ogled.
+    var videnKos={}, cakaKos={};
+    function kosKljuc(el){
+      var a=el.getAttribute('href')||'';
+      if(a.indexOf('#ponudba/')===0) return a.slice(9);
+      if(a.indexOf('#deal/')===0)    return a.slice(6);
+      return null;
+    }
+    try{
+      var ioKos=new IntersectionObserver(function(es){
+        es.forEach(function(e){
+          var k=kosKljuc(e.target); if(!k||videnKos[k]) return;
+          if(e.isIntersecting){
+            cakaKos[k]=setTimeout(function(){ videnKos[k]=1; track('kartica',k); }, 1000);
+          } else if(cakaKos[k]){ clearTimeout(cakaKos[k]); delete cakaKos[k]; }
+        });
+      },{threshold:0.5});
+      // kartice pridejo v DOM šele ob izrisu seznama, zato opazujemo tudi spremembe
+      function opazujKartice(){
+        [].forEach.call(document.querySelectorAll('a[href^="#ponudba/"], a[href^="#deal/"]'), function(el){
+          if(el.__opaz) return; el.__opaz=1; ioKos.observe(el);
+        });
+      }
+      opazujKartice();
+      new MutationObserver(opazujKartice).observe(document.body,{childList:true,subtree:true});
+    }catch(e){}
   };
   if (window.bkrjConsent && window.bkrjConsent() === 'all') window.bkrjStartAnalytics();
 })();
